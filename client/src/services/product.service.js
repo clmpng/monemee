@@ -1,72 +1,26 @@
 import api from './api';
 
-/**
- * Product Service
- * API calls for product management
- */
-const productService = {
-  /**
-   * Get all products for current user
-   */
-  async getMyProducts() {
-    return api.get('/products');
-  },
-
-  /**
-   * Get single product by ID
-   */
-  async getProduct(id) {
-    return api.get(`/products/${id}`);
-  },
-
-  /**
-   * Create new product
-   */
-  async createProduct(data) {
-    return api.post('/products', data);
-  },
-
-  /**
-   * Update product
-   */
-  async updateProduct(id, data) {
-    return api.put(`/products/${id}`, data);
-  },
-
-  /**
-   * Delete product
-   */
-  async deleteProduct(id) {
-    return api.delete(`/products/${id}`);
-  },
-
-  /**
-   * Upload product file
-   */
-  async uploadFile(id, file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    return api.post(`/products/${id}/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-  },
-
-  /**
-   * Get top/trending products (for promoters)
-   */
-  async getTopProducts() {
-    return api.get('/products/top');
-  },
-
-  /**
-   * Discover products (for promoters)
-   */
-  async discoverProducts(params = {}) {
-    return api.get('/products/discover', { params });
-  }
+const productsService = {
+  // Get my products
+  getMyProducts: () => api.get('/products'),
+  
+  // Get single product
+  getProduct: (id) => api.get(`/products/${id}`),
+  
+  // Create product
+  createProduct: (data) => api.post('/products', data),
+  
+  // Update product
+  updateProduct: (id, data) => api.put(`/products/${id}`, data),
+  
+  // Delete product
+  deleteProduct: (id) => api.delete(`/products/${id}`),
+  
+  // Get top products
+  getTopProducts: () => api.get('/products/top'),
+  
+  // Discover products (for promoters)
+  discoverProducts: (params) => api.get('/products/discover', { params })
 };
 
-export default productService;
+export default productsService;

@@ -6,6 +6,7 @@ const productsRoutes = require('./products.routes');
 const earningsRoutes = require('./earnings.routes');
 const promotionRoutes = require('./promotion.routes');
 const paymentsRoutes = require('./payments.routes');
+const usersRoutes = require('./users.routes');
 
 // ============================================
 // API Routes
@@ -23,10 +24,7 @@ router.use('/promotion', promotionRoutes);
 // Payments (Stripe)
 router.use('/payments', paymentsRoutes);
 
-// Auth routes (später hinzufügen)
-// router.use('/auth', authRoutes);
-
-// Users routes (später hinzufügen)
-// router.use('/users', usersRoutes);
+// Users
+router.use('/users', usersRoutes);
 
 module.exports = router;

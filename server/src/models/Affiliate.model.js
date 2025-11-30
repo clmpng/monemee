@@ -195,7 +195,22 @@ const AffiliateModel = {
     
     const result = await db.query(query, [creatorId]);
     return result.rows[0];
-  }
+  },
+
+    /**
+   * Increment click count
+   */
+  async incrementClicks(code) {
+      const query = `
+        UPDATE affiliate_links 
+        SET clicks = clicks + 1 
+        WHERE code = $1
+        RETURNING clicks
+      `;
+      
+      const result = await db.query(query, [code]);
+      return result.rows[0]?.clicks || 0;
+    }
 };
 
 module.exports = AffiliateModel;
