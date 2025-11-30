@@ -12,11 +12,12 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
     description: initialData?.description || '',
     price: initialData?.price || '',
     isFree: initialData?.price === 0 || false,
-    thumbnail: initialData?.thumbnail || null,
-    file: initialData?.file || null,
-    fileName: initialData?.fileName || '',
-    fileSize: initialData?.fileSize || 0,
-    affiliateCommission: initialData?.affiliateCommission || 20,
+    thumbnailFile: null,           // File-Objekt
+    thumbnailPreview: initialData?.thumbnail_url || null, // Nur für Vorschau
+    productFile: null,             // File-Objekt
+    fileName: initialData?.file_name || '',
+    fileSize: initialData?.file_size || 0,
+    affiliateCommission: initialData?.affiliate_commission || 20,
     status: initialData?.status || 'draft'
   });
 
@@ -27,59 +28,67 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error on change
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
   };
 
-  // Handle thumbnail upload
+  // Handle thumbnail upload - NUR Preview, kein Base64 speichern
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         setErrors(prev => ({ ...prev, thumbnail: 'Bild darf max. 5MB groß sein' }));
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, thumbnail: reader.result }));
-      };
-      reader.readAsDataURL(file);
+      // Speichere File-Objekt und erstelle temporäre Preview-URL
+      setFormData(prev => ({
+        ...prev,
+        thumbnailFile: file,
+        thumbnailPreview: URL.createObjectURL(file)
+      }));
     }
   };
 
-  // Handle product file upload
+  // Handle product file upload - NUR File-Objekt speichern
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 100 * 1024 * 1024) { // 100MB limit
+      if (file.size > 100 * 1024 * 1024) {
         setErrors(prev => ({ ...prev, file: 'Datei darf max. 100MB groß sein' }));
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({
-          ...prev,
-          file: reader.result,
-          fileName: file.name,
-          fileSize: file.size
-        }));
-      };
-      reader.readAsDataURL(file);
+      setFormData(prev => ({
+        ...prev,
+        productFile: file,
+        fileName: file.name,
+        fileSize: file.size
+      }));
     }
   };
 
   // Remove thumbnail
   const removeThumbnail = () => {
-    setFormData(prev => ({ ...prev, thumbnail: null }));
+    if (formData.thumbnailPreview && formData.thumbnailFile) {
+      URL.revokeObjectURL(formData.thumbnailPreview);
+    }
+    setFormData(prev => ({ 
+      ...prev, 
+      thumbnailFile: null, 
+      thumbnailPreview: null 
+    }));
   };
 
   // Remove file
   const removeFile = () => {
-    setFormData(prev => ({ ...prev, file: null, fileName: '', fileSize: 0 }));
+    setFormData(prev => ({ 
+      ...prev, 
+      productFile: null, 
+      fileName: '', 
+      fileSize: 0 
+    }));
   };
 
   // Toggle free
@@ -98,21 +107,14 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  // Get file icon based on extension
+  // Get file icon
   const getFileIcon = (fileName) => {
+    if (!fileName) return '📁';
     const ext = fileName.split('.').pop().toLowerCase();
     const icons = {
-      pdf: '📄',
-      zip: '📦',
-      mp4: '🎬',
-      mp3: '🎵',
-      png: '🖼️',
-      jpg: '🖼️',
-      jpeg: '🖼️',
-      doc: '📝',
-      docx: '📝',
-      xls: '📊',
-      xlsx: '📊'
+      pdf: '📄', zip: '📦', mp4: '🎬', mp3: '🎵',
+      png: '🖼️', jpg: '🖼️', jpeg: '🖼️',
+      doc: '📝', docx: '📝', xls: '📊', xlsx: '📊'
     };
     return icons[ext] || '📁';
   };
@@ -129,7 +131,8 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
       newErrors.price = 'Bitte gib einen Preis ein';
     }
 
-    if (!formData.file) {
+    // Datei ist nur bei neuen Produkten Pflicht
+    if (!initialData && !formData.productFile) {
       newErrors.file = 'Bitte lade eine Datei hoch';
     }
 
@@ -145,8 +148,8 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
       title: formData.title.trim(),
       description: formData.description.trim(),
       price: formData.isFree ? 0 : parseFloat(formData.price),
-      thumbnail: formData.thumbnail,
-      file: formData.file,
+      thumbnailFile: formData.thumbnailFile,     // File-Objekt
+      productFile: formData.productFile,          // File-Objekt
       fileName: formData.fileName,
       fileSize: formData.fileSize,
       affiliateCommission: formData.affiliateCommission,
@@ -161,10 +164,10 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
       {/* Thumbnail Upload */}
       <div>
         <p className={styles.sectionTitle}>Vorschaubild</p>
-        {formData.thumbnail ? (
+        {formData.thumbnailPreview ? (
           <div className={styles.thumbnailPreview}>
             <img 
-              src={formData.thumbnail} 
+              src={formData.thumbnailPreview} 
               alt="Vorschau" 
               className={styles.thumbnailImage}
             />
@@ -199,7 +202,7 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
       {/* Product File Upload */}
       <div>
         <p className={styles.sectionTitle}>Produkt-Datei *</p>
-        {formData.file ? (
+        {formData.fileName ? (
           <div className={styles.filePreview}>
             <div className={styles.fileIcon}>
               {getFileIcon(formData.fileName)}
@@ -304,47 +307,77 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
           <div className={`${styles.checkbox} ${formData.isFree ? styles.checkboxChecked : ''}`}>
             {formData.isFree && '✓'}
           </div>
-          <span className={styles.freeLabel}>Kostenlos anbieten</span>
+          <span style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+            Kostenlos anbieten
+          </span>
         </div>
       </div>
 
       {/* Affiliate Commission */}
-      <div className={styles.commissionSection}>
-        <div className={styles.commissionHeader}>
-          <span className={styles.commissionLabel}>Affiliate-Provision</span>
-          <span className={styles.commissionValue}>{formData.affiliateCommission}%</span>
-        </div>
+      <div>
+        <label style={{ 
+          fontSize: '14px', 
+          fontWeight: '500', 
+          marginBottom: '8px',
+          display: 'block'
+        }}>
+          Affiliate-Provision: {formData.affiliateCommission}%
+        </label>
         <input
           type="range"
-          min="0"
+          name="affiliateCommission"
+          min="5"
           max="50"
           value={formData.affiliateCommission}
-          onChange={(e) => setFormData(prev => ({ 
-            ...prev, 
-            affiliateCommission: parseInt(e.target.value) 
-          }))}
-          className={styles.commissionSlider}
+          onChange={handleChange}
+          style={{ width: '100%' }}
         />
-        <p className={styles.commissionHint}>
-          Promoter erhalten {formData.affiliateCommission}% vom Verkaufspreis
-        </p>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          fontSize: '12px',
+          color: 'var(--color-text-tertiary)',
+          marginTop: '4px'
+        }}>
+          <span>5%</span>
+          <span>50%</span>
+        </div>
       </div>
 
-      {/* Actions */}
-      <div className={styles.actions}>
-        <Button 
-          variant="secondary" 
+      {/* Action Buttons */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '12px', 
+        marginTop: '8px',
+        flexDirection: 'column'
+      }}>
+        <Button
+          onClick={() => handleSubmit('active')}
+          disabled={isLoading}
+          style={{ width: '100%' }}
+        >
+          {isLoading ? 'Wird gespeichert...' : '🚀 Veröffentlichen'}
+        </Button>
+        
+        <Button
+          variant="secondary"
           onClick={() => handleSubmit('draft')}
           disabled={isLoading}
+          style={{ width: '100%' }}
         >
-          Als Entwurf
+          💾 Als Entwurf speichern
         </Button>
-        <Button 
-          onClick={() => handleSubmit('active')}
-          loading={isLoading}
-        >
-          Veröffentlichen
-        </Button>
+
+        {onCancel && (
+          <Button
+            variant="ghost"
+            onClick={onCancel}
+            disabled={isLoading}
+            style={{ width: '100%' }}
+          >
+            Abbrechen
+          </Button>
+        )}
       </div>
     </div>
   );

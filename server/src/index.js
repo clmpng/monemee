@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const uploadRoutes = require('./routes/upload.routes');
 
 // Import routes
 const routes = require('./routes');
@@ -47,6 +48,7 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/v1', routes);
+app.use('/api/v1/upload', uploadRoutes);
 
 // ============================================
 // Error Handling

@@ -20,7 +20,34 @@ const productsService = {
   getTopProducts: () => api.get('/products/top'),
   
   // Discover products (for promoters)
-  discoverProducts: (params) => api.get('/products/discover', { params })
+  discoverProducts: (params) => api.get('/products/discover', { params }),
+  
+  /**
+   * Upload file via Backend (umgeht CORS)
+   * @param {File} file - File object to upload
+   * @param {string} type - 'thumbnail' or 'product'
+   * @returns {string} Download URL
+   */
+  uploadFile: async (file, type = 'product') => {
+    if (!file) return null;
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', type);
+      
+      const response = await api.post('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      return response.data.url;
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw new Error('Datei konnte nicht hochgeladen werden');
+    }
+  }
 };
 
 export default productsService;
