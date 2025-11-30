@@ -4,8 +4,11 @@ import { Routes, Route } from 'react-router-dom';
 // Layout
 import { AppLayout } from '../components/layout';
 
+// Common
+import { Icon } from '../components/common';
+
 // Pages
-import { MyStore, AddProduct } from '../pages/store';
+import { MyStore, AddProduct, EditProduct } from '../pages/store';
 import { EarningsDashboard } from '../pages/earnings';
 import { PromotionHub } from '../pages/promotion';
 import Messages from '../pages/Messages';
@@ -31,6 +34,9 @@ function AppRoutes() {
         
         {/* Add Product */}
         <Route path="/products/new" element={<AddProduct />} />
+
+        {/* Edit Product */}
+        <Route path="/products/:id/edit" element={<EditProduct />} />
         
         {/* Earnings / Statistics */}
         <Route path="/earnings" element={<EarningsDashboard />} />
@@ -40,12 +46,6 @@ function AppRoutes() {
         
         {/* Messages */}
         <Route path="/messages" element={<Messages />} />
-        
-        {/* Edit Product (später) */}
-        {/* <Route path="/products/:id/edit" element={<EditProduct />} /> */}
-        
-        {/* Settings (später) */}
-        {/* <Route path="/settings" element={<Settings />} /> */}
       </Route>
 
       {/* 404 */}
@@ -58,7 +58,9 @@ function AppRoutes() {
 function NotFound() {
   return (
     <div className="page" style={{ textAlign: 'center', paddingTop: '100px' }}>
-      <div style={{ fontSize: '64px', marginBottom: '16px' }}>🔍</div>
+      <div style={{ fontSize: '64px', marginBottom: '16px' }}>
+        <Icon name="searchX" size={64} />
+      </div>
       <h1 style={{ fontSize: '24px', marginBottom: '8px' }}>Seite nicht gefunden</h1>
       <p style={{ color: 'var(--color-text-secondary)' }}>
         Die angeforderte Seite existiert nicht.

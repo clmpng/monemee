@@ -1,13 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { Icon } from '../common';
 import styles from '../../styles/components/BottomNav.module.css';
 
 function BottomNav() {
   const navItems = [
-    { path: '/', icon: '🏪', label: 'Store' },
-    { path: '/earnings', icon: '📊', label: 'Statistiken' },
-    { path: '/promotion', icon: '📣', label: 'Promotion' },
-    { path: '/messages', icon: '💬', label: 'Nachrichten' },
+    { path: '/', icon: 'store', label: 'Store' },
+    { path: '/earnings', icon: 'chart', label: 'Statistiken' },
+    { path: '/promotion', icon: 'megaphone', label: 'Promotion' },
+    { path: '/messages', icon: 'message', label: 'Nachrichten' },
   ];
 
   return (
@@ -24,7 +25,9 @@ function BottomNav() {
             {({ isActive }) => (
               <>
                 {isActive && <span className={styles.activeIndicator} />}
-                <span className={styles.navIcon}>{item.icon}</span>
+                <span className={styles.navIcon}>
+                  <Icon name={item.icon} size="md" />
+                </span>
                 <span className={styles.navLabel}>{item.label}</span>
               </>
             )}

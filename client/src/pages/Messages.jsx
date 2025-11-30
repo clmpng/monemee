@@ -1,8 +1,8 @@
 import React from 'react';
+import { Icon } from '../components/common';
 
 /**
  * Messages/Dashboard Page
- * Shows smart notifications and updates
  */
 function Messages() {
   // Mock notifications
@@ -10,28 +10,28 @@ function Messages() {
     {
       id: 1,
       type: 'success',
-      icon: '💰',
+      icon: 'wallet',
       message: 'Du hast heute 12,34€ verdient!',
       time: 'Vor 2 Stunden'
     },
     {
       id: 2,
       type: 'info',
-      icon: '👁️',
+      icon: 'eye',
       message: 'Dein Produkt hat 9 Views – willst du den 10. holen?',
       time: 'Vor 4 Stunden'
     },
     {
       id: 3,
       type: 'progress',
-      icon: '⭐',
+      icon: 'star',
       message: 'Noch 266€ bis Level 3!',
       time: 'Heute'
     },
     {
       id: 4,
       type: 'sale',
-      icon: '🎉',
+      icon: 'party',
       message: 'Neuer Verkauf: Ultimate Productivity Guide für 29,99€',
       time: 'Gestern'
     }
@@ -55,7 +55,9 @@ function Messages() {
       {/* Empty State (wenn keine Notifications) */}
       {notifications.length === 0 && (
         <div className="empty-state">
-          <div className="empty-state-icon">🔔</div>
+          <div className="empty-state-icon">
+            <Icon name="bell" size="xxl" />
+          </div>
           <h3 className="empty-state-title">Keine Benachrichtigungen</h3>
           <p className="empty-state-text">
             Hier erscheinen deine Updates und Neuigkeiten.
@@ -66,19 +68,20 @@ function Messages() {
   );
 }
 
-// Notification Card
+// Notification Card Component
 function NotificationCard({ notification }) {
-  const getTypeStyle = (type) => {
-    switch (type) {
-      case 'success':
-        return { borderLeft: '3px solid var(--color-success)' };
-      case 'sale':
-        return { borderLeft: '3px solid var(--color-primary)' };
-      case 'progress':
-        return { borderLeft: '3px solid var(--color-warning)' };
-      default:
-        return { borderLeft: '3px solid var(--color-border-light)' };
-    }
+  const typeColors = {
+    success: 'var(--color-success)',
+    info: 'var(--color-primary)',
+    progress: 'var(--color-warning)',
+    sale: 'var(--color-success)'
+  };
+
+  const typeBgColors = {
+    success: 'rgba(16, 185, 129, 0.15)',
+    info: 'rgba(99, 102, 241, 0.15)',
+    progress: 'rgba(245, 158, 11, 0.15)',
+    sale: 'rgba(16, 185, 129, 0.15)'
   };
 
   return (
@@ -88,21 +91,20 @@ function NotificationCard({ notification }) {
       padding: '16px',
       background: 'var(--color-bg-secondary)',
       borderRadius: 'var(--radius-lg)',
-      border: '1px solid var(--color-border)',
-      ...getTypeStyle(notification.type)
+      border: '1px solid var(--color-border)'
     }}>
       <div style={{
         width: '40px',
         height: '40px',
         borderRadius: 'var(--radius-md)',
-        background: 'var(--color-bg-tertiary)',
+        background: typeBgColors[notification.type] || typeBgColors.info,
+        color: typeColors[notification.type] || typeColors.info,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '20px',
         flexShrink: 0
       }}>
-        {notification.icon}
+        <Icon name={notification.icon} size="md" />
       </div>
       <div style={{ flex: 1 }}>
         <p style={{ 

@@ -1,17 +1,18 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { Icon } from '../common';
 import styles from '../../styles/components/Sidebar.module.css';
 
 function Sidebar({ user }) {
   const navItems = [
-    { path: '/', icon: '🏪', label: 'My Store' },
-    { path: '/earnings', icon: '💰', label: 'Einnahmen' },
-    { path: '/promotion', icon: '📣', label: 'Promotion' },
-    { path: '/messages', icon: '💬', label: 'Nachrichten' },
+    { path: '/', icon: 'store', label: 'My Store' },
+    { path: '/earnings', icon: 'wallet', label: 'Einnahmen' },
+    { path: '/promotion', icon: 'megaphone', label: 'Promotion' },
+    { path: '/messages', icon: 'message', label: 'Nachrichten' },
   ];
 
   const secondaryItems = [
-    { path: '/settings', icon: '⚙️', label: 'Einstellungen' },
+    { path: '/settings', icon: 'settings', label: 'Einstellungen' },
   ];
 
   // Get initials from user name
@@ -24,7 +25,9 @@ function Sidebar({ user }) {
     <aside className={styles.sidebar}>
       {/* Logo */}
       <div className={styles.logo}>
-        <span className={styles.logoIcon}>💸</span>
+        <span className={styles.logoIcon}>
+          <Icon name="dollarCircle" size="lg" />
+        </span>
         <span className={styles.logoText}>MoneMee</span>
       </div>
 
@@ -40,7 +43,9 @@ function Sidebar({ user }) {
                 `${styles.navItem} ${isActive ? styles.navItemActive : ''}`
               }
             >
-              <span className={styles.navIcon}>{item.icon}</span>
+              <span className={styles.navIcon}>
+                <Icon name={item.icon} size="md" />
+              </span>
               <span className={styles.navLabel}>{item.label}</span>
             </NavLink>
           ))}
@@ -57,7 +62,9 @@ function Sidebar({ user }) {
                 `${styles.navItem} ${isActive ? styles.navItemActive : ''}`
               }
             >
-              <span className={styles.navIcon}>{item.icon}</span>
+              <span className={styles.navIcon}>
+                <Icon name={item.icon} size="md" />
+              </span>
               <span className={styles.navLabel}>{item.label}</span>
             </NavLink>
           ))}
@@ -74,7 +81,9 @@ function Sidebar({ user }) {
             <div className={styles.userName}>{user?.name || 'User'}</div>
             <div className={styles.userRole}>Creator</div>
           </div>
-          <span className={styles.userMenuIcon}>⋮</span>
+          <span className={styles.userMenuIcon}>
+            <Icon name="moreVertical" size="sm" />
+          </span>
         </div>
       </div>
     </aside>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Input, Button } from '../common';
+import { Input, Button, Icon} from '../common';
 import styles from '../../styles/components/ProductForm.module.css';
 
 /**
@@ -107,16 +107,24 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  // Get file icon
-  const getFileIcon = (fileName) => {
-    if (!fileName) return '📁';
+  // Get file icon name for Lucide
+  const getFileIconName = (fileName) => {
+    if (!fileName) return 'folder';
     const ext = fileName.split('.').pop().toLowerCase();
-    const icons = {
-      pdf: '📄', zip: '📦', mp4: '🎬', mp3: '🎵',
-      png: '🖼️', jpg: '🖼️', jpeg: '🖼️',
-      doc: '📝', docx: '📝', xls: '📊', xlsx: '📊'
+    const iconNames = {
+      pdf: 'fileText',
+      zip: 'package',
+      mp4: 'video',
+      mp3: 'music',
+      png: 'image',
+      jpg: 'image',
+      jpeg: 'image',
+      doc: 'fileText',
+      docx: 'fileText',
+      xls: 'fileText',
+      xlsx: 'fileText'
     };
-    return icons[ext] || '📁';
+    return iconNames[ext] || 'file';
   };
 
   // Validate form
@@ -205,7 +213,7 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
         {formData.fileName ? (
           <div className={styles.filePreview}>
             <div className={styles.fileIcon}>
-              {getFileIcon(formData.fileName)}
+              {<Icon name={getFileIconName(formData.fileName)} size="lg" />}
             </div>
             <div className={styles.fileInfo}>
               <p className={styles.fileName}>{formData.fileName}</p>

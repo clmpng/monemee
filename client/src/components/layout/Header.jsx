@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Icon } from '../common';
 import styles from '../../styles/components/Header.module.css';
 
 function Header({ user }) {
@@ -14,7 +15,9 @@ function Header({ user }) {
       <div className={styles.headerContent}>
         {/* Logo */}
         <Link to="/" className={styles.logo}>
-          <span className={styles.logoIcon}>💸</span>
+          <span className={styles.logoIcon}>
+            <Icon name="dollarCircle" size="lg" />
+          </span>
           <span className={styles.logoText}>MoneMee</span>
         </Link>
 
@@ -22,7 +25,7 @@ function Header({ user }) {
         <div className={styles.actions}>
           {/* Notifications */}
           <button className={styles.iconButton} title="Benachrichtigungen">
-            🔔
+            <Icon name="bell" size="md" />
             {/* <span className={styles.notificationDot} /> */}
           </button>
 

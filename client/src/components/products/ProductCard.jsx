@@ -44,12 +44,12 @@ function ProductCard({
     <div className={styles.productCard} onClick={handleClick}>
       {/* Thumbnail */}
       <div className={styles.thumbnail}>
-        {product.thumbnail ? (
-          <img 
-            src={product.thumbnail} 
-            alt={product.title} 
-            className={styles.thumbnailImage}
-          />
+      {product.thumbnail_url ? (
+        <img 
+          src={product.thumbnail_url} 
+          alt={product.title} 
+          className={styles.thumbnailImage}
+        />
         ) : (
           <div className={styles.thumbnailPlaceholder}>
             📦
