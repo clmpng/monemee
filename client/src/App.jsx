@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
+import { ProductProvider } from './context/ProductContext';
 import AppRoutes from './routes/AppRoutes';
 
 // Global Styles
@@ -11,7 +12,9 @@ import './styles/index.css';
 function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <ProductProvider>
+        <AppRoutes />
+      </ProductProvider>
     </BrowserRouter>
   );
 }

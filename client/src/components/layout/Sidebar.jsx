@@ -25,7 +25,7 @@ function Sidebar({ user }) {
       {/* Logo */}
       <div className={styles.logo}>
         <span className={styles.logoIcon}>💸</span>
-        <span className={styles.logoText}>EarnFlow</span>
+        <span className={styles.logoText}>MoneMee</span>
       </div>
 
       {/* Navigation */}

@@ -3,10 +3,10 @@
    ======================================== */
 
    :root {
-    /* Colors - Primary */
-    --color-primary: #6366F1;        /* Haupt‑Purple */
-    --color-primary-light: #A5B4FC;  /* Helles Purple */
-    --color-primary-dark: #4F46E5;   /* Dunkleres Purple */
+    /* Primary Green Theme */
+    --color-primary: #1E3A8A;
+    --color-primary-light: #3B82F6;
+    --color-primary-dark: #1E40AF;
     
     /* Colors - Status */
     --color-success: #10b981;
@@ -16,17 +16,18 @@
     --color-danger: #ef4444;
     --color-danger-light: #f87171;
     
-    /* Colors - Background (Dark Theme) */
-    --color-bg-primary: #F9FAFB;    
-    --color-bg-secondary: #EEF2FF;   
-    --color-bg-tertiary: #FFFFFF;    
-    --color-bg-elevated: #FFFFFF;   
+    /* Background */
+    --color-bg-primary: #F8FAFC;
+    --color-bg-secondary: #FFFFFF;
+    --color-bg-tertiary: #F1F5F9;
+    --color-bg-elevated: #FFFFFF;
+    --color-bg-soft-blue: #EFF6FF; /* optional */
     
-    /* Colors - Text */
-    --color-text-primary: #0F172A;    /* Dunkles Navy für Haupttext */
-    --color-text-secondary: #475569;  
-    --color-text-tertiary: #64748B;   
-    --color-text-muted: #94A3B8;     
+    /* Text */
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #334155;
+    --color-text-tertiary: #64748B;
+    --color-text-muted: #94A3B8;
     
     
     /* Colors - Border */

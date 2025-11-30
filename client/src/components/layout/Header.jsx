@@ -15,7 +15,7 @@ function Header({ user }) {
         {/* Logo */}
         <Link to="/" className={styles.logo}>
           <span className={styles.logoIcon}>💸</span>
-          <span className={styles.logoText}>EarnFlow</span>
+          <span className={styles.logoText}>MoneMee</span>
         </Link>
 
         {/* Actions */}

@@ -1,5 +1,5 @@
 -- ============================================
--- EarnFlow Database Schema
+-- MoneMee Database Schema
 -- PostgreSQL
 -- ============================================
 

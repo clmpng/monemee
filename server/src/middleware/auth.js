@@ -29,7 +29,7 @@ const authenticate = async (req, res, next) => {
   
       // Für MVP: Mock user ID
       req.userId = 1;
-      req.userEmail = 'demo@earnflow.app';
+      req.userEmail = 'demo@monemee.app';
   
       next();
     } catch (error) {

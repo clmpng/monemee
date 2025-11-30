@@ -1,4 +1,4 @@
-# EarnFlow 💸
+# Monemee 💸
 
 Eine mobile-first Web-Plattform (PWA), die es Nutzern ermöglicht, als **Creator** (digitale Produkte verkaufen) oder **Promoter** (Affiliate-Marketing) Geld zu verdienen.
 
@@ -27,7 +27,7 @@ Eine mobile-first Web-Plattform (PWA), die es Nutzern ermöglicht, als **Creator
 ## 📁 Projektstruktur
 
 ```
-earnflow/
+monemee/
 ├── client/                 # React Frontend
 │   ├── public/
 │   └── src/
@@ -63,7 +63,7 @@ earnflow/
 ```bash
 # Repository klonen
 git clone <repo-url>
-cd earnflow
+cd monemee
 
 # Client installieren
 cd client
@@ -101,7 +101,7 @@ REACT_APP_FIREBASE_PROJECT_ID=
 ### Server (.env)
 ```
 PORT=5000
-DATABASE_URL=postgresql://user:password@localhost:5432/earnflow
+DATABASE_URL=postgresql://user:password@localhost:5432/monemee
 FIREBASE_PROJECT_ID=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=

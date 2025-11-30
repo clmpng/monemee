@@ -5,7 +5,7 @@ import { Routes, Route } from 'react-router-dom';
 import { AppLayout } from '../components/layout';
 
 // Pages
-import { MyStore } from '../pages/store';
+import { MyStore, AddProduct } from '../pages/store';
 import { EarningsDashboard } from '../pages/earnings';
 import { PromotionHub } from '../pages/promotion';
 import Messages from '../pages/Messages';
@@ -24,10 +24,13 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Main App Layout with Bottom Nav */}
+      {/* Main App Layout with Navigation */}
       <Route element={<AppLayout user={user} />}>
         {/* Store / Home */}
         <Route path="/" element={<MyStore />} />
+        
+        {/* Add Product */}
+        <Route path="/products/new" element={<AddProduct />} />
         
         {/* Earnings / Statistics */}
         <Route path="/earnings" element={<EarningsDashboard />} />
@@ -38,24 +41,12 @@ function AppRoutes() {
         {/* Messages */}
         <Route path="/messages" element={<Messages />} />
         
-        {/* Product Pages (später) */}
-        {/* <Route path="/products" element={<ProductsList />} /> */}
-        {/* <Route path="/products/new" element={<AddProduct />} /> */}
-        {/* <Route path="/products/:id" element={<ProductDetail />} /> */}
+        {/* Edit Product (später) */}
         {/* <Route path="/products/:id/edit" element={<EditProduct />} /> */}
         
         {/* Settings (später) */}
         {/* <Route path="/settings" element={<Settings />} /> */}
       </Route>
-
-      {/* Auth Routes (ohne Bottom Nav - später) */}
-      {/* <Route path="/login" element={<Login />} /> */}
-      {/* <Route path="/register" element={<Register />} /> */}
-      {/* <Route path="/onboarding" element={<Onboarding />} /> */}
-
-      {/* Public Store (ohne Nav - später) */}
-      {/* <Route path="/:username" element={<PublicStore />} /> */}
-      {/* <Route path="/p/:productId" element={<PublicProduct />} /> */}
 
       {/* 404 */}
       <Route path="*" element={<NotFound />} />

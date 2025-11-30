@@ -25,7 +25,7 @@ const createConnectAccount = async (user) => {
       },
       business_type: 'individual',
       metadata: {
-        earnflow_user_id: user.id.toString()
+        monemee_user_id: user.id.toString()
       }
     });
 

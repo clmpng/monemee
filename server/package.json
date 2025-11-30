@@ -1,7 +1,7 @@
 {
-  "name": "earnflow-server",
+  "name": "monemee-server",
   "version": "0.1.0",
-  "description": "EarnFlow API Server",
+  "description": "MoneMee API Server",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

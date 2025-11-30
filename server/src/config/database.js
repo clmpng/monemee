@@ -8,7 +8,7 @@ const pool = new Pool({
   // Oder einzelne Konfiguration:
   // host: process.env.DB_HOST || 'localhost',
   // port: process.env.DB_PORT || 5432,
-  // database: process.env.DB_NAME || 'earnflow',
+  // database: process.env.DB_NAME || 'monemee',
   // user: process.env.DB_USER || 'postgres',
   // password: process.env.DB_PASSWORD || '',
   max: 20, // Max connections in pool

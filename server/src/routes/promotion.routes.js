@@ -11,7 +11,7 @@ router.post('/generate-link', (req, res) => {
   res.json({
     success: true,
     data: {
-      link: 'https://earnflow.app/p/123?ref=ABC123',
+      link: 'https://monemee.app/p/123?ref=ABC123',
       code: 'ABC123'
     }
   });

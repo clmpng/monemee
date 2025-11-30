@@ -100,7 +100,7 @@ function PublicStore() {
         ))}
       </div>
 
-      {/* EarnFlow Branding */}
+      {/* MoneMee Branding */}
       <div style={{ 
         textAlign: 'center', 
         marginTop: '48px', 
@@ -117,7 +117,7 @@ function PublicStore() {
             fontSize: '14px'
           }}
         >
-          💸 Powered by EarnFlow
+          💸 Powered by MoneMee
         </a>
       </div>
     </div>

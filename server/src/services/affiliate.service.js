@@ -32,7 +32,7 @@ const AffiliateService = {
     });
 
     // Generate full URL
-    const baseUrl = process.env.CLIENT_URL || 'https://earnflow.app';
+    const baseUrl = process.env.CLIENT_URL || 'https://monemee.app';
     const fullUrl = `${baseUrl}/p/${productId}?ref=${affiliateLink.code}`;
 
     return {
