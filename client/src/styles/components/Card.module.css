@@ -1,0 +1,124 @@
+/* ========================================
+   Card Component Styles
+   ======================================== */
+
+   .card {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+  }
+  
+  .clickable {
+    cursor: pointer;
+  }
+  
+  .clickable:hover {
+    border-color: var(--color-border-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .clickable:active {
+    transform: translateY(0);
+  }
+  
+  /* Padding Variants */
+  .noPadding {
+    padding: 0;
+  }
+  
+  .smallPadding {
+    padding: var(--spacing-sm);
+  }
+  
+  .padding {
+    padding: var(--spacing-md);
+  }
+  
+  .largePadding {
+    padding: var(--spacing-lg);
+  }
+  
+  /* Elevated Card */
+  .elevated {
+    background: var(--color-bg-tertiary);
+    box-shadow: var(--shadow-md);
+  }
+  
+  /* Highlight Border */
+  .highlight {
+    border-color: var(--color-primary);
+  }
+  
+  /* Card Header */
+  .header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .headerTitle {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  .headerSubtitle {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+  }
+  
+  /* Card Body */
+  .body {
+    padding: var(--spacing-md);
+  }
+  
+  /* Card Footer */
+  .footer {
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+  }
+  
+  /* Stats Card Variant */
+  .statsCard {
+    padding: var(--spacing-md);
+  }
+  
+  .statsLabel {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  .statsValue {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+  
+  .statsChange {
+    font-size: var(--font-size-xs);
+    margin-top: var(--spacing-xs);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+  
+  .statsChangePositive {
+    color: var(--color-success);
+  }
+  
+  .statsChangeNegative {
+    color: var(--color-danger);
+  }

@@ -1,0 +1,133 @@
+/* ========================================
+   Modal Component Styles
+   ======================================== */
+
+   .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  /* Modal Container */
+  .modal {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    width: 100%;
+    max-width: var(--max-width);
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  /* Center Modal on larger screens */
+  @media (min-width: 640px) {
+    .overlay {
+      align-items: center;
+    }
+    
+    .modal {
+      border-radius: var(--radius-xl);
+      max-height: 80vh;
+    }
+  }
+  
+  /* Modal Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  
+  .title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  .closeButton {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+  }
+  
+  .closeButton:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+  }
+  
+  /* Modal Body */
+  .body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+  }
+  
+  /* Modal Footer */
+  .footer {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  
+  .footer > button {
+    flex: 1;
+  }
+  
+  /* Handle bar for mobile */
+  .handle {
+    width: 40px;
+    height: 4px;
+    background: var(--color-border-light);
+    border-radius: var(--radius-full);
+    margin: var(--spacing-sm) auto;
+  }
+  
+  /* Size Variants */
+  .small {
+    max-width: 320px;
+  }
+  
+  .large {
+    max-width: 600px;
+  }
+  
+  .fullscreen {
+    max-width: none;
+    max-height: none;
+    height: 100%;
+    border-radius: 0;
+  }

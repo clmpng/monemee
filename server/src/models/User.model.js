@@ -1,0 +1,188 @@
+const db = require('../config/database');
+
+/**
+ * User Model
+ * Raw SQL queries for users table
+ */
+const UserModel = {
+  /**
+   * Find user by ID
+   */
+  async findById(id) {
+    const query = `
+      SELECT 
+        id, firebase_uid, email, username, name,
+        bio, avatar_url, role, level, total_earnings,
+        stripe_account_id, created_at, updated_at
+      FROM users 
+      WHERE id = $1
+    `;
+    
+    const result = await db.query(query, [id]);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Find user by Firebase UID
+   */
+  async findByFirebaseUid(firebaseUid) {
+    const query = `
+      SELECT * FROM users 
+      WHERE firebase_uid = $1
+    `;
+    
+    const result = await db.query(query, [firebaseUid]);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Find user by email
+   */
+  async findByEmail(email) {
+    const query = `
+      SELECT * FROM users 
+      WHERE email = $1
+    `;
+    
+    const result = await db.query(query, [email]);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Find user by username
+   */
+  async findByUsername(username) {
+    const query = `
+      SELECT 
+        id, username, name, bio, avatar_url, 
+        role, level, created_at
+      FROM users 
+      WHERE username = $1
+    `;
+    
+    const result = await db.query(query, [username]);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Create new user
+   */
+  async create(data) {
+    const {
+      firebase_uid,
+      email,
+      username,
+      name,
+      bio = '',
+      avatar_url = null,
+      role = 'creator'
+    } = data;
+
+    const query = `
+      INSERT INTO users (
+        firebase_uid, email, username, name,
+        bio, avatar_url, role
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `;
+
+    const values = [
+      firebase_uid, email, username, name,
+      bio, avatar_url, role
+    ];
+
+    const result = await db.query(query, values);
+    return result.rows[0];
+  },
+
+  /**
+   * Update user
+   */
+  async update(id, data) {
+    const allowedFields = [
+      'username', 'name', 'bio', 'avatar_url', 
+      'role', 'stripe_account_id'
+    ];
+
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.includes(key)) {
+        updates.push(`${key} = $${paramCount}`);
+        values.push(value);
+        paramCount++;
+      }
+    }
+
+    if (updates.length === 0) {
+      return this.findById(id);
+    }
+
+    values.push(id);
+    const query = `
+      UPDATE users 
+      SET ${updates.join(', ')}, updated_at = NOW()
+      WHERE id = $${paramCount}
+      RETURNING *
+    `;
+
+    const result = await db.query(query, values);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Update user earnings and check for level up
+   */
+  async updateEarnings(id, amount) {
+    const query = `
+      UPDATE users 
+      SET 
+        total_earnings = total_earnings + $1,
+        level = CASE
+          WHEN total_earnings + $1 >= 5000 THEN 5
+          WHEN total_earnings + $1 >= 2000 THEN 4
+          WHEN total_earnings + $1 >= 500 THEN 3
+          WHEN total_earnings + $1 >= 100 THEN 2
+          ELSE 1
+        END,
+        updated_at = NOW()
+      WHERE id = $2
+      RETURNING id, level, total_earnings
+    `;
+    
+    const result = await db.query(query, [amount, id]);
+    return result.rows[0];
+  },
+
+  /**
+   * Get platform fee based on user level
+   */
+  getPlatformFee(level) {
+    const fees = {
+      1: 15,  // 15%
+      2: 12,  // 12%
+      3: 10,  // 10%
+      4: 8,   // 8%
+      5: 5    // 5%
+    };
+    return fees[level] || 15;
+  },
+
+  /**
+   * Check if username is available
+   */
+  async isUsernameAvailable(username) {
+    const query = `
+      SELECT id FROM users 
+      WHERE username = $1
+    `;
+    
+    const result = await db.query(query, [username]);
+    return result.rows.length === 0;
+  }
+};
+
+module.exports = UserModel;

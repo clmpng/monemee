@@ -1,0 +1,6 @@
+/* ========================================
+   Global Styles - Import all base styles
+   ======================================== */
+
+   @import './base/variables.css';
+   @import './base/layout.css';
