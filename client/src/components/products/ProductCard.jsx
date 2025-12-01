@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Icon } from '../common';
 import styles from '../../styles/components/ProductCard.module.css';
 
 /**
@@ -44,21 +45,21 @@ function ProductCard({
     <div className={styles.productCard} onClick={handleClick}>
       {/* Thumbnail */}
       <div className={styles.thumbnail}>
-      {product.thumbnail_url ? (
-        <img 
-          src={product.thumbnail_url} 
-          alt={product.title} 
-          className={styles.thumbnailImage}
-        />
+        {product.thumbnail_url ? (
+          <img 
+            src={product.thumbnail_url} 
+            alt={product.title} 
+            className={styles.thumbnailImage}
+          />
         ) : (
           <div className={styles.thumbnailPlaceholder}>
-            📦
+            <Icon name="package" size="xl" />
           </div>
         )}
         
         {/* Status Badge */}
         <span className={`${styles.statusBadge} ${product.status === 'active' ? styles.statusActive : styles.statusDraft}`}>
-          {product.status === 'active' ? 'Live' : 'Entwurf'}
+          {product.status === 'active' ? 'Public' : 'Entwurf'}
         </span>
       </div>
 
@@ -72,11 +73,15 @@ function ProductCard({
         {/* Stats */}
         <div className={styles.stats}>
           <span className={styles.stat}>
-            <span className={styles.statIcon}>👁️</span>
+            <span className={styles.statIcon}>
+              <Icon name="eye" size="sm" />
+            </span>
             {product.views || 0}
           </span>
           <span className={styles.stat}>
-            <span className={styles.statIcon}>💰</span>
+            <span className={styles.statIcon}>
+              <Icon name="shoppingBag" size="sm" />
+            </span>
             {product.sales || 0}
           </span>
         </div>
@@ -89,13 +94,14 @@ function ProductCard({
             className={`${styles.actionButton} ${styles.editButton}`}
             onClick={handleEdit}
           >
-            ✏️ Bearbeiten
+            <Icon name="edit" size="sm" />
+            <span>Bearbeiten</span>
           </button>
           <button 
             className={`${styles.actionButton} ${styles.deleteButton}`}
             onClick={handleDelete}
           >
-            🗑️
+            <Icon name="trash" size="sm" />
           </button>
         </div>
       )}
@@ -109,7 +115,9 @@ function ProductCard({
 function AddProductCard({ onClick }) {
   return (
     <div className={styles.addProductCard} onClick={onClick}>
-      <div className={styles.addIcon}>+</div>
+      <div className={styles.addIcon}>
+        <Icon name="plus" size="lg" />
+      </div>
       <span className={styles.addText}>Produkt erstellen</span>
     </div>
   );

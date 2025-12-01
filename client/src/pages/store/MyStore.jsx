@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductCard } from '../../components/products';
-import { Button } from '../../components/common';
+import { Button, QuickActions } from '../../components/common';
 import { useProducts } from '../../context/ProductContext';
 import styles from '../../styles/pages/Store.module.css';
 
