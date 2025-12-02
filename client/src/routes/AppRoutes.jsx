@@ -12,6 +12,7 @@ import { MyStore, AddProduct, EditProduct } from '../pages/store';
 import { EarningsDashboard } from '../pages/earnings';
 import { PromotionHub } from '../pages/promotion';
 import Messages from '../pages/Messages';
+import PublicProduct from '../pages/public/PublicProduct';
 
 /**
  * App Routes Configuration
@@ -47,6 +48,9 @@ function AppRoutes() {
         {/* Messages */}
         <Route path="/messages" element={<Messages />} />
       </Route>
+
+      {/* Public Product Page */}
+      <Route path="/p/:productId" element={<PublicProduct />} />
 
       {/* 404 */}
       <Route path="*" element={<NotFound />} />

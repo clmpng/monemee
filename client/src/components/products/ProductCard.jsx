@@ -19,7 +19,7 @@ function ProductCard({
     if (onClick) {
       onClick(product);
     } else {
-      navigate(`/products/${product.id}`);
+      navigate(`/p/${product.id}`);
     }
   };
 

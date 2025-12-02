@@ -1,11 +1,15 @@
+// client/src/services/products.service.js
 import api from './api';
 
 const productsService = {
   // Get my products
   getMyProducts: () => api.get('/products'),
   
-  // Get single product
+  // Get single product (authenticated)
   getProduct: (id) => api.get(`/products/${id}`),
+  
+  // Get public product (no auth required, increments views)
+  getPublicProduct: (id) => api.get(`/products/public/${id}`),
   
   // Create product
   createProduct: (data) => api.post('/products', data),

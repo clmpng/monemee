@@ -16,6 +16,9 @@ router.get('/top', productsController.getTopProducts);
 // GET /api/v1/products/discover - Discover products (for promoters)
 router.get('/discover', productsController.discoverProducts);
 
+// GET /api/v1/products/public/:id - Get public product (no auth, increments views)
+router.get('/public/:id', productsController.getPublicProduct);
+
 // GET /api/v1/products/:id - Get single product
 router.get('/:id', productsController.getProduct);
 

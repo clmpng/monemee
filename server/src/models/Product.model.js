@@ -219,7 +219,54 @@ const ProductModel = {
 
     const result = await db.query(query, values);
     return result.rows;
+  },
+
+
+  /**
+   * Find product by ID for public view (with creator info)
+   */
+  async findByIdPublic(id) {
+    const query = `
+      SELECT 
+        p.id,
+        p.title,
+        p.description,
+        p.price,
+        p.thumbnail_url,
+        p.type,
+        p.status,
+        p.views,
+        p.sales,
+        p.affiliate_commission,
+        p.created_at,
+        u.id as user_id,
+        u.username as creator_username,
+        u.name as creator_name,
+        u.avatar_url as creator_avatar,
+        u.bio as creator_bio,
+        (SELECT COUNT(*) FROM products WHERE user_id = u.id AND status = 'active') as creator_product_count
+      FROM products p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.id = $1
+    `;
+    
+    const result = await db.query(query, [id]);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Increment view counter
+   */
+  async incrementViews(id) {
+    const query = `
+      UPDATE products 
+      SET views = views + 1 
+      WHERE id = $1
+    `;
+    
+    await db.query(query, [id]);
   }
+
 };
 
 module.exports = ProductModel;

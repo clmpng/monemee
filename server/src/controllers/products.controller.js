@@ -183,6 +183,45 @@ const productsController = {
     } catch (error) {
       next(error);
     }
+  },
+  
+  /**
+   * Get public product (no auth required)
+   * Increments view counter
+   * GET /api/v1/products/public/:id
+   */
+  async getPublicProduct(req, res, next) {
+    try {
+      const { id } = req.params;
+      
+      // Get product with creator info
+      const product = await ProductModel.findByIdPublic(id);
+      
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: 'Produkt nicht gefunden'
+        });
+      }
+      
+      // Only show active products publicly
+      if (product.status !== 'active') {
+        return res.status(404).json({
+          success: false,
+          message: 'Produkt nicht verfügbar'
+        });
+      }
+      
+      // Increment view counter (async, don't wait)
+      ProductModel.incrementViews(id).catch(console.error);
+      
+      res.json({
+        success: true,
+        data: product
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 
