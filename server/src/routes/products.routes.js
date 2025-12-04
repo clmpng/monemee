@@ -1,11 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const productsController = require('../controllers/products.controller');
-// const { authenticate } = require('../middleware/auth');
-
-// ============================================
-// Products Routes
-// ============================================
 
 // GET /api/v1/products - Get all products for current user
 router.get('/', productsController.getMyProducts);
@@ -19,7 +14,7 @@ router.get('/discover', productsController.discoverProducts);
 // GET /api/v1/products/public/:id - Get public product (no auth, increments views)
 router.get('/public/:id', productsController.getPublicProduct);
 
-// GET /api/v1/products/:id - Get single product
+// GET /api/v1/products/:id - Get single product (authenticated)
 router.get('/:id', productsController.getProduct);
 
 // POST /api/v1/products - Create new product

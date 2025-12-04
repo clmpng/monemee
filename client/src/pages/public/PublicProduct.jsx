@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Button, Card, Badge, Icon } from '../../components/common';
 import { productsService, promotionService } from '../../services';
+import { useAuth } from '../../context/AuthContext';
 import styles from '../../styles/pages/PublicProduct.module.css';
 
 /**
@@ -15,6 +16,7 @@ function PublicProduct() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const affiliateCode = searchParams.get('ref');
+  const { user, isAuthenticated } = useAuth();
   
   // State
   const [product, setProduct] = useState(null);
@@ -25,8 +27,6 @@ function PublicProduct() {
   const [generatingLink, setGeneratingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
-  // Mock: Später aus AuthContext
-  const currentUser = null; // null = nicht eingeloggt
 
   // Affiliate-Code speichern & tracken
   useEffect(() => {
@@ -91,7 +91,7 @@ function PublicProduct() {
 
   // Affiliate-Link generieren
   const handleGenerateLink = async () => {
-    if (!currentUser) {
+    if (!user) {
       navigate('/login?redirect=' + encodeURIComponent(`/p/${productId}`));
       return;
     }
@@ -185,7 +185,7 @@ function PublicProduct() {
     );
   }
 
-  const isOwnProduct = currentUser?.id === product.user_id;
+  const isOwnProduct = user?.id === product.user_id;
 
   return (
     <div className={styles.productPage}>
@@ -430,7 +430,7 @@ function PublicProduct() {
                 loading={generatingLink}
                 icon={<Icon name="link" size="sm" />}
               >
-                {currentUser ? 'Affiliate-Link erstellen' : 'Anmelden & Link erstellen'}
+                {user ? 'Affiliate-Link erstellen' : 'Anmelden & Link erstellen'}
               </Button>
             )}
 
@@ -445,7 +445,7 @@ function PublicProduct() {
               </Button>
             )}
 
-            {!currentUser && (
+            {!user && (
               <p className={styles.affiliateHint}>
                 <Icon name="info" size="xs" />
                 Melde dich an, um deinen persönlichen Affiliate-Link zu erhalten

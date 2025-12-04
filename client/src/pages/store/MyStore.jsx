@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductCard } from '../../components/products';
-import { Button, QuickActions } from '../../components/common';
+import { Button, Icon } from '../../components/common';
 import { useProducts } from '../../context/ProductContext';
+import { useAuth } from '../../context/AuthContext';
 import styles from '../../styles/pages/Store.module.css';
 
 /**
@@ -10,16 +11,8 @@ import styles from '../../styles/pages/Store.module.css';
  */
 function MyStore() {
   const navigate = useNavigate();
-  const { products, stats, deleteProduct, toggleStatus } = useProducts();
-  
-  // Mock user data (später aus AuthContext)
-  const user = {
-    id: 1,
-    name: 'Max Mustermann',
-    username: '@maxmuster',
-    bio: 'Digital Creator | Sharing knowledge about productivity and design.',
-    avatar: null
-  };
+  const { products, loading, error, stats, deleteProduct, toggleStatus } = useProducts();
+  const { user } = useAuth();
 
   // Handlers
   const handleAddProduct = () => {
@@ -50,21 +43,49 @@ function MyStore() {
     }).format(amount);
   };
 
+    // Loading State
+    if (loading) {
+      return (
+        <div className={`page ${styles.storePage}`}>
+          <div className={styles.emptyProducts}>
+            <div className={styles.emptyIcon}>⏳</div>
+            <p>Produkte werden geladen...</p>
+          </div>
+        </div>
+      );
+    }
+  
+    // Error State
+    if (error) {
+      return (
+        <div className={`page ${styles.storePage}`}>
+          <div className={styles.emptyProducts}>
+            <div className={styles.emptyIcon}>⚠️</div>
+            <h3 className={styles.emptyTitle}>Fehler beim Laden</h3>
+            <p className={styles.emptyText}>{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Erneut versuchen
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
   return (
     <div className={`page ${styles.storePage}`}>
       {/* Store Header / Profile */}
       <div className={styles.storeHeader}>
-        <div className={styles.storeAvatar}>
-          {user.avatar ? (
-            <img src={user.avatar} alt={user.name} className={styles.storeAvatarImage} />
+       <div className={styles.storeAvatar}>
+          {user?.avatar ? (
+            <img src={user.avatar} alt={user?.name} className={styles.storeAvatarImage} />
           ) : (
-            getInitials(user.name)
+            getInitials(user?.name)
           )}
         </div>
         <div className={styles.storeInfo}>
-          <h1 className={styles.storeName}>{user.name}</h1>
-          <p className={styles.storeUsername}>{user.username}</p>
-          <p className={styles.storeBio}>{user.bio}</p>
+          <h1 className={styles.storeName}>{user?.name || 'Mein Store'}</h1>
+          <p className={styles.storeUsername}>@{user?.username || 'username'}</p>
+          {user?.bio && <p className={styles.storeBio}>{user.bio}</p>}
           
           <button className={styles.editStoreButton}>
             ⚙️ Store bearbeiten

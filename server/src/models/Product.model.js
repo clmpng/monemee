@@ -254,19 +254,6 @@ const ProductModel = {
     return result.rows[0] || null;
   },
 
-  /**
-   * Increment view counter
-   */
-  async incrementViews(id) {
-    const query = `
-      UPDATE products 
-      SET views = views + 1 
-      WHERE id = $1
-    `;
-    
-    await db.query(query, [id]);
-  }
-
 };
 
 module.exports = ProductModel;
