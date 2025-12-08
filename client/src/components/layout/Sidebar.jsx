@@ -1,9 +1,15 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Icon } from '../common';
+import { useAuth } from '../../context/AuthContext';
 import styles from '../../styles/components/Sidebar.module.css';
 
 function Sidebar({ user }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
   const navItems = [
     { path: '/', icon: 'store', label: 'My Store' },
     { path: '/earnings', icon: 'wallet', label: 'Statistiken' },
@@ -15,10 +21,27 @@ function Sidebar({ user }) {
     { path: '/settings', icon: 'settings', label: 'Einstellungen' },
   ];
 
-  // Get initials from user name
+  // Get initials from user name (max 2 characters)
   const getInitials = (name) => {
     if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -73,18 +96,44 @@ function Sidebar({ user }) {
 
       {/* User Section */}
       <div className={styles.userSection}>
-        <div className={styles.userCard}>
+        <div 
+          className={`${styles.userCard} ${showUserMenu ? styles.userCardActive : ''}`}
+          onClick={() => setShowUserMenu(!showUserMenu)}
+        >
           <div className={styles.userAvatar}>
-            {getInitials(user?.name || 'User')}
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.name} className={styles.userAvatarImage} />
+            ) : (
+              <span className={styles.userAvatarInitials}>
+                {getInitials(user?.name)}
+              </span>
+            )}
           </div>
           <div className={styles.userInfo}>
             <div className={styles.userName}>{user?.name || 'User'}</div>
-            <div className={styles.userRole}>Creator</div>
+            <div className={styles.userRole}>
+              {user?.role === 'both' ? 'Creator & Promoter' : 
+               user?.role === 'creator' ? 'Creator' : 'Promoter'}
+            </div>
           </div>
           <span className={styles.userMenuIcon}>
-            <Icon name="moreVertical" size="sm" />
+            <Icon name={showUserMenu ? 'chevronDown' : 'moreVertical'} size="sm" />
           </span>
         </div>
+
+        {/* User Menu Dropdown */}
+        {showUserMenu && (
+          <div className={styles.userMenu}>
+            <button 
+              className={`${styles.userMenuItem} ${styles.logoutItem}`}
+              onClick={handleLogout}
+              disabled={loggingOut}
+            >
+              <Icon name="logout" size="sm" />
+              <span>{loggingOut ? 'Abmelden...' : 'Abmelden'}</span>
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

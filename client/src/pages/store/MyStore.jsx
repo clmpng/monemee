@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ProductCard } from '../../components/products';
 import { Button, Icon } from '../../components/common';
 import { useProducts } from '../../context/ProductContext';
@@ -29,10 +29,14 @@ function MyStore() {
     }
   };
 
-  // Get initials
+  // Get initials from name (max 2 characters)
   const getInitials = (name) => {
     if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
   };
 
   // Format currency
@@ -43,43 +47,47 @@ function MyStore() {
     }).format(amount);
   };
 
-    // Loading State
-    if (loading) {
-      return (
-        <div className={`page ${styles.storePage}`}>
-          <div className={styles.emptyProducts}>
-            <div className={styles.emptyIcon}>⏳</div>
-            <p>Produkte werden geladen...</p>
-          </div>
+  // Loading State
+  if (loading) {
+    return (
+      <div className={`page ${styles.storePage}`}>
+        <div className={styles.loadingState}>
+          <div className={styles.loadingSpinner} />
+          <p>Produkte werden geladen...</p>
         </div>
-      );
-    }
-  
-    // Error State
-    if (error) {
-      return (
-        <div className={`page ${styles.storePage}`}>
-          <div className={styles.emptyProducts}>
-            <div className={styles.emptyIcon}>⚠️</div>
-            <h3 className={styles.emptyTitle}>Fehler beim Laden</h3>
-            <p className={styles.emptyText}>{error}</p>
-            <Button onClick={() => window.location.reload()}>
-              Erneut versuchen
-            </Button>
+      </div>
+    );
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <div className={`page ${styles.storePage}`}>
+        <div className={styles.emptyProducts}>
+          <div className={styles.emptyIcon}>
+            <Icon name="alertCircle" size={48} />
           </div>
+          <h3 className={styles.emptyTitle}>Fehler beim Laden</h3>
+          <p className={styles.emptyText}>{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Erneut versuchen
+          </Button>
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
   return (
     <div className={`page ${styles.storePage}`}>
       {/* Store Header / Profile */}
       <div className={styles.storeHeader}>
-       <div className={styles.storeAvatar}>
+        <div className={styles.storeAvatar}>
           {user?.avatar ? (
             <img src={user.avatar} alt={user?.name} className={styles.storeAvatarImage} />
           ) : (
-            getInitials(user?.name)
+            <span className={styles.storeAvatarInitials}>
+              {getInitials(user?.name)}
+            </span>
           )}
         </div>
         <div className={styles.storeInfo}>
@@ -87,9 +95,25 @@ function MyStore() {
           <p className={styles.storeUsername}>@{user?.username || 'username'}</p>
           {user?.bio && <p className={styles.storeBio}>{user.bio}</p>}
           
-          <button className={styles.editStoreButton}>
-            ⚙️ Store bearbeiten
-          </button>
+          {/* Store Actions */}
+          <div className={styles.storeActions}>
+            <Link to="/settings" className={styles.editStoreButton}>
+              <Icon name="settings" size="sm" />
+              Profil bearbeiten
+            </Link>
+            
+            {user?.username && (
+              <a 
+                href={`/store/${user.username}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.previewStoreButton}
+              >
+                <Icon name="externalLink" size="sm" />
+                Store-Vorschau
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
@@ -133,13 +157,16 @@ function MyStore() {
         {/* Empty State (wenn keine Produkte) */}
         {products.length === 0 && (
           <div className={styles.emptyProducts}>
-            <div className={styles.emptyIcon}>📦</div>
+            <div className={styles.emptyIcon}>
+              <Icon name="package" size={48} />
+            </div>
             <h3 className={styles.emptyTitle}>Noch keine Produkte</h3>
             <p className={styles.emptyText}>
               Erstelle dein erstes digitales Produkt und starte mit dem Verkaufen!
             </p>
             <Button onClick={handleAddProduct}>
-              + Erstes Produkt erstellen
+              <Icon name="plus" size="sm" />
+              Erstes Produkt erstellen
             </Button>
           </div>
         )}

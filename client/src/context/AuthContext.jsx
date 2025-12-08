@@ -43,6 +43,7 @@ export function AuthProvider({ children }) {
       try {
         if (firebaseUser) {
           // User is signed in - fetch profile from backend
+          // The backend will automatically create the user if they don't exist
           const profile = await fetchUserProfile();
           
           if (profile) {
@@ -52,15 +53,16 @@ export function AuthProvider({ children }) {
               emailVerified: firebaseUser.emailVerified
             });
           } else {
-            // User exists in Firebase but not in DB yet (new user)
+            // Backend couldn't fetch user - might be network issue
+            // Set basic info from Firebase
             setUser({
               id: null,
               firebaseUid: firebaseUser.uid,
               email: firebaseUser.email,
-              name: firebaseUser.displayName || 'Neuer User',
+              name: firebaseUser.displayName || 'User',
               username: null,
               avatar: firebaseUser.photoURL,
-              role: null,
+              role: 'both',
               level: 1,
               totalEarnings: 0,
               isNewUser: true
@@ -73,6 +75,7 @@ export function AuthProvider({ children }) {
       } catch (err) {
         console.error('Auth state change error:', err);
         setError(err.message);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -85,12 +88,18 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       setError(null);
+      setLoading(true);
+      
       const result = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Profile will be fetched automatically by onAuthStateChanged
       return { success: true, user: result.user };
     } catch (err) {
       const message = getErrorMessage(err.code);
       setError(message);
       return { success: false, error: message };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,16 +107,24 @@ export function AuthProvider({ children }) {
   const register = async (email, password, name) => {
     try {
       setError(null);
+      setLoading(true);
+      
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
       // Update display name in Firebase
-      await firebaseUpdateProfile(result.user, { displayName: name });
+      if (name) {
+        await firebaseUpdateProfile(result.user, { displayName: name });
+      }
       
+      // User will be created in backend automatically by auth middleware
+      // Profile will be fetched by onAuthStateChanged
       return { success: true, user: result.user };
     } catch (err) {
       const message = getErrorMessage(err.code);
       setError(message);
       return { success: false, error: message };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,25 +132,38 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = async () => {
     try {
       setError(null);
+      setLoading(true);
+      
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
       const result = await signInWithPopup(auth, provider);
+      
+      // User will be created in backend automatically if new
       return { success: true, user: result.user };
     } catch (err) {
       const message = getErrorMessage(err.code);
       setError(message);
       return { success: false, error: message };
+    } finally {
+      setLoading(false);
     }
   };
 
   // Logout
   const logout = async () => {
     try {
+      setLoading(true);
       await signOut(auth);
       setUser(null);
       return { success: true };
     } catch (err) {
       console.error('Logout error:', err);
       return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -145,13 +175,14 @@ export function AuthProvider({ children }) {
       
       if (response.success) {
         setUser(prev => ({ ...prev, ...response.data }));
-        return { success: true };
+        return { success: true, data: response.data };
       }
       
       return { success: false, error: 'Update fehlgeschlagen' };
     } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      const message = err.message || 'Update fehlgeschlagen';
+      setError(message);
+      return { success: false, error: message };
     }
   };
 
@@ -161,7 +192,7 @@ export function AuthProvider({ children }) {
       const response = await usersService.updateRole(role);
       
       if (response.success) {
-        setUser(prev => ({ ...prev, role: response.data.role, isNewUser: false }));
+        setUser(prev => ({ ...prev, role: response.data.role }));
         return { success: true };
       }
       
@@ -173,9 +204,20 @@ export function AuthProvider({ children }) {
 
   // Refresh user data from backend
   const refreshUser = async () => {
-    const profile = await fetchUserProfile();
-    if (profile) {
-      setUser(prev => ({ ...prev, ...profile }));
+    try {
+      const profile = await fetchUserProfile();
+      if (profile) {
+        setUser(prev => ({ 
+          ...prev, 
+          ...profile,
+          firebaseUid: prev?.firebaseUid
+        }));
+        return { success: true };
+      }
+      return { success: false };
+    } catch (err) {
+      console.error('Refresh user error:', err);
+      return { success: false, error: err.message };
     }
   };
 
@@ -183,7 +225,7 @@ export function AuthProvider({ children }) {
     user,
     loading,
     error,
-    isAuthenticated: !!user && !user.isNewUser,
+    isAuthenticated: !!user && !!user.id,
     isNewUser: user?.isNewUser || false,
     login,
     register,
@@ -226,7 +268,10 @@ function getErrorMessage(code) {
     'auth/popup-closed-by-user': 'Anmeldung abgebrochen',
     'auth/network-request-failed': 'Netzwerkfehler - prüfe deine Verbindung',
     'auth/too-many-requests': 'Zu viele Versuche - bitte warte kurz',
-    'auth/invalid-credential': 'Ungültige Anmeldedaten'
+    'auth/invalid-credential': 'Ungültige Anmeldedaten',
+    'auth/operation-not-allowed': 'Diese Anmeldemethode ist nicht aktiviert',
+    'auth/account-exists-with-different-credential': 'Ein Konto mit dieser E-Mail existiert bereits',
+    'auth/requires-recent-login': 'Bitte melde dich erneut an'
   };
   
   return messages[code] || 'Ein Fehler ist aufgetreten';

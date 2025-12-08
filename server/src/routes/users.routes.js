@@ -1,21 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const usersController = require('../controllers/users.controller');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 
 // ============================================
 // Users Routes
 // ============================================
 
-// GET /api/v1/users/me - Get current user
-router.get('/me', usersController.getMe);
+// Protected Routes (require authentication)
+// -----------------------------------------
 
-// PUT /api/v1/users/me - Update current user
-router.put('/me', usersController.updateMe);
+// GET /api/v1/users/me - Get current user profile
+router.get('/me', authenticate, usersController.getMe);
+
+// PUT /api/v1/users/me - Update current user profile
+router.put('/me', authenticate, usersController.updateMe);
 
 // PUT /api/v1/users/me/role - Update user role
-router.put('/me/role', usersController.updateRole);
+router.put('/me/role', authenticate, usersController.updateRole);
 
-// GET /api/v1/users/:username/store - Get public store
-router.get('/:username/store', usersController.getPublicStore);
+// Public Routes (authentication optional or not required)
+// -------------------------------------------------------
+
+// GET /api/v1/users/check-username/:username - Check if username is available
+// Uses optionalAuth so we can check if user is checking their own username
+router.get('/check-username/:username', optionalAuth, usersController.checkUsername);
+
+// GET /api/v1/users/:username/store - Get public store by username
+router.get('/:username/store', optionalAuth, usersController.getPublicStore);
 
 module.exports = router;

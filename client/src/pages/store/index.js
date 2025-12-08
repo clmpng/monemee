@@ -1,4 +1,4 @@
-// Store Pages Export
+// Store Pages
 export { default as MyStore } from './MyStore';
 export { default as AddProduct } from './AddProduct';
 export { default as EditProduct } from './EditProduct';

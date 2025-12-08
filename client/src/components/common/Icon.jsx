@@ -12,7 +12,10 @@ import {
   X,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
+  ChevronLeft,
   MoreVertical,
+  MoreHorizontal,
   
   // Finanzen & Statistiken
   Wallet,
@@ -23,6 +26,8 @@ import {
   DollarSign,
   CircleDollarSign,
   PiggyBank,
+  ArrowUp,
+  ArrowDown,
   
   // Level & Gamification
   Sprout,
@@ -44,11 +49,14 @@ import {
   Upload,
   Link,
   ExternalLink,
+  LogOut,
+  LogIn,
   
   // Status & Feedback
   Check,
   CheckCircle,
   AlertCircle,
+  AlertTriangle,
   Info,
   HelpCircle,
   Eye,
@@ -79,18 +87,18 @@ import {
   Loader2,
   PartyPopper,
   SearchX,
-  ShoppingBag
+  ShoppingBag,
+  Camera,
+  Mail,
+  Lock,
+  Unlock
 } from 'lucide-react';
 
 // ============================================
 // ZENTRALE ICON-KONFIGURATION
-// Hier kannst du globale Einstellungen ändern
 // ============================================
 export const ICON_CONFIG = {
-  // Standard Stroke-Breite (1 = dünn, 2 = normal, 3 = dick)
   strokeWidth: 1.5,
-  
-  // Standard-Größen in Pixel
   sizes: {
     xs: 14,
     sm: 16,
@@ -99,12 +107,10 @@ export const ICON_CONFIG = {
     xl: 28,
     xxl: 32
   },
-  
-  // Standard-Größe wenn keine angegeben
   defaultSize: 'md'
 };
 
-// Icon-Mapping für einfachen Zugriff
+// Icon-Mapping
 const iconMap = {
   // Navigation
   store: Store,
@@ -118,7 +124,10 @@ const iconMap = {
   close: X,
   chevronRight: ChevronRight,
   chevronDown: ChevronDown,
+  chevronUp: ChevronUp,
+  chevronLeft: ChevronLeft,
   moreVertical: MoreVertical,
+  moreHorizontal: MoreHorizontal,
   
   // Finanzen & Statistiken
   wallet: Wallet,
@@ -129,6 +138,8 @@ const iconMap = {
   dollar: DollarSign,
   dollarCircle: CircleDollarSign,
   piggyBank: PiggyBank,
+  arrowUp: ArrowUp,
+  arrowDown: ArrowDown,
   
   // Level & Gamification
   sprout: Sprout,
@@ -150,13 +161,16 @@ const iconMap = {
   upload: Upload,
   link: Link,
   externalLink: ExternalLink,
+  logout: LogOut,
+  login: LogIn,
   
   // Status & Feedback
   check: Check,
   checkCircle: CheckCircle,
-  alert: AlertCircle,
+  alertCircle: AlertCircle,
+  alertTriangle: AlertTriangle,
   info: Info,
-  help: HelpCircle,
+  helpCircle: HelpCircle,
   eye: Eye,
   eyeOff: EyeOff,
   
@@ -167,7 +181,7 @@ const iconMap = {
   video: Video,
   music: Music,
   image: Image,
-  folder: FolderOpen,
+  folderOpen: FolderOpen,
   
   // Social & Users
   users: Users,
@@ -183,26 +197,25 @@ const iconMap = {
   filter: Filter,
   refresh: RefreshCw,
   loader: Loader2,
-  party: PartyPopper,
+  partyPopper: PartyPopper,
   searchX: SearchX,
-  shoppingBag: ShoppingBag
+  shoppingBag: ShoppingBag,
+  camera: Camera,
+  mail: Mail,
+  lock: Lock,
+  unlock: Unlock
 };
 
 /**
- * Zentrale Icon-Komponente
- * 
- * @param {string} name - Icon-Name (z.B. 'store', 'wallet', 'star')
- * @param {string} size - Größe: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' oder Zahl
- * @param {number} strokeWidth - Überschreibt globale strokeWidth
- * @param {string} className - Zusätzliche CSS-Klassen
- * @param {string} color - Icon-Farbe (CSS-Wert)
+ * Icon Component
+ * Unified icon component using Lucide React
  */
-function Icon({ 
+export function Icon({ 
   name, 
   size = ICON_CONFIG.defaultSize, 
   strokeWidth = ICON_CONFIG.strokeWidth,
   className = '',
-  color,
+  style = {},
   ...props 
 }) {
   const IconComponent = iconMap[name];
@@ -212,22 +225,20 @@ function Icon({
     return null;
   }
   
-  // Größe ermitteln (String oder Zahl)
-  const pixelSize = typeof size === 'number' 
+  // Get numeric size
+  const numericSize = typeof size === 'number' 
     ? size 
     : ICON_CONFIG.sizes[size] || ICON_CONFIG.sizes.md;
   
   return (
-    <IconComponent
-      size={pixelSize}
+    <IconComponent 
+      size={numericSize}
       strokeWidth={strokeWidth}
       className={className}
-      color={color}
+      style={style}
       {...props}
     />
   );
 }
 
-// Exportiere auch die Raw-Icons für spezielle Fälle
-export { iconMap };
 export default Icon;

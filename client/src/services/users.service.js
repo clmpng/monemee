@@ -10,6 +10,9 @@ const usersService = {
   // Update role
   updateRole: (role) => api.put('/users/me/role', { role }),
   
+  // Check username availability
+  checkUsername: (username) => api.get(`/users/check-username/${username}`),
+  
   // Get public store
   getPublicStore: (username) => api.get(`/users/${username}/store`)
 };
