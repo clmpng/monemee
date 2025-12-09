@@ -54,16 +54,17 @@
 }
 
 .storeAvatar {
-  width: 96px;
-  height: 96px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #818cf8 100%);
+  background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%); /* Explizit blau */
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto var(--spacing-md);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 @media (min-width: 768px) {
@@ -81,10 +82,16 @@
 }
 
 .storeAvatarInitials {
-  color: white;
-  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: var(--font-size-2xl);
   font-weight: 700;
-  line-height: 1;
+  color: white;
+  text-transform: uppercase;
+  user-select: none;
 }
 
 @media (min-width: 768px) {
