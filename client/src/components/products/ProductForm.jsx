@@ -1,39 +1,43 @@
-import React, { useState } from 'react';
-import { Input, Button, Icon} from '../common';
+import React, { useState, useCallback } from 'react';
+import { Icon } from '../common';
+import ModuleCard from './ModuleCard';
+import ModuleSheet from './ModuleSheet';
 import styles from '../../styles/components/ProductForm.module.css';
 
 /**
  * Product Form Component
- * Used for creating and editing products
+ * Modulares System für Produkterstellung
  */
 function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
+  // Basis-Produktdaten
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
     price: initialData?.price || '',
     isFree: initialData?.price === 0 || false,
-    thumbnailFile: null,           // File-Objekt
-    thumbnailPreview: initialData?.thumbnail_url || null, // Nur für Vorschau
-    productFile: null,             // File-Objekt
-    fileName: initialData?.file_name || '',
-    fileSize: initialData?.file_size || 0,
+    thumbnailFile: null,
+    thumbnailPreview: initialData?.thumbnail_url || null,
+    affiliateEnabled: initialData?.affiliate_commission > 0 || false,
     affiliateCommission: initialData?.affiliate_commission || 20,
     status: initialData?.status || 'draft'
   });
 
+  // Module State
+  const [modules, setModules] = useState(initialData?.modules || []);
+  const [showModuleSheet, setShowModuleSheet] = useState(false);
+  const [editingModule, setEditingModule] = useState(null);
   const [errors, setErrors] = useState({});
 
   // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
   };
 
-  // Handle thumbnail upload - NUR Preview, kein Base64 speichern
+  // Handle thumbnail upload
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -41,30 +45,10 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
         setErrors(prev => ({ ...prev, thumbnail: 'Bild darf max. 5MB groß sein' }));
         return;
       }
-
-      // Speichere File-Objekt und erstelle temporäre Preview-URL
       setFormData(prev => ({
         ...prev,
         thumbnailFile: file,
         thumbnailPreview: URL.createObjectURL(file)
-      }));
-    }
-  };
-
-  // Handle product file upload - NUR File-Objekt speichern
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 100 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, file: 'Datei darf max. 100MB groß sein' }));
-        return;
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        productFile: file,
-        fileName: file.name,
-        fileSize: file.size
       }));
     }
   };
@@ -81,16 +65,6 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
     }));
   };
 
-  // Remove file
-  const removeFile = () => {
-    setFormData(prev => ({ 
-      ...prev, 
-      productFile: null, 
-      fileName: '', 
-      fileSize: 0 
-    }));
-  };
-
   // Toggle free
   const toggleFree = () => {
     setFormData(prev => ({
@@ -100,32 +74,39 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
     }));
   };
 
-  // Format file size
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-  };
+  // Module handlers
+  const handleAddModule = useCallback((moduleData) => {
+    if (editingModule !== null) {
+      // Update existing module
+      setModules(prev => prev.map((m, i) => 
+        i === editingModule ? { ...moduleData, id: m.id } : m
+      ));
+      setEditingModule(null);
+    } else {
+      // Add new module
+      setModules(prev => [...prev, { ...moduleData, id: `temp_${Date.now()}` }]);
+    }
+    setShowModuleSheet(false);
+  }, [editingModule]);
 
-  // Get file icon name for Lucide
-  const getFileIconName = (fileName) => {
-    if (!fileName) return 'folder';
-    const ext = fileName.split('.').pop().toLowerCase();
-    const iconNames = {
-      pdf: 'fileText',
-      zip: 'package',
-      mp4: 'video',
-      mp3: 'music',
-      png: 'image',
-      jpg: 'image',
-      jpeg: 'image',
-      doc: 'fileText',
-      docx: 'fileText',
-      xls: 'fileText',
-      xlsx: 'fileText'
-    };
-    return iconNames[ext] || 'file';
-  };
+  const handleEditModule = useCallback((index) => {
+    setEditingModule(index);
+    setShowModuleSheet(true);
+  }, []);
+
+  const handleDeleteModule = useCallback((index) => {
+    setModules(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleMoveModule = useCallback((index, direction) => {
+    setModules(prev => {
+      const newModules = [...prev];
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= newModules.length) return prev;
+      [newModules[index], newModules[newIndex]] = [newModules[newIndex], newModules[index]];
+      return newModules;
+    });
+  }, []);
 
   // Validate form
   const validate = () => {
@@ -139,9 +120,9 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
       newErrors.price = 'Bitte gib einen Preis ein';
     }
 
-    // Datei ist nur bei neuen Produkten Pflicht
-    if (!initialData && !formData.productFile) {
-      newErrors.file = 'Bitte lade eine Datei hoch';
+    // Mindestens ein Modul bei neuen Produkten
+    if (!initialData && modules.length === 0) {
+      newErrors.modules = 'Füge mindestens einen Inhalt hinzu';
     }
 
     setErrors(newErrors);
@@ -156,237 +137,276 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
       title: formData.title.trim(),
       description: formData.description.trim(),
       price: formData.isFree ? 0 : parseFloat(formData.price),
-      thumbnailFile: formData.thumbnailFile,     // File-Objekt
-      productFile: formData.productFile,          // File-Objekt
-      fileName: formData.fileName,
-      fileSize: formData.fileSize,
-      affiliateCommission: formData.affiliateCommission,
-      status: status
+      thumbnailFile: formData.thumbnailFile,
+      affiliateCommission: formData.affiliateEnabled ? formData.affiliateCommission : 0,
+      status: status,
+      modules: modules.map((m, index) => ({
+        ...m,
+        sort_order: index,
+        // Entferne temporäre IDs
+        id: m.id?.toString().startsWith('temp_') ? undefined : m.id
+      }))
     };
 
     onSubmit(productData);
   };
 
   return (
-    <div className={styles.form}>
-      {/* Thumbnail Upload */}
-      <div>
-        <p className={styles.sectionTitle}>Vorschaubild</p>
-        {formData.thumbnailPreview ? (
-          <div className={styles.thumbnailPreview}>
-            <img 
-              src={formData.thumbnailPreview} 
-              alt="Vorschau" 
-              className={styles.thumbnailImage}
-            />
-            <button 
-              type="button"
-              className={styles.thumbnailRemove}
-              onClick={removeThumbnail}
-            >
-              ✕
-            </button>
+    <div className={styles.formContainer}>
+      <div className={styles.form}>
+        {/* Thumbnail Section */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionIcon}>🎨</span>
+            <h2 className={styles.sectionTitle}>Vorschaubild</h2>
           </div>
-        ) : (
-          <div className={styles.uploadArea}>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleThumbnailChange}
-              className={styles.uploadInput}
-            />
-            <div className={styles.uploadIcon}>🖼️</div>
-            <p className={styles.uploadTitle}>Bild hochladen</p>
-            <p className={styles.uploadSubtitle}>PNG, JPG bis 5MB</p>
-          </div>
-        )}
-        {errors.thumbnail && (
-          <p style={{ color: 'var(--color-danger)', fontSize: '12px', marginTop: '8px' }}>
-            {errors.thumbnail}
-          </p>
-        )}
-      </div>
-
-      {/* Product File Upload */}
-      <div>
-        <p className={styles.sectionTitle}>Produkt-Datei *</p>
-        {formData.fileName ? (
-          <div className={styles.filePreview}>
-            <div className={styles.fileIcon}>
-              {<Icon name={getFileIconName(formData.fileName)} size="lg" />}
+          
+          {formData.thumbnailPreview ? (
+            <div className={styles.thumbnailPreview}>
+              <img 
+                src={formData.thumbnailPreview} 
+                alt="Vorschau" 
+                className={styles.thumbnailImage}
+              />
+              <button 
+                type="button"
+                className={styles.thumbnailRemove}
+                onClick={removeThumbnail}
+              >
+                <Icon name="x" size="sm" />
+              </button>
             </div>
-            <div className={styles.fileInfo}>
-              <p className={styles.fileName}>{formData.fileName}</p>
-              <p className={styles.fileSize}>{formatFileSize(formData.fileSize)}</p>
-            </div>
-            <button 
-              type="button"
-              className={styles.fileRemove}
-              onClick={removeFile}
-            >
-              🗑️
-            </button>
+          ) : (
+            <label className={styles.uploadArea}>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailChange}
+                className={styles.uploadInput}
+              />
+              <div className={styles.uploadContent}>
+                <div className={styles.uploadIconWrapper}>
+                  <Icon name="image" size="lg" />
+                </div>
+                <p className={styles.uploadTitle}>Bild hochladen</p>
+                <p className={styles.uploadSubtitle}>PNG, JPG bis 5MB</p>
+              </div>
+            </label>
+          )}
+          {errors.thumbnail && (
+            <p className={styles.errorText}>{errors.thumbnail}</p>
+          )}
+        </section>
+
+        {/* Basic Info Section */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionIcon}>📝</span>
+            <h2 className={styles.sectionTitle}>Grundinfos</h2>
           </div>
-        ) : (
-          <div className={`${styles.uploadArea} ${errors.file ? styles.uploadAreaError : ''}`}>
+
+          <div className={styles.field}>
+            <label className={styles.label}>
+              Titel <span className={styles.required}>*</span>
+            </label>
             <input
-              type="file"
-              onChange={handleFileChange}
-              className={styles.uploadInput}
+              type="text"
+              name="title"
+              placeholder="z.B. Ultimate Fitness Guide"
+              value={formData.title}
+              onChange={handleChange}
+              className={`${styles.input} ${errors.title ? styles.inputError : ''}`}
             />
-            <div className={styles.uploadIcon}>📁</div>
-            <p className={styles.uploadTitle}>Datei hochladen</p>
-            <p className={styles.uploadSubtitle}>PDF, ZIP, MP4, etc. bis 100MB</p>
+            {errors.title && <p className={styles.errorText}>{errors.title}</p>}
           </div>
-        )}
-        {errors.file && (
-          <p style={{ color: 'var(--color-danger)', fontSize: '12px', marginTop: '8px' }}>
-            {errors.file}
+
+          <div className={styles.field}>
+            <label className={styles.label}>Beschreibung</label>
+            <textarea
+              name="description"
+              placeholder="Beschreibe was dein Kunde bekommt..."
+              value={formData.description}
+              onChange={handleChange}
+              rows={4}
+              className={styles.textarea}
+            />
+          </div>
+        </section>
+
+        {/* Content Modules Section */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionIcon}>📦</span>
+            <h2 className={styles.sectionTitle}>Produkt-Inhalte</h2>
+            <span className={styles.moduleCount}>{modules.length}</span>
+          </div>
+          
+          <p className={styles.sectionDescription}>
+            Was erhält dein Kunde nach dem Kauf?
           </p>
-        )}
-      </div>
 
-      {/* Title */}
-      <Input
-        label="Titel *"
-        name="title"
-        placeholder="z.B. Ultimate Productivity Guide"
-        value={formData.title}
-        onChange={handleChange}
-        error={errors.title}
-      />
+          {/* Module List */}
+          <div className={styles.moduleList}>
+            {modules.map((module, index) => (
+              <ModuleCard
+                key={module.id || index}
+                module={module}
+                index={index}
+                totalCount={modules.length}
+                onEdit={() => handleEditModule(index)}
+                onDelete={() => handleDeleteModule(index)}
+                onMoveUp={() => handleMoveModule(index, 'up')}
+                onMoveDown={() => handleMoveModule(index, 'down')}
+              />
+            ))}
+          </div>
 
-      {/* Description */}
-      <Input.Textarea
-        label="Beschreibung"
-        name="description"
-        placeholder="Beschreibe dein Produkt..."
-        value={formData.description}
-        onChange={handleChange}
-        rows={4}
-      />
-
-      {/* Price */}
-      <div>
-        <label style={{ 
-          fontSize: '14px', 
-          fontWeight: '500', 
-          marginBottom: '4px',
-          display: 'block'
-        }}>
-          Preis
-        </label>
-        <div className={styles.priceWrapper}>
-          <span className={styles.priceSymbol}>€</span>
-          <input
-            type="number"
-            name="price"
-            placeholder="0.00"
-            value={formData.isFree ? '' : formData.price}
-            onChange={handleChange}
-            disabled={formData.isFree}
-            min="0"
-            step="0.01"
-            className={styles.priceInput}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              paddingLeft: '36px',
-              fontSize: '16px',
-              background: 'var(--color-bg-tertiary)',
-              border: `1px solid ${errors.price ? 'var(--color-danger)' : 'var(--color-border)'}`,
-              borderRadius: 'var(--radius-lg)',
-              color: formData.isFree ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)'
+          {/* Add Module Button */}
+          <button
+            type="button"
+            className={styles.addModuleButton}
+            onClick={() => {
+              setEditingModule(null);
+              setShowModuleSheet(true);
             }}
-          />
+          >
+            <Icon name="plus" size="sm" />
+            <span>Inhalt hinzufügen</span>
+          </button>
+
+          {errors.modules && (
+            <p className={styles.errorText}>{errors.modules}</p>
+          )}
+        </section>
+
+      {/* Pricing Section */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <span className={styles.sectionIcon}>💰</span>
+          <h2 className={styles.sectionTitle}>Preis & Provision</h2>
         </div>
-        {errors.price && (
-          <p style={{ color: 'var(--color-danger)', fontSize: '12px', marginTop: '4px' }}>
-            {errors.price}
-          </p>
-        )}
-        
-        {/* Free Toggle */}
-        <div 
-          className={styles.freeToggle} 
-          onClick={toggleFree}
-          style={{ marginTop: '12px' }}
-        >
-          <div className={`${styles.checkbox} ${formData.isFree ? styles.checkboxChecked : ''}`}>
-            {formData.isFree && '✓'}
+
+        <div className={styles.field}>
+          <label className={styles.label}>Preis</label>
+          <div className={styles.priceRow}>
+            <div className={styles.priceInputWrapper}>
+              <span className={styles.priceCurrency}>€</span>
+              <input
+                type="number"
+                name="price"
+                placeholder="0.00"
+                value={formData.isFree ? '' : formData.price}
+                onChange={handleChange}
+                disabled={formData.isFree}
+                min="0"
+                step="0.01"
+                className={`${styles.priceInput} ${errors.price ? styles.inputError : ''}`}
+              />
+            </div>
+            <button
+              type="button"
+              className={`${styles.freeToggle} ${formData.isFree ? styles.freeToggleActive : ''}`}
+              onClick={toggleFree}
+            >
+              <Icon name={formData.isFree ? 'check' : 'gift'} size="sm" />
+              <span>Kostenlos</span>
+            </button>
           </div>
-          <span style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-            Kostenlos anbieten
-          </span>
+          {errors.price && <p className={styles.errorText}>{errors.price}</p>}
         </div>
+
+        {/* Affiliate Toggle */}
+        <div className={styles.field}>
+          <button
+            type="button"
+            className={styles.affiliateToggle}
+            onClick={() => setFormData(prev => ({ 
+              ...prev, 
+              affiliateEnabled: !prev.affiliateEnabled 
+            }))}
+          >
+            <div className={`${styles.checkbox} ${formData.affiliateEnabled ? styles.checkboxActive : ''}`}>
+              {formData.affiliateEnabled && <Icon name="check" size="xs" />}
+            </div>
+            <div className={styles.affiliateToggleContent}>
+              <span className={styles.affiliateToggleLabel}>Affiliate-Programm aktivieren</span>
+              <span className={styles.affiliateToggleHint}>Lass andere dein Produkt bewerben</span>
+            </div>
+          </button>
+        </div>
+
+        {/* Affiliate Commission Slider - nur wenn aktiviert */}
+        {formData.affiliateEnabled && (
+          <div className={styles.field}>
+            <label className={styles.label}>
+              Affiliate-Provision
+              <span className={styles.labelHint}>{formData.affiliateCommission}%</span>
+            </label>
+            <input
+              type="range"
+              name="affiliateCommission"
+              min="5"
+              max="50"
+              value={formData.affiliateCommission}
+              onChange={handleChange}
+              className={styles.slider}
+            />
+            <div className={styles.sliderLabels}>
+              <span>5%</span>
+              <span>50%</span>
+            </div>
+            <p className={styles.fieldHint}>
+              So viel verdienen Promoter pro Verkauf
+            </p>
+          </div>
+        )}
+      </section>
       </div>
 
-      {/* Affiliate Commission */}
-      <div>
-        <label style={{ 
-          fontSize: '14px', 
-          fontWeight: '500', 
-          marginBottom: '8px',
-          display: 'block'
-        }}>
-          Affiliate-Provision: {formData.affiliateCommission}%
-        </label>
-        <input
-          type="range"
-          name="affiliateCommission"
-          min="5"
-          max="50"
-          value={formData.affiliateCommission}
-          onChange={handleChange}
-          style={{ width: '100%' }}
-        />
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between',
-          fontSize: '12px',
-          color: 'var(--color-text-tertiary)',
-          marginTop: '4px'
-        }}>
-          <span>5%</span>
-          <span>50%</span>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '12px', 
-        marginTop: '8px',
-        flexDirection: 'column'
-      }}>
-        <Button
-          onClick={() => handleSubmit('active')}
-          disabled={isLoading}
-          style={{ width: '100%' }}
-        >
-          {isLoading ? 'Wird gespeichert...' : '🚀 Veröffentlichen'}
-        </Button>
-        
-        <Button
-          variant="secondary"
+      {/* Sticky CTA */}
+      <div className={styles.stickyCTA}>
+        <button
+          type="button"
+          className={styles.secondaryButton}
           onClick={() => handleSubmit('draft')}
           disabled={isLoading}
-          style={{ width: '100%' }}
         >
-          💾 Als Entwurf speichern
-        </Button>
-
-        {onCancel && (
-          <Button
-            variant="ghost"
-            onClick={onCancel}
-            disabled={isLoading}
-            style={{ width: '100%' }}
-          >
-            Abbrechen
-          </Button>
-        )}
+          {isLoading ? (
+            <span className={styles.spinner} />
+          ) : (
+            <>
+              <Icon name="save" size="sm" />
+              <span>Als Entwurf</span>
+            </>
+          )}
+        </button>
+        <button
+          type="button"
+          className={styles.primaryButton}
+          onClick={() => handleSubmit('active')}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <span className={styles.spinner} />
+          ) : (
+            <>
+              <Icon name="rocket" size="sm" />
+              <span>Veröffentlichen</span>
+            </>
+          )}
+        </button>
       </div>
+
+      {/* Module Sheet */}
+      <ModuleSheet
+        isOpen={showModuleSheet}
+        onClose={() => {
+          setShowModuleSheet(false);
+          setEditingModule(null);
+        }}
+        onSave={handleAddModule}
+        editData={editingModule !== null ? modules[editingModule] : null}
+      />
     </div>
   );
 }

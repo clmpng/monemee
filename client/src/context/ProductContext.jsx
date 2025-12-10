@@ -6,6 +6,7 @@ const ProductContext = createContext(null);
 /**
  * Product Provider
  * Manages products state via API
+ * Supports modular product content
  */
 export function ProductProvider({ children }) {
   const [products, setProducts] = useState([]);
@@ -33,106 +34,171 @@ export function ProductProvider({ children }) {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Add new product
+  /**
+   * Add new product with modules
+   * File uploads should be handled by the calling component
+   */
   const addProduct = async (productData) => {
     try {
-      // Falls Dateien vorhanden, erst hochladen
-      let thumbnailUrl = null;
-      let fileUrl = null;
-      
-      if (productData.thumbnailFile) {
-        thumbnailUrl = await productsService.uploadFile(productData.thumbnailFile, 'thumbnail');
-      }
-      
-      if (productData.productFile) {
-        fileUrl = await productsService.uploadFile(productData.productFile, 'product');
-      }
-
-      // Produkt erstellen mit URLs statt Base64
-      const dataToSend = {
-        title: productData.title,
-        description: productData.description,
-        price: productData.price,
-        thumbnail_url: thumbnailUrl,
-        file_url: fileUrl,
-        file_name: productData.fileName,
-        file_size: productData.fileSize,
-        affiliate_commission: productData.affiliateCommission,
-        status: productData.status
-      };
-
-      const response = await productsService.createProduct(dataToSend);
+      const response = await productsService.createProduct(productData);
       const newProduct = response.data;
       
       setProducts(prev => [newProduct, ...prev]);
-      return newProduct;
+      return { success: true, data: newProduct };
     } catch (err) {
       console.error('Error creating product:', err);
       throw err;
     }
   };
 
-  // Update product
+  /**
+   * Update product with modules
+   * File uploads should be handled by the calling component
+   */
   const updateProduct = async (id, updates) => {
     try {
-      // Falls neue Dateien, erst hochladen
-      let thumbnailUrl = updates.thumbnail_url;
-      let fileUrl = updates.file_url;
-      
-      if (updates.thumbnailFile) {
-        thumbnailUrl = await productsService.uploadFile(updates.thumbnailFile, 'thumbnail');
-      }
-      
-      if (updates.productFile) {
-        fileUrl = await productsService.uploadFile(updates.productFile, 'product');
-      }
-
-      const dataToSend = {
-        ...updates,
-        thumbnail_url: thumbnailUrl,
-        file_url: fileUrl
-      };
-      
-      // Entferne File-Objekte vor dem Senden
-      delete dataToSend.thumbnailFile;
-      delete dataToSend.productFile;
-
-      const response = await productsService.updateProduct(id, dataToSend);
+      const response = await productsService.updateProduct(id, updates);
       const updatedProduct = response.data;
       
       setProducts(prev =>
         prev.map(p => p.id === id ? updatedProduct : p)
       );
-      return updatedProduct;
+      return { success: true, data: updatedProduct };
     } catch (err) {
       console.error('Error updating product:', err);
       throw err;
     }
   };
 
-  // Delete product
+  /**
+   * Delete product
+   */
   const deleteProduct = async (id) => {
     try {
       await productsService.deleteProduct(id);
       setProducts(prev => prev.filter(p => p.id !== id));
+      return { success: true };
     } catch (err) {
       console.error('Error deleting product:', err);
       throw err;
     }
   };
 
-  // Get single product
+  /**
+   * Get single product by ID
+   * Returns product with modules from local state
+   * For fresh data, use getProductFresh
+   */
   const getProduct = (id) => {
     return products.find(p => p.id === parseInt(id));
   };
 
-  // Toggle product status
+  /**
+   * Get single product fresh from API
+   * Use when editing to ensure latest data with modules
+   */
+  const getProductFresh = async (id) => {
+    try {
+      const response = await productsService.getProduct(id);
+      return response.data;
+    } catch (err) {
+      console.error('Error fetching product:', err);
+      return null;
+    }
+  };
+
+  /**
+   * Toggle product status (active/draft)
+   */
   const toggleStatus = async (id) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
     
     const newStatus = product.status === 'active' ? 'draft' : 'active';
     await updateProduct(id, { status: newStatus });
+  };
+
+  /**
+   * Add module to product
+   */
+  const addModule = async (productId, moduleData) => {
+    try {
+      const response = await productsService.addModule(productId, moduleData);
+      
+      // Update local state
+      setProducts(prev =>
+        prev.map(p => {
+          if (p.id === productId) {
+            return {
+              ...p,
+              modules: [...(p.modules || []), response.data]
+            };
+          }
+          return p;
+        })
+      );
+      
+      return { success: true, data: response.data };
+    } catch (err) {
+      console.error('Error adding module:', err);
+      throw err;
+    }
+  };
+
+  /**
+   * Update module
+   */
+  const updateModule = async (productId, moduleId, moduleData) => {
+    try {
+      const response = await productsService.updateModule(productId, moduleId, moduleData);
+      
+      // Update local state
+      setProducts(prev =>
+        prev.map(p => {
+          if (p.id === productId) {
+            return {
+              ...p,
+              modules: (p.modules || []).map(m => 
+                m.id === moduleId ? response.data : m
+              )
+            };
+          }
+          return p;
+        })
+      );
+      
+      return { success: true, data: response.data };
+    } catch (err) {
+      console.error('Error updating module:', err);
+      throw err;
+    }
+  };
+
+  /**
+   * Delete module
+   */
+  const deleteModule = async (productId, moduleId) => {
+    try {
+      await productsService.deleteModule(productId, moduleId);
+      
+      // Update local state
+      setProducts(prev =>
+        prev.map(p => {
+          if (p.id === productId) {
+            return {
+              ...p,
+              modules: (p.modules || []).filter(m => m.id !== moduleId)
+            };
+          }
+          return p;
+        })
+      );
+      
+      return { success: true };
+    } catch (err) {
+      console.error('Error deleting module:', err);
+      throw err;
+    }
   };
 
   // Calculate stats
@@ -145,15 +211,26 @@ export function ProductProvider({ children }) {
   };
 
   const value = {
+    // State
     products,
     loading,
     error,
     stats,
+    
+    // Product operations
     addProduct,
     updateProduct,
     deleteProduct,
     getProduct,
+    getProductFresh,
     toggleStatus,
+    
+    // Module operations
+    addModule,
+    updateModule,
+    deleteModule,
+    
+    // Utilities
     refetch: fetchProducts
   };
 

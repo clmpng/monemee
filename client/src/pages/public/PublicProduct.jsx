@@ -27,7 +27,6 @@ function PublicProduct() {
   const [generatingLink, setGeneratingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
-
   // Affiliate-Code speichern & tracken
   useEffect(() => {
     if (affiliateCode) {
@@ -75,7 +74,7 @@ function PublicProduct() {
 
   // Provision berechnen
   const calculateCommission = useCallback((price, commissionPercent) => {
-    if (!price || price === 0) return '0,00';
+    if (!price || price === 0) return '0,00 €';
     return new Intl.NumberFormat('de-DE', {
       style: 'currency',
       currency: 'EUR'
@@ -191,7 +190,7 @@ function PublicProduct() {
     <div className={styles.productPage}>
       {/* Back Button */}
       <button className={styles.backButton} onClick={() => navigate(-1)}>
-        <Icon name="chevronRight" size="md" style={{ transform: 'rotate(180deg)' }} />
+        <Icon name="chevronLeft" size="md" />
       </button>
 
       {/* Hero Image */}
@@ -315,32 +314,42 @@ function PublicProduct() {
           )}
         </div>
 
-        {/* What's Included */}
+        {/* What's Included - Modules */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>
             <Icon name="package" size="sm" />
             Das bekommst du
           </h2>
-          <div className={styles.includedGrid}>
-            <div className={styles.includedItem}>
-              <div className={styles.includedIcon}>
-                <Icon name="download" size="md" />
-              </div>
-              <span>Sofort-Download</span>
+          
+          {product.modules && product.modules.length > 0 ? (
+            <div className={styles.modulesList}>
+              {product.modules.map((module, index) => (
+                <ModulePreviewItem key={module.id || index} module={module} />
+              ))}
             </div>
-            <div className={styles.includedItem}>
-              <div className={styles.includedIcon}>
-                <Icon name="fileText" size="md" />
+          ) : (
+            // Fallback wenn keine Module vorhanden
+            <div className={styles.includedGrid}>
+              <div className={styles.includedItem}>
+                <div className={styles.includedIcon}>
+                  <Icon name="download" size="md" />
+                </div>
+                <span>Sofort-Download</span>
               </div>
-              <span>Digitale Dateien</span>
-            </div>
-            <div className={styles.includedItem}>
-              <div className={styles.includedIcon}>
-                <Icon name="refresh" size="md" />
+              <div className={styles.includedItem}>
+                <div className={styles.includedIcon}>
+                  <Icon name="fileText" size="md" />
+                </div>
+                <span>Digitale Dateien</span>
               </div>
-              <span>Lebenslanger Zugang</span>
+              <div className={styles.includedItem}>
+                <div className={styles.includedIcon}>
+                  <Icon name="refresh" size="md" />
+                </div>
+                <span>Lebenslanger Zugang</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Creator Card */}
@@ -377,8 +386,8 @@ function PublicProduct() {
           </Button>
         </Card>
 
-        {/* Affiliate Section - Immer sichtbar */}
-        {!isOwnProduct && (
+        {/* Affiliate Section - Nur wenn Provision > 0 und nicht eigenes Produkt */}
+        {!isOwnProduct && product.affiliate_commission > 0 && (
           <Card className={styles.affiliateCard} highlight>
             <div className={styles.affiliateHeader}>
               <div className={styles.affiliateIcon}>
@@ -453,6 +462,89 @@ function PublicProduct() {
             )}
           </Card>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Module Preview Item for buyers
+ * Shows what's included in the product
+ */
+function ModulePreviewItem({ module }) {
+  const MODULE_CONFIG = {
+    file: {
+      icon: 'file',
+      color: '#6366f1',
+      bgColor: 'rgba(99, 102, 241, 0.1)',
+      getLabel: (m) => m.title || m.file_name || 'Digitale Datei',
+      getDescription: (m) => {
+        if (m.description) return m.description;
+        if (m.file_size) {
+          const size = m.file_size;
+          if (size < 1024) return `${size} B`;
+          if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+          return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+        }
+        return null;
+      }
+    },
+    url: {
+      icon: 'link',
+      color: '#10b981',
+      bgColor: 'rgba(16, 185, 129, 0.1)',
+      getLabel: (m) => m.title || m.url_label || 'Externer Link',
+      getDescription: (m) => m.description || 'Zugang zu exklusivem Content'
+    },
+    email: {
+      icon: 'mail',
+      color: '#f59e0b',
+      bgColor: 'rgba(245, 158, 11, 0.1)',
+      getLabel: (m) => m.title || 'Newsletter-Zugang',
+      getDescription: (m) => m.description || 'Exklusive E-Mail-Inhalte'
+    },
+    text: {
+      icon: 'fileText',
+      color: '#8b5cf6',
+      bgColor: 'rgba(139, 92, 246, 0.1)',
+      getLabel: (m) => m.title || 'Anleitung & Text',
+      getDescription: (m) => m.description || 'Detaillierte Anleitung'
+    },
+    videocall: {
+      icon: 'video',
+      color: '#ef4444',
+      bgColor: 'rgba(239, 68, 68, 0.1)',
+      getLabel: (m) => m.title || `${m.duration || 30} Min. Videocall`,
+      getDescription: (m) => m.description || 'Persönliches 1:1 Gespräch'
+    }
+  };
+
+  const config = MODULE_CONFIG[module.type] || MODULE_CONFIG.file;
+  const description = config.getDescription(module);
+
+  return (
+    <div className={styles.modulePreviewItem}>
+      <div 
+        className={styles.modulePreviewIcon}
+        style={{ 
+          backgroundColor: config.bgColor,
+          color: config.color 
+        }}
+      >
+        <Icon name={config.icon} size="md" />
+      </div>
+      <div className={styles.modulePreviewContent}>
+        <span className={styles.modulePreviewLabel}>
+          {config.getLabel(module)}
+        </span>
+        {description && (
+          <span className={styles.modulePreviewDescription}>
+            {description.length > 60 ? description.substring(0, 60) + '...' : description}
+          </span>
+        )}
+      </div>
+      <div className={styles.modulePreviewCheck}>
+        <Icon name="checkCircle" size="sm" />
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 const ProductModel = require('../models/Product.model');
+const ProductModuleModel = require('../models/ProductModule.model');
 
 /**
  * Products Controller
@@ -11,14 +12,28 @@ const productsController = {
    */
   async getMyProducts(req, res, next) {
     try {
-      // TODO: Get user ID from auth middleware
-      const userId = req.userId || 1;
+      const userId = req.userId;
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
       
       const products = await ProductModel.findByUserId(userId);
       
+      // Lade Module für jedes Produkt
+      const productsWithModules = await Promise.all(
+        products.map(async (product) => {
+          const modules = await ProductModuleModel.findByProductId(product.id);
+          return { ...product, modules };
+        })
+      );
+      
       res.json({
         success: true,
-        data: products
+        data: productsWithModules
       });
     } catch (error) {
       next(error);
@@ -41,9 +56,12 @@ const productsController = {
         });
       }
       
+      // Lade Module
+      const modules = await ProductModuleModel.findByProductId(id);
+      
       res.json({
         success: true,
-        data: product
+        data: { ...product, modules }
       });
     } catch (error) {
       next(error);
@@ -51,22 +69,37 @@ const productsController = {
   },
 
   /**
-   * Create new product
+   * Create new product with modules
    * POST /api/v1/products
    */
   async createProduct(req, res, next) {
     try {
-      const userId = req.userId || 1;
-      const productData = {
-        ...req.body,
-        user_id: userId
-      };
+      const userId = req.userId;
       
-      const product = await ProductModel.create(productData);
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
+
+      const { modules, ...productData } = req.body;
+      
+      // Erstelle Produkt
+      const product = await ProductModel.create({
+        ...productData,
+        user_id: userId
+      });
+      
+      // Erstelle Module falls vorhanden
+      let createdModules = [];
+      if (modules && modules.length > 0) {
+        createdModules = await ProductModuleModel.createMany(product.id, modules);
+      }
       
       res.status(201).json({
         success: true,
-        data: product,
+        data: { ...product, modules: createdModules },
         message: 'Produkt erstellt'
       });
     } catch (error) {
@@ -81,20 +114,47 @@ const productsController = {
   async updateProduct(req, res, next) {
     try {
       const { id } = req.params;
-      const updateData = req.body;
+      const userId = req.userId;
       
-      const product = await ProductModel.update(id, updateData);
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
+
+      const { modules, ...updateData } = req.body;
       
-      if (!product) {
+      // Prüfe ob Produkt dem User gehört
+      const existingProduct = await ProductModel.findById(id);
+      if (!existingProduct || existingProduct.user_id !== userId) {
         return res.status(404).json({
           success: false,
           message: 'Produkt nicht gefunden'
         });
       }
       
+      // Update Produkt
+      const product = await ProductModel.update(id, updateData);
+      
+      // Update Module falls mitgesendet
+      let updatedModules = [];
+      if (modules !== undefined) {
+        // Lösche alle bestehenden Module
+        await ProductModuleModel.deleteByProductId(id);
+        
+        // Erstelle neue Module
+        if (modules && modules.length > 0) {
+          updatedModules = await ProductModuleModel.createMany(id, modules);
+        }
+      } else {
+        // Lade bestehende Module
+        updatedModules = await ProductModuleModel.findByProductId(id);
+      }
+      
       res.json({
         success: true,
-        data: product,
+        data: { ...product, modules: updatedModules },
         message: 'Produkt aktualisiert'
       });
     } catch (error) {
@@ -109,7 +169,25 @@ const productsController = {
   async deleteProduct(req, res, next) {
     try {
       const { id } = req.params;
+      const userId = req.userId;
       
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
+
+      // Prüfe ob Produkt dem User gehört
+      const existingProduct = await ProductModel.findById(id);
+      if (!existingProduct || existingProduct.user_id !== userId) {
+        return res.status(404).json({
+          success: false,
+          message: 'Produkt nicht gefunden'
+        });
+      }
+      
+      // Module werden durch CASCADE automatisch gelöscht
       const deleted = await ProductModel.delete(id);
       
       if (!deleted) {
@@ -134,10 +212,9 @@ const productsController = {
    */
   async uploadFile(req, res, next) {
     try {
-      // TODO: Implement file upload to Firebase Storage
       res.json({
         success: true,
-        message: 'File upload not implemented yet'
+        message: 'Use /api/v1/upload instead'
       });
     } catch (error) {
       next(error);
@@ -172,8 +249,8 @@ const productsController = {
       const products = await ProductModel.discover({
         category,
         sort,
-        limit: parseInt(limit),
-        offset: parseInt(offset)
+        limit: parseInt(limit, 10),
+        offset: parseInt(offset, 10)
       });
       
       res.json({
@@ -184,40 +261,200 @@ const productsController = {
       next(error);
     }
   },
-  
+
   /**
-   * Get public product (no auth required)
-   * Increments view counter
+   * Get public product (no auth, increments views)
    * GET /api/v1/products/public/:id
    */
   async getPublicProduct(req, res, next) {
     try {
       const { id } = req.params;
       
-      // Get product with creator info
       const product = await ProductModel.findByIdPublic(id);
       
-      if (!product) {
+      if (!product || product.status !== 'active') {
         return res.status(404).json({
           success: false,
           message: 'Produkt nicht gefunden'
         });
       }
       
-      // Only show active products publicly
-      if (product.status !== 'active') {
-        return res.status(404).json({
-          success: false,
-          message: 'Produkt nicht verfügbar'
-        });
-      }
+      // Increment views
+      await ProductModel.incrementViews(id);
       
-      // Increment view counter (async, don't wait)
-      ProductModel.incrementViews(id).catch(console.error);
+      // Lade Module
+      const modules = await ProductModuleModel.findByProductId(id);
       
       res.json({
         success: true,
-        data: product
+        data: { ...product, modules }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Add module to product
+   * POST /api/v1/products/:id/modules
+   */
+  async addModule(req, res, next) {
+    try {
+      const { id } = req.params;
+      const userId = req.userId;
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
+
+      // Prüfe ob Produkt dem User gehört
+      const product = await ProductModel.findById(id);
+      if (!product || product.user_id !== userId) {
+        return res.status(404).json({
+          success: false,
+          message: 'Produkt nicht gefunden'
+        });
+      }
+
+      const moduleData = {
+        ...req.body,
+        product_id: id
+      };
+
+      const module = await ProductModuleModel.create(moduleData);
+      
+      res.status(201).json({
+        success: true,
+        data: module,
+        message: 'Modul hinzugefügt'
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Update module
+   * PUT /api/v1/products/:id/modules/:moduleId
+   */
+  async updateModule(req, res, next) {
+    try {
+      const { id, moduleId } = req.params;
+      const userId = req.userId;
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
+
+      // Prüfe ob Produkt dem User gehört
+      const product = await ProductModel.findById(id);
+      if (!product || product.user_id !== userId) {
+        return res.status(404).json({
+          success: false,
+          message: 'Produkt nicht gefunden'
+        });
+      }
+
+      const module = await ProductModuleModel.update(moduleId, req.body);
+      
+      if (!module) {
+        return res.status(404).json({
+          success: false,
+          message: 'Modul nicht gefunden'
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: module,
+        message: 'Modul aktualisiert'
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Delete module
+   * DELETE /api/v1/products/:id/modules/:moduleId
+   */
+  async deleteModule(req, res, next) {
+    try {
+      const { id, moduleId } = req.params;
+      const userId = req.userId;
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
+
+      // Prüfe ob Produkt dem User gehört
+      const product = await ProductModel.findById(id);
+      if (!product || product.user_id !== userId) {
+        return res.status(404).json({
+          success: false,
+          message: 'Produkt nicht gefunden'
+        });
+      }
+
+      const deleted = await ProductModuleModel.delete(moduleId);
+      
+      if (!deleted) {
+        return res.status(404).json({
+          success: false,
+          message: 'Modul nicht gefunden'
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Modul gelöscht'
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Reorder modules
+   * PUT /api/v1/products/:id/modules/reorder
+   */
+  async reorderModules(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { moduleIds } = req.body;
+      const userId = req.userId;
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
+
+      // Prüfe ob Produkt dem User gehört
+      const product = await ProductModel.findById(id);
+      if (!product || product.user_id !== userId) {
+        return res.status(404).json({
+          success: false,
+          message: 'Produkt nicht gefunden'
+        });
+      }
+
+      const modules = await ProductModuleModel.reorder(id, moduleIds);
+      
+      res.json({
+        success: true,
+        data: modules,
+        message: 'Module neu sortiert'
       });
     } catch (error) {
       next(error);
