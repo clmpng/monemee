@@ -22,6 +22,7 @@ import Settings from '../pages/settings/Settings';
 
 // Public Pages
 import { PublicStore, PublicProduct } from '../pages/public';
+import LandingPage from '../pages/public/LandingPage';
 
 /**
  * Protected Route Wrapper
@@ -56,6 +57,19 @@ function AppRoutes() {
   return (
     <Routes>
       {/* ================================
+          LANDING PAGE (for non-authenticated users)
+          ================================ */}
+      
+      <Route 
+        path="/" 
+        element={
+          isAuthenticated 
+            ? <Navigate to="/dashboard" replace /> 
+            : <LandingPage />
+        } 
+      />
+
+      {/* ================================
           PUBLIC ROUTES (no auth required)
           ================================ */}
       
@@ -77,7 +91,7 @@ function AppRoutes() {
         path="/login" 
         element={
           isAuthenticated 
-            ? <Navigate to="/" replace /> 
+            ? <Navigate to="/dashboard" replace /> 
             : <Login />
         } 
       />
@@ -87,7 +101,7 @@ function AppRoutes() {
         path="/register" 
         element={
           isAuthenticated 
-            ? <Navigate to="/" replace /> 
+            ? <Navigate to="/dashboard" replace /> 
             : <Register />
         } 
       />
@@ -113,8 +127,8 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        {/* Store / Home */}
-        <Route path="/" element={<MyStore />} />
+        {/* Dashboard / Home (authenticated) */}
+        <Route path="/dashboard" element={<MyStore />} />
         
         {/* Product Management */}
         <Route path="/products/new" element={<AddProduct />} />
@@ -185,8 +199,8 @@ function LoadingScreen() {
         }} 
       />
       <style>{`
-        @keyframes spin { 
-          to { transform: rotate(360deg); } 
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>
@@ -194,45 +208,46 @@ function LoadingScreen() {
 }
 
 /**
- * 404 Not Found Page
+ * 404 Not Found Component
  */
 function NotFound() {
   return (
     <div 
       style={{ 
         minHeight: '100vh',
-        display: 'flex',
+        display: 'flex', 
         flexDirection: 'column',
         alignItems: 'center', 
         justifyContent: 'center',
+        padding: '24px',
         textAlign: 'center',
-        padding: '20px',
         background: 'var(--color-bg-primary)'
       }}
     >
       <div 
         style={{ 
-          width: '100px',
-          height: '100px',
-          background: 'var(--color-bg-tertiary)',
-          borderRadius: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '32px'
+          fontSize: '72px',
+          fontWeight: '800',
+          color: 'var(--color-border)',
+          lineHeight: 1,
+          marginBottom: '16px'
         }}
       >
-        <Icon name="searchX" size={48} style={{ color: 'var(--color-text-tertiary)' }} />
-      </div>
-      <h1 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '12px' }}>
         404
+      </div>
+      <h1 style={{ 
+        fontSize: '24px', 
+        fontWeight: '600',
+        marginBottom: '8px',
+        color: 'var(--color-text-primary)'
+      }}>
+        Seite nicht gefunden
       </h1>
       <p style={{ 
-        color: 'var(--color-text-secondary)', 
-        marginBottom: '32px',
-        maxWidth: '300px'
+        color: 'var(--color-text-secondary)',
+        marginBottom: '24px'
       }}>
-        Die angeforderte Seite existiert leider nicht.
+        Die gesuchte Seite existiert nicht oder wurde verschoben.
       </p>
       <a 
         href="/"
@@ -240,10 +255,9 @@ function NotFound() {
           padding: '12px 24px',
           background: 'var(--color-primary)',
           color: 'white',
-          borderRadius: 'var(--radius-lg)',
+          borderRadius: 'var(--radius-md)',
           textDecoration: 'none',
-          fontWeight: '600',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+          fontWeight: '500'
         }}
       >
         Zur Startseite

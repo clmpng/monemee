@@ -91,8 +91,8 @@ function EarningsDashboard() {
   return (
     <div className={`page ${styles.earningsPage}`}>
       <div className="page-header">
-        <h1 className="page-title">Einnahmen</h1>
-        <p className="page-subtitle">Deine Statistiken und Fortschritt</p>
+        <h1 className="page-title">Fortschritt</h1>
+        <p className="page-subtitle">Deine Statistiken und Einnahmen</p>
       </div>
 
       {/* Total Earnings Card */}

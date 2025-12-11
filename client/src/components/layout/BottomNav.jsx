@@ -6,7 +6,7 @@ import styles from '../../styles/components/BottomNav.module.css';
 function BottomNav() {
   const navItems = [
     { path: '/', icon: 'store', label: 'Store' },
-    { path: '/earnings', icon: 'chart', label: 'Statistiken' },
+    { path: '/earnings', icon: 'chart', label: 'Fortschritt' },
     { path: '/promotion', icon: 'megaphone', label: 'Promotion' },
     { path: '/messages', icon: 'message', label: 'Nachrichten' },
   ];

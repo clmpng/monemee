@@ -12,7 +12,7 @@ function Sidebar({ user }) {
 
   const navItems = [
     { path: '/', icon: 'store', label: 'My Store' },
-    { path: '/earnings', icon: 'wallet', label: 'Statistiken' },
+    { path: '/earnings', icon: 'wallet', label: 'Fortschritt' },
     { path: '/promotion', icon: 'megaphone', label: 'Promotion' },
     { path: '/messages', icon: 'message', label: 'Nachrichten' },
   ];
