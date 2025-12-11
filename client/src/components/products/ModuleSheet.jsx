@@ -17,7 +17,7 @@ const MODULE_TYPES = [
     type: 'url',
     icon: 'link',
     label: 'Link / URL',
-    description: 'Notion, Gumroad, etc.',
+    description: 'Notion, Videos, etc.',
     color: '#10b981'
   },
   {

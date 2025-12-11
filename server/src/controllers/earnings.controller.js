@@ -4,6 +4,9 @@ const UserModel = require('../models/User.model');
 /**
  * Earnings Controller
  * Handles all earnings/statistics related HTTP requests
+ * 
+ * WICHTIG: Alle Endpoints erfordern Authentifizierung!
+ * Kein Fallback auf userId=1 mehr (war ein Bug der fremde Daten anzeigte)
  */
 const earningsController = {
   /**
@@ -12,7 +15,15 @@ const earningsController = {
    */
   async getDashboard(req, res, next) {
     try {
-      const userId = req.userId || 1;
+      const userId = req.userId;
+      
+      // Auth Check - kein Fallback mehr!
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
       
       // Get current month dates
       const now = new Date();
@@ -76,7 +87,15 @@ const earningsController = {
    */
   async getProductEarnings(req, res, next) {
     try {
-      const userId = req.userId || 1;
+      const userId = req.userId;
+      
+      // Auth Check - kein Fallback mehr!
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
       
       const topProducts = await TransactionModel.getTopProductsByRevenue(userId, 10);
       
@@ -101,7 +120,15 @@ const earningsController = {
    */
   async getAffiliateEarnings(req, res, next) {
     try {
-      const userId = req.userId || 1;
+      const userId = req.userId;
+      
+      // Auth Check - kein Fallback mehr!
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
       
       const affiliateSales = await TransactionModel.findByPromoterId(userId, 50, 0);
       
@@ -126,7 +153,15 @@ const earningsController = {
    */
   async getLevelInfo(req, res, next) {
     try {
-      const userId = req.userId || 1;
+      const userId = req.userId;
+      
+      // Auth Check - kein Fallback mehr!
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
       
       const user = await UserModel.findById(userId);
       

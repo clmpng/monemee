@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import productsService from '../services/products.service';
+import { useAuth } from './AuthContext';
 
 const ProductContext = createContext(null);
 
@@ -7,14 +8,26 @@ const ProductContext = createContext(null);
  * Product Provider
  * Manages products state via API
  * Supports modular product content
+ * 
+ * WICHTIG: Wartet auf Auth-Initialisierung bevor API-Calls gemacht werden
  */
 export function ProductProvider({ children }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Auth-Status abfragen
+  const { isAuthenticated, loading: authLoading } = useAuth();
 
   // Fetch products from API
   const fetchProducts = useCallback(async () => {
+    // Nur laden wenn eingeloggt
+    if (!isAuthenticated) {
+      setProducts([]);
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
@@ -27,12 +40,17 @@ export function ProductProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
-  // Load products on mount
+  // Load products when auth is ready
   useEffect(() => {
+    // Warten bis Auth-Status klar ist
+    if (authLoading) {
+      return;
+    }
+    
     fetchProducts();
-  }, [fetchProducts]);
+  }, [fetchProducts, authLoading]);
 
   /**
    * Add new product with modules
@@ -213,7 +231,7 @@ export function ProductProvider({ children }) {
   const value = {
     // State
     products,
-    loading,
+    loading: loading || authLoading, // Auch während Auth-Check als "loading" anzeigen
     error,
     stats,
     

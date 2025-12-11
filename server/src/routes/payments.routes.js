@@ -1,38 +1,39 @@
 const express = require('express');
 const router = express.Router();
+const paymentsController = require('../controllers/payments.controller');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 
 // ============================================
 // Payments Routes (Stripe)
 // ============================================
 
-// POST /api/v1/payments/create-checkout - Create Stripe checkout session
-router.post('/create-checkout', (req, res) => {
-  // TODO: Implement Stripe checkout
-  res.json({
-    success: true,
-    data: {
-      sessionUrl: 'https://checkout.stripe.com/...'
-    }
-  });
-});
+/**
+ * DUMMY: Simulierter Kauf für Testing
+ * Erstellt echte Transaktionen in der DB
+ * POST /api/v1/payments/simulate-purchase
+ * 
+ * Body: { productId: number, affiliateCode?: string }
+ */
+router.post('/simulate-purchase', authenticate, paymentsController.simulatePurchase);
 
-// POST /api/v1/payments/webhook - Stripe webhook
-router.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
-  // TODO: Implement Stripe webhook handling
-  // - Verify webhook signature
-  // - Handle checkout.session.completed
-  // - Create transaction record
-  // - Distribute commissions
-  res.json({ received: true });
-});
+/**
+ * Create Stripe checkout session
+ * POST /api/v1/payments/create-checkout
+ * TODO: Echte Stripe Integration
+ */
+router.post('/create-checkout', authenticate, paymentsController.createCheckout);
 
-// GET /api/v1/payments/transactions - Get user transactions
-router.get('/transactions', (req, res) => {
-  // TODO: Implement
-  res.json({
-    success: true,
-    data: []
-  });
-});
+/**
+ * Stripe webhook
+ * POST /api/v1/payments/webhook
+ * WICHTIG: Kein authenticate middleware - Stripe sendet direkt
+ */
+router.post('/webhook', express.raw({ type: 'application/json' }), paymentsController.handleWebhook);
+
+/**
+ * Get user transactions
+ * GET /api/v1/payments/transactions
+ */
+router.get('/transactions', authenticate, paymentsController.getTransactions);
 
 module.exports = router;

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Button, Card, Badge, Icon } from '../../components/common';
-import { productsService, promotionService } from '../../services';
+import { productsService, promotionService, paymentsService } from '../../services';
 import { useAuth } from '../../context/AuthContext';
 import styles from '../../styles/pages/PublicProduct.module.css';
 
@@ -26,6 +26,11 @@ function PublicProduct() {
   const [affiliateLink, setAffiliateLink] = useState(null);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  
+  // Kauf-State
+  const [purchasing, setPurchasing] = useState(false);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [purchaseData, setPurchaseData] = useState(null);
 
   // Affiliate-Code speichern & tracken
   useEffect(() => {
@@ -81,11 +86,59 @@ function PublicProduct() {
     }).format(price * (commissionPercent / 100));
   }, []);
 
-  // Kaufen Handler
+  /**
+   * Kaufen Handler
+   * DUMMY: Simuliert einen echten Kauf - erstellt Transaktionen in der DB
+   * SPÄTER: Wird durch echten Stripe-Checkout ersetzt
+   */
+  
   const handleBuy = async () => {
-    const refCode = localStorage.getItem('monemee_ref');
-    console.log('Buy product', productId, 'with ref:', refCode);
-    alert('Checkout wird bald implementiert! 🚀');
+    if (!isAuthenticated) {
+      navigate('/login?redirect=' + encodeURIComponent(`/p/${productId}`));
+      return;
+    }
+    
+    // DUMMY/TESTING: Auskommentiert - eigenes Produkt kaufen erlaubt
+    // TODO: Vor Production wieder aktivieren!
+    // if (isOwnProduct) {
+    //   alert('Du kannst dein eigenes Produkt nicht kaufen.');
+    //   return;
+    // }
+    
+    try {
+      setPurchasing(true);
+      
+      // Affiliate-Code aus LocalStorage holen
+      const refCode = localStorage.getItem('monemee_ref');
+      const refProduct = localStorage.getItem('monemee_ref_product');
+      
+      // Nur Affiliate-Code verwenden wenn er für dieses Produkt gilt
+      const useAffiliateCode = (refCode && refProduct === productId) ? refCode : null;
+      
+      // DUMMY: Simulierten Kauf ausführen
+      const response = await paymentsService.simulatePurchase(
+        parseInt(productId), 
+        useAffiliateCode
+      );
+      
+      if (response.success) {
+        setPurchaseSuccess(true);
+        setPurchaseData(response.data);
+        
+        // Affiliate-Code aus LocalStorage entfernen
+        localStorage.removeItem('monemee_ref');
+        localStorage.removeItem('monemee_ref_product');
+        
+        // Produkt-State aktualisieren (Sales +1)
+        setProduct(prev => prev ? { ...prev, sales: (prev.sales || 0) + 1 } : prev);
+      }
+      
+    } catch (err) {
+      console.error('Purchase error:', err);
+      alert(err.message || 'Kauf fehlgeschlagen. Bitte versuche es erneut.');
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   // Affiliate-Link generieren
@@ -184,7 +237,47 @@ function PublicProduct() {
     );
   }
 
-  const isOwnProduct = user?.id === product.user_id;
+  const isOwnProduct =  false; //user?.id === product.user_id;
+
+  // Success State nach Kauf
+  if (purchaseSuccess) {
+    return (
+      <div className={styles.successContainer}>
+        <div className={styles.successIcon}>
+          <Icon name="checkCircle" size={80} />
+        </div>
+        <h1 className={styles.successTitle}>Kauf erfolgreich! 🎉</h1>
+        <p className={styles.successText}>
+          Du hast <strong>{product.title}</strong> gekauft.
+        </p>
+        {purchaseData?.payment && (
+          <div className={styles.successDetails}>
+            <div className={styles.successDetailRow}>
+              <span>Betrag:</span>
+              <span>{formatPrice(purchaseData.payment.amount)}</span>
+            </div>
+            {purchaseData.payment.promoterCommission > 0 && (
+              <div className={styles.successDetailRow}>
+                <span>Affiliate-Bonus:</span>
+                <span>{formatPrice(purchaseData.payment.promoterCommission)}</span>
+              </div>
+            )}
+          </div>
+        )}
+        <p className={styles.successNote}>
+          (Dies ist eine Simulation - echte Zahlung kommt bald!)
+        </p>
+        <div className={styles.successActions}>
+          <Button variant="primary" onClick={() => navigate('/')}>
+            Zur Startseite
+          </Button>
+          <Button variant="secondary" onClick={() => setPurchaseSuccess(false)}>
+            Zurück zum Produkt
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.productPage}>
@@ -271,9 +364,12 @@ function PublicProduct() {
             size="large" 
             fullWidth 
             onClick={handleBuy}
-            icon={<Icon name="shoppingBag" size="sm" />}
+            disabled={purchasing || isOwnProduct}
+            icon={purchasing ? null : <Icon name="shoppingBag" size="sm" />}
           >
-            {product.price > 0 ? 'Jetzt kaufen' : 'Kostenlos herunterladen'}
+            {purchasing ? 'Wird verarbeitet...' : 
+             isOwnProduct ? 'Dein eigenes Produkt' :
+             product.price > 0 ? 'Jetzt kaufen' : 'Kostenlos herunterladen'}
           </Button>
 
           <div className={styles.trustBadges}>
