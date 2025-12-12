@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
 import { usersService } from '../../services';
@@ -16,8 +16,12 @@ function Settings() {
   const { user, updateProfile, logout, refreshUser } = useAuth();
   const fileInputRef = useRef(null);
   
-  // Active tab
-  const [activeTab, setActiveTab] = useState('profile');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs = ['profile', 'store', 'notifications', 'security'];
+    return validTabs.includes(tabParam) ? tabParam : 'profile';
+  });
   
   // Form states
   const [formData, setFormData] = useState({
