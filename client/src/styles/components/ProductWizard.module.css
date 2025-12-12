@@ -1,0 +1,674 @@
+/* ========================================
+   Product Wizard Styles
+   Mobile-first, modernes Design
+   ======================================== */
+
+/* ========================================
+   Progress Bar
+   ======================================== */
+
+   .progressBar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .progressStep {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+  
+  .progressDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-bg-tertiary);
+    border: 2px solid var(--color-border);
+    transition: all var(--transition-normal);
+  }
+  
+  .progressDot.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  }
+  
+  .progressDot.completed {
+    background: var(--color-success);
+    border-color: var(--color-success);
+  }
+  
+  .progressLine {
+    width: 40px;
+    height: 2px;
+    background: var(--color-border);
+    transition: all var(--transition-normal);
+  }
+  
+  .progressLine.active {
+    background: var(--color-primary);
+  }
+  
+  .progressLabel {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+    margin-left: var(--spacing-xs);
+    display: none;
+  }
+  
+  @media (min-width: 480px) {
+    .progressLabel {
+      display: block;
+    }
+    
+    .progressLine {
+      width: 60px;
+    }
+  }
+  
+  .progressLabel.active {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+  
+  /* ========================================
+     Step Intro (shared)
+     ======================================== */
+  
+  .stepIntro {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .stepTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--spacing-sm) 0;
+    line-height: 1.3;
+  }
+  
+  @media (min-width: 768px) {
+    .stepTitle {
+      font-size: 26px;
+    }
+  }
+  
+  .stepDescription {
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    margin: 0;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+  
+  .typeHeaderIcon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--spacing-md);
+    font-size: 28px;
+  }
+  
+  /* ========================================
+     Type Selector (Step 1)
+     ======================================== */
+  
+  .typeSelector {
+    padding: var(--spacing-lg);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .typeGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  @media (min-width: 640px) {
+    .typeGrid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  .typeCard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg) var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: center;
+  }
+  
+  .typeCard:hover:not(.typeCardDisabled) {
+    border-color: var(--type-color, var(--color-primary));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+  
+  .typeCard:active:not(.typeCardDisabled) {
+    transform: translateY(0);
+  }
+  
+  .typeCardSelected {
+    border-color: var(--type-color, var(--color-primary));
+    background: color-mix(in srgb, var(--type-color, var(--color-primary)) 5%, var(--color-bg-secondary));
+  }
+  
+  .typeCardDisabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .typeIcon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+    font-size: 24px;
+    transition: all var(--transition-fast);
+  }
+  
+  .typeCard:hover:not(.typeCardDisabled) .typeIcon,
+  .typeCardSelected .typeIcon {
+    background: color-mix(in srgb, var(--type-color, var(--color-primary)) 15%, transparent);
+  }
+  
+  .typeContent {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .typeLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  .typeDescription {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    line-height: 1.3;
+  }
+  
+  /* Badges */
+  .popularBadge,
+  .comingSoonBadge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .popularBadge {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #78350f;
+  }
+  
+  .comingSoonBadge {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-tertiary);
+  }
+  
+  /* Selection indicator */
+  .selectedIndicator {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    width: 24px;
+    height: 24px;
+    background: var(--type-color, var(--color-primary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: popIn 0.2s ease-out;
+  }
+  
+  .selectedIndicator svg {
+    width: 14px;
+    height: 14px;
+    color: white;
+  }
+  
+  @keyframes popIn {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  .typeHint {
+    text-align: center;
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+    margin: 0;
+    padding-top: var(--spacing-sm);
+  }
+  
+  /* ========================================
+     Templates Section (Step 2)
+     ======================================== */
+  
+  .templatesSection {
+    padding: var(--spacing-lg);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .templatesGrid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  /* Template Card */
+  .templateCard {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+  }
+  
+  .templateCard:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+  
+  .templateCard:active {
+    transform: translateY(0);
+  }
+  
+  .templatePreview {
+    height: 80px;
+    background: linear-gradient(
+      135deg, 
+      color-mix(in srgb, var(--template-color, var(--color-primary)) 20%, var(--color-bg-tertiary)) 0%,
+      color-mix(in srgb, var(--template-color, var(--color-primary)) 10%, var(--color-bg-tertiary)) 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .templateEmoji {
+    font-size: 36px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+  }
+  
+  .templateContent {
+    padding: var(--spacing-md);
+    flex: 1;
+  }
+  
+  .templateName {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  .templateTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--spacing-sm) 0;
+    line-height: 1.3;
+  }
+  
+  .templateMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .templatePrice {
+    font-weight: 600;
+    color: var(--color-success);
+  }
+  
+  .templateDot {
+    color: var(--color-border);
+  }
+  
+  .templateBadges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+  
+  .templateBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  
+  .templateAction {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-primary);
+    transition: all var(--transition-fast);
+  }
+  
+  .templateCard:hover .templateAction {
+    background: var(--color-primary);
+    color: white;
+  }
+  
+  /* Divider */
+  .templatesDivider {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin: var(--spacing-xl) 0;
+  }
+  
+  .templatesDivider::before,
+  .templatesDivider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+  
+  .templatesDivider span {
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+  }
+  
+  /* Start Blank Button */
+  .startBlankButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    width: 100%;
+    padding: var(--spacing-lg);
+    background: var(--color-bg-secondary);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+  }
+  
+  .startBlankButton:hover {
+    border-color: var(--color-primary);
+    border-style: solid;
+    background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-secondary));
+  }
+  
+  .startBlankIcon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+  }
+  
+  .startBlankButton:hover .startBlankIcon {
+    background: var(--color-primary);
+    color: white;
+  }
+  
+  .startBlankContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .startBlankTitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  .startBlankDescription {
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+  }
+  
+  .startBlankArrow {
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+  }
+  
+  .startBlankButton:hover .startBlankArrow {
+    color: var(--color-primary);
+    transform: translateX(4px);
+  }
+  
+  /* ========================================
+     Wizard Actions (Bottom Bar)
+     ======================================== */
+  
+  .wizardActions {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border-top: 1px solid var(--color-border);
+    z-index: 100;
+  }
+  
+  @media (min-width: 768px) {
+    .wizardActions {
+      position: sticky;
+      margin-top: var(--spacing-xl);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--color-border);
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+  
+  .wizardBackButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+  }
+  
+  .wizardBackButton:hover {
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+  }
+  
+  .wizardNextButton {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    height: 48px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+  
+  .wizardNextButton:hover:not(:disabled) {
+    background: var(--color-primary-dark);
+  }
+  
+  .wizardNextButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* ========================================
+     Animations
+     ======================================== */
+  
+  .fadeIn {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .slideInRight {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  .slideInLeft {
+    animation: slideInLeft 0.3s ease-out;
+  }
+  
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  /* ========================================
+     Responsive Adjustments
+     ======================================== */
+  
+  @media (min-width: 768px) {
+    .typeSelector,
+    .templatesSection {
+      padding: var(--spacing-xl);
+    }
+    
+    .typeGrid {
+      gap: var(--spacing-lg);
+    }
+    
+    .typeCard {
+      padding: var(--spacing-xl) var(--spacing-lg);
+    }
+    
+    .typeIcon {
+      width: 56px;
+      height: 56px;
+      font-size: 28px;
+    }
+    
+    .templateCard {
+      flex-direction: row;
+      align-items: stretch;
+    }
+    
+    .templatePreview {
+      width: 120px;
+      height: auto;
+      flex-shrink: 0;
+    }
+    
+    .templateContent {
+      padding: var(--spacing-lg);
+    }
+    
+    .templateAction {
+      width: 100px;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+      flex-shrink: 0;
+    }
+  }

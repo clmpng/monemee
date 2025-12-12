@@ -475,7 +475,7 @@ function PublicProduct() {
           <Button 
             variant="secondary" 
             fullWidth
-            onClick={() => navigate(`/@${product.creator_username}`)}
+            onClick={() => navigate(`/store/${product.creator_username}`)}
           >
             Store ansehen
             <Icon name="chevronRight" size="sm" />
