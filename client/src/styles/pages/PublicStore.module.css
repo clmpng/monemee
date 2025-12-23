@@ -1,10 +1,11 @@
 /* ========================================
    Public Store Page Styles
-   Mobile-first, buyer-focused design
+   Mobile-first, modern profile design
    ======================================== */
 
    .publicStore {
     min-height: 100vh;
+    min-height: 100dvh;
     background: var(--color-bg-primary);
   }
   
@@ -46,7 +47,10 @@
   }
   
   .logoIcon {
-    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
   }
   
   .logoText {
@@ -69,6 +73,7 @@
   .loginButton:hover {
     background: var(--color-primary-dark);
     color: white;
+    transform: translateY(-1px);
   }
   
   /* ========================================
@@ -139,42 +144,52 @@
   }
   
   /* ========================================
-     Hero Section
+     Profile Section
      ======================================== */
   
-  .hero {
+  .profileSection {
     position: relative;
-    padding: 48px 16px 40px;
-    text-align: center;
-    overflow: hidden;
+    padding-bottom: 32px;
   }
   
-  @media (min-width: 768px) {
-    .hero {
-      padding: 56px 24px 56px;
-    }
-  }
-  
-  .heroBackground {
+  .profileBg {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 140px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-    opacity: 0.08;
+    height: 180px;
+    background: var(--color-primary);
+    overflow: hidden;
   }
   
   @media (min-width: 768px) {
-    .heroBackground {
-      height: 180px;
+    .profileBg {
+      height: 220px;
     }
   }
   
-  .heroContent {
+  .profileBgWave {
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 90px;
+    background: var(--color-bg-primary);
+    border-radius: 100% 100% 0 0;
+  }
+  
+  .profileContent {
     position: relative;
     max-width: 500px;
     margin: 0 auto;
+    padding: 100px 20px 0;
+    text-align: center;
+  }
+  
+  @media (min-width: 768px) {
+    .profileContent {
+      padding: 140px 24px 0;
+    }
   }
   
   /* Avatar */
@@ -185,26 +200,27 @@
   }
   
   .avatar {
-    width: 96px;
-    height: 96px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #818cf8 100%);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
+    font-size: 40px;
     font-weight: 700;
-    border: 4px solid var(--color-bg-primary);
-    box-shadow: var(--shadow-lg);
+    border: 5px solid var(--color-bg-primary);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.25);
     overflow: hidden;
   }
   
   @media (min-width: 768px) {
     .avatar {
-      width: 112px;
-      height: 112px;
-      font-size: 36px;
+      width: 140px;
+      height: 140px;
+      font-size: 48px;
+      border-width: 6px;
     }
   }
   
@@ -216,10 +232,10 @@
   
   .levelBadge {
     position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 28px;
-    height: 28px;
+    bottom: 4px;
+    right: 4px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -227,12 +243,12 @@
     color: white;
     border-radius: 50%;
     border: 3px solid var(--color-bg-primary);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
   }
   
   /* Profile Info */
   .storeName {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 700;
     color: var(--color-text-primary);
     margin: 0 0 4px 0;
@@ -241,44 +257,138 @@
   
   @media (min-width: 768px) {
     .storeName {
-      font-size: 28px;
+      font-size: 32px;
     }
   }
   
   .storeHandle {
     font-size: 15px;
     color: var(--color-text-tertiary);
-    margin: 0 0 12px 0;
+    margin: 0 0 16px 0;
   }
   
   .storeBio {
     font-size: 15px;
     color: var(--color-text-secondary);
-    line-height: 1.5;
+    line-height: 1.6;
     margin: 0 0 20px 0;
     max-width: 400px;
     margin-left: auto;
     margin-right: auto;
   }
   
-  /* Trust Badges */
-  .trustBadges {
+  /* Action Buttons */
+  .profileActions {
+    margin-bottom: 24px;
+  }
+  
+  .contactButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+  }
+  
+  .contactButton:hover {
+    background: var(--color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+  }
+  
+  .contactButton:active {
+    transform: translateY(0);
+  }
+  
+  /* Trust Indicators */
+  .trustIndicators {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 16px;
-    flex-wrap: wrap;
+    padding: 20px;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
   }
   
-  .trustBadge {
+  @media (min-width: 768px) {
+    .trustIndicators {
+      gap: 24px;
+      padding: 24px 32px;
+    }
+  }
+  
+  .trustItem {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--color-text-secondary);
+    gap: 10px;
   }
   
-  .trustBadge svg {
+  .trustIcon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(16, 185, 129, 0.1);
     color: var(--color-success);
+    border-radius: var(--radius-md);
+  }
+  
+  .trustText {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+  
+  .trustLabel {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .trustValue {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  .trustDivider {
+    width: 1px;
+    height: 32px;
+    background: var(--color-border);
+  }
+  
+  @media (max-width: 480px) {
+    .trustIndicators {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    
+    .trustDivider {
+      display: none;
+    }
+    
+    .trustItem {
+      flex: 1;
+      min-width: 100px;
+      justify-content: center;
+    }
+    
+    .trustIcon {
+      width: 36px;
+      height: 36px;
+    }
   }
   
   /* ========================================
@@ -316,18 +426,17 @@
     margin: 0 0 20px 0;
   }
   
+  .sectionTitle svg {
+    color: var(--color-text-tertiary);
+  }
+  
   .productCount {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 24px;
-    height: 24px;
-    padding: 0 8px;
-    background: var(--color-bg-tertiary);
-    color: var(--color-text-secondary);
-    border-radius: var(--radius-full);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
+    color: var(--color-text-tertiary);
+    background: var(--color-bg-tertiary);
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
   }
   
   /* Products Grid */
@@ -337,7 +446,7 @@
     gap: 16px;
   }
   
-  @media (min-width: 640px) {
+  @media (min-width: 768px) {
     .productsGrid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -345,46 +454,27 @@
     }
   }
   
-  /* Empty State */
-  .emptyState {
-    text-align: center;
-    padding: 48px 24px;
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl);
-    color: var(--color-text-tertiary);
-  }
-  
-  .emptyState p {
-    margin: 12px 0 0 0;
-    font-size: 14px;
-  }
-  
-  /* ========================================
-     Product Card
-     ======================================== */
-  
+  /* Product Card */
   .productCard {
     display: flex;
     flex-direction: column;
     background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
     overflow: hidden;
     text-decoration: none;
-    transition: all var(--transition-normal);
+    transition: all var(--transition-fast);
   }
   
   .productCard:hover {
     border-color: var(--color-primary);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
   }
   
   /* Thumbnail */
   .productThumbnail {
     position: relative;
-    width: 100%;
     aspect-ratio: 16 / 10;
     background: var(--color-bg-tertiary);
     overflow: hidden;
@@ -394,14 +484,14 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform var(--transition-slow);
+    transition: transform var(--transition-normal);
   }
   
   .productCard:hover .productThumbnail img {
-    transform: scale(1.03);
+    transform: scale(1.05);
   }
   
-  .thumbnailPlaceholder {
+  .productPlaceholder {
     width: 100%;
     height: 100%;
     display: flex;
@@ -446,7 +536,6 @@
     color: var(--color-text-primary);
     margin: 0;
     line-height: 1.3;
-    /* Limit to 2 lines */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -458,7 +547,6 @@
     color: var(--color-text-secondary);
     line-height: 1.5;
     margin: 0;
-    /* Limit to 2 lines */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -498,90 +586,247 @@
     gap: 8px;
   }
   
-  /* ========================================
-     CTA Section
-     ======================================== */
-  
-  .ctaSection {
-    padding: 0 16px 32px;
-  }
-  
-  @media (min-width: 768px) {
-    .ctaSection {
-      padding: 0 24px 48px;
-    }
-  }
-  
-  .ctaCard {
+  /* Empty State */
+  .emptyProducts {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    padding: 24px;
+    padding: 48px 24px;
     background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
-    text-align: center;
+    border: 1px dashed var(--color-border);
+    color: var(--color-text-tertiary);
   }
   
-  @media (min-width: 640px) {
-    .ctaCard {
-      flex-direction: row;
-      text-align: left;
-      gap: 16px;
-      padding: 20px 24px;
+  .emptyProducts p {
+    font-size: 14px;
+    margin: 0;
+  }
+  
+  /* ========================================
+     Contact Modal
+     ======================================== */
+  
+  .modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+  }
+  
+  @media (min-width: 768px) {
+    .modalOverlay {
+      align-items: center;
     }
   }
   
-  .ctaIcon {
-    width: 48px;
-    height: 48px;
+  .modal {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: 24px;
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  @media (min-width: 768px) {
+    .modal {
+      border-radius: var(--radius-xl);
+      animation: fadeIn 0.2s ease-out;
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  
+  .modalClose {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(30, 58, 138, 0.08);
-    color: var(--color-primary);
-    border-radius: var(--radius-lg);
-    flex-shrink: 0;
+    background: var(--color-bg-tertiary);
+    border: none;
+    border-radius: var(--radius-full);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
   }
   
-  .ctaContent {
-    flex: 1;
+  .modalClose:hover {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
   }
   
-  .ctaContent h3 {
-    font-size: 15px;
+  .modalHeader {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  
+  .modalAvatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #818cf8 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 auto 12px;
+    overflow: hidden;
+  }
+  
+  .modalAvatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .modalHeader h3 {
+    font-size: 18px;
     font-weight: 600;
     color: var(--color-text-primary);
     margin: 0 0 4px 0;
   }
   
-  .ctaContent p {
-    font-size: 13px;
-    color: var(--color-text-secondary);
+  .modalHeader p {
+    font-size: 14px;
+    color: var(--color-text-tertiary);
     margin: 0;
   }
   
-  .ctaButton {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 18px;
-    background: var(--color-bg-tertiary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--color-text-primary);
-    text-decoration: none;
-    transition: all var(--transition-fast);
-    white-space: nowrap;
+  /* Contact Form */
+  .contactForm {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
   
-  .ctaButton:hover {
-    background: var(--color-primary);
+  .formField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .formField label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+  
+  .formField input,
+  .formField textarea {
+    padding: 12px 14px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    color: var(--color-text-primary);
+    transition: all var(--transition-fast);
+    resize: none;
+  }
+  
+  .formField input:focus,
+  .formField textarea:focus {
+    outline: none;
     border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+  
+  .formField input::placeholder,
+  .formField textarea::placeholder {
+    color: var(--color-text-tertiary);
+  }
+  
+  .formError {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--color-danger);
+  }
+  
+  .sendButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 24px;
+    background: var(--color-primary);
     color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+  
+  .sendButton:hover:not(:disabled) {
+    background: var(--color-primary-dark);
+  }
+  
+  .sendButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+  
+  /* Success Message */
+  .successMessage {
+    text-align: center;
+    padding: 24px 0;
+  }
+  
+  .successIcon {
+    color: var(--color-success);
+    margin-bottom: 16px;
+  }
+  
+  .successMessage h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 8px 0;
+  }
+  
+  .successMessage p {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin: 0;
   }
   
   /* ========================================
@@ -589,25 +834,25 @@
      ======================================== */
   
   .footer {
-    padding: 24px 16px 32px;
+    padding: 24px 16px;
     text-align: center;
     border-top: 1px solid var(--color-border);
+    margin-top: 32px;
   }
   
-  .footerBrand {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    font-size: 14px;
+  .footer p {
+    font-size: 13px;
     color: var(--color-text-tertiary);
-    transition: color var(--transition-fast);
+    margin: 0;
   }
   
-  .footerBrand:hover {
-    color: var(--color-text-secondary);
+  .footerLink {
+    color: var(--color-primary);
+    font-weight: 500;
+    text-decoration: none;
   }
   
-  .footerLogo {
-    font-size: 18px;
+  .footerLink:hover {
+    text-decoration: underline;
   }
+  

@@ -38,6 +38,7 @@ import {
   Award,
   Trophy,
   Zap,
+  Sparkles,
   
   // Aktionen
   Plus,
@@ -51,6 +52,9 @@ import {
   ExternalLink,
   LogOut,
   LogIn,
+  Send,
+  Reply,
+  Archive,
   
   // Status & Feedback
   Check,
@@ -70,6 +74,7 @@ import {
   Music,
   Image,
   FolderOpen,
+  Inbox,
   
   // Social & Users
   Users,
@@ -77,6 +82,10 @@ import {
   UserPlus,
   Heart,
   ThumbsUp,
+  
+  // Security
+  Shield,
+  ShieldCheck,
   
   // Misc
   Calendar,
@@ -150,6 +159,7 @@ const iconMap = {
   award: Award,
   trophy: Trophy,
   zap: Zap,
+  sparkles: Sparkles,
   
   // Aktionen
   plus: Plus,
@@ -163,6 +173,9 @@ const iconMap = {
   externalLink: ExternalLink,
   logout: LogOut,
   login: LogIn,
+  send: Send,
+  reply: Reply,
+  archive: Archive,
   
   // Status & Feedback
   check: Check,
@@ -182,6 +195,7 @@ const iconMap = {
   music: Music,
   image: Image,
   folderOpen: FolderOpen,
+  inbox: Inbox,
   
   // Social & Users
   users: Users,
@@ -189,6 +203,10 @@ const iconMap = {
   userPlus: UserPlus,
   heart: Heart,
   thumbsUp: ThumbsUp,
+  
+  // Security
+  shield: Shield,
+  shieldCheck: ShieldCheck,
   
   // Misc
   calendar: Calendar,
@@ -198,6 +216,7 @@ const iconMap = {
   refresh: RefreshCw,
   loader: Loader2,
   partyPopper: PartyPopper,
+  party: PartyPopper,
   searchX: SearchX,
   shoppingBag: ShoppingBag,
   camera: Camera,

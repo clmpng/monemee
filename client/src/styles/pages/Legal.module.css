@@ -1,0 +1,273 @@
+/* ========================================
+   Legal Pages Styles
+   Impressum, Datenschutz, AGB, Widerruf
+   ======================================== */
+
+   .legalPage {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--color-bg-primary);
+  }
+  
+  /* Header */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--color-bg-primary);
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .backButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--color-bg-secondary);
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .backButton:hover {
+    background: var(--color-bg-tertiary);
+  }
+  
+  .headerTitle {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  /* Content */
+  .content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: var(--spacing-xl) var(--spacing-lg);
+    padding-bottom: calc(var(--spacing-xl) * 3);
+  }
+  
+  @media (min-width: 768px) {
+    .content {
+      padding: var(--spacing-2xl) var(--spacing-xl);
+    }
+  }
+  
+  /* Page Title */
+  .pageTitle {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  @media (min-width: 768px) {
+    .pageTitle {
+      font-size: var(--font-size-3xl);
+    }
+  }
+  
+  .lastUpdated {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  /* Sections */
+  .section {
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .sectionTitle {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--color-primary);
+    display: inline-block;
+  }
+  
+  @media (min-width: 768px) {
+    .sectionTitle {
+      font-size: var(--font-size-xl);
+    }
+  }
+  
+  .subsectionTitle {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-top: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  /* Text Content */
+  .text {
+    font-size: var(--font-size-md);
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .text:last-child {
+    margin-bottom: 0;
+  }
+  
+  .text strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+  
+  /* Links */
+  .link {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  
+  .link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
+  
+  /* Lists */
+  .list {
+    margin: var(--spacing-md) 0;
+    padding-left: var(--spacing-lg);
+  }
+  
+  .list li {
+    font-size: var(--font-size-md);
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .list li::marker {
+    color: var(--color-primary);
+  }
+  
+  /* Info Box */
+  .infoBox {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+  }
+  
+  .infoBox p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+  
+  .infoBox p + p {
+    margin-top: var(--spacing-sm);
+  }
+  
+  .infoBox strong {
+    color: var(--color-text-primary);
+  }
+  
+  /* Contact Box */
+  .contactBox {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+  }
+  
+  .contactBox p {
+    margin: 0;
+    font-size: var(--font-size-md);
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+  }
+  
+  /* Table */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--spacing-lg) 0;
+    font-size: var(--font-size-sm);
+  }
+  
+  .table th,
+  .table td {
+    text-align: left;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .table th {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    background: var(--color-bg-secondary);
+  }
+  
+  .table td {
+    color: var(--color-text-secondary);
+  }
+  
+  /* Widerrufsformular */
+  .widerrufForm {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+    font-family: monospace;
+    font-size: var(--font-size-sm);
+    line-height: 1.8;
+    color: var(--color-text-secondary);
+    white-space: pre-wrap;
+  }
+  
+  /* Footer Navigation */
+  .footerNav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-2xl);
+    padding-top: var(--spacing-xl);
+    border-top: 1px solid var(--color-border);
+  }
+  
+  .footerLink {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  
+  .footerLink:hover {
+    color: var(--color-primary);
+  }
+  
+  /* Highlight Box for important notices */
+  .highlightBox {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-left: 4px solid var(--color-danger);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+  }
+  
+  .highlightBox p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    font-weight: 500;
+  }

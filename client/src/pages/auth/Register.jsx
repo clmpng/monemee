@@ -7,6 +7,7 @@ import styles from '../../styles/pages/Auth.module.css';
 /**
  * Register Page
  * Handles email/password and Google registration
+ * Includes mandatory AGB/Datenschutz checkbox (DSGVO compliant)
  */
 function Register() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -47,6 +49,11 @@ function Register() {
       setLocalError('Passwörter stimmen nicht überein');
       return false;
     }
+
+    if (!acceptedTerms) {
+      setLocalError('Bitte akzeptiere die AGB und Datenschutzerklärung');
+      return false;
+    }
     
     return true;
   };
@@ -63,12 +70,11 @@ function Register() {
     setLoading(true);
     
     try {
-      const result = await register(email, password, name.trim());
+      const result = await register(email, password, name);
       
       if (result.success) {
-        // Redirect to home - user is now logged in
         setTimeout(() => {
-          navigate('/', { replace: true });
+          navigate('/dashboard', { replace: true });
         }, 100);
       }
     } finally {
@@ -78,8 +84,12 @@ function Register() {
 
   // Handle Google registration
   const handleGoogleRegister = async () => {
+    if (!acceptedTerms) {
+      setLocalError('Bitte akzeptiere die AGB und Datenschutzerklärung');
+      return;
+    }
+
     setGoogleLoading(true);
-    setLocalError(null);
     clearError();
     
     try {
@@ -87,7 +97,7 @@ function Register() {
       
       if (result.success) {
         setTimeout(() => {
-          navigate('/', { replace: true });
+          navigate('/dashboard', { replace: true });
         }, 100);
       }
     } finally {
@@ -98,24 +108,6 @@ function Register() {
   const isLoading = loading || googleLoading;
   const displayError = localError || error;
 
-  // Password strength indicator
-  const getPasswordStrength = () => {
-    if (!password) return null;
-    
-    let strength = 0;
-    if (password.length >= 6) strength++;
-    if (password.length >= 8) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-    
-    if (strength <= 2) return { label: 'Schwach', color: 'var(--color-danger)', width: '33%' };
-    if (strength <= 3) return { label: 'Mittel', color: 'var(--color-warning)', width: '66%' };
-    return { label: 'Stark', color: 'var(--color-success)', width: '100%' };
-  };
-
-  const passwordStrength = getPasswordStrength();
-
   return (
     <div className={styles.authPage}>
       <div className={styles.authContainer}>
@@ -124,7 +116,7 @@ function Register() {
           <div className={styles.logoWrapper}>
             <Icon name="dollarCircle" size={48} className={styles.logoIcon} />
           </div>
-          <h1 className={styles.title}>Konto erstellen</h1>
+          <h1 className={styles.title}>Account erstellen</h1>
           <p className={styles.subtitle}>Starte in wenigen Minuten</p>
         </div>
 
@@ -192,30 +184,9 @@ function Register() {
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
               >
-                <Icon name={showPassword ? 'eyeOff' : 'eye'} size={18} />
+                <Icon name={showPassword ? 'eyeOff' : 'eye'} size={20} />
               </button>
             </div>
-            
-            {/* Password Strength Indicator */}
-            {password && passwordStrength && (
-              <div className={styles.passwordStrength}>
-                <div className={styles.strengthBar}>
-                  <div 
-                    className={styles.strengthFill}
-                    style={{ 
-                      width: passwordStrength.width,
-                      backgroundColor: passwordStrength.color
-                    }}
-                  />
-                </div>
-                <span 
-                  className={styles.strengthLabel}
-                  style={{ color: passwordStrength.color }}
-                >
-                  {passwordStrength.label}
-                </span>
-              </div>
-            )}
           </div>
 
           <div className={styles.inputGroup}>
@@ -232,18 +203,40 @@ function Register() {
                 autoComplete="new-password"
                 required
               />
-              {confirmPassword && password === confirmPassword && (
-                <span className={styles.inputSuccess}>
-                  <Icon name="check" size={18} />
-                </span>
-              )}
             </div>
+          </div>
+
+          {/* AGB & Datenschutz Checkbox - PFLICHT! */}
+          <div className={styles.checkboxGroup}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className={styles.checkbox}
+                disabled={isLoading}
+              />
+              <span className={styles.checkboxCustom}>
+                {acceptedTerms && <Icon name="check" size={14} />}
+              </span>
+              <span className={styles.checkboxText}>
+                Ich akzeptiere die{' '}
+                <Link to="/agb" className={styles.termsLink} target="_blank">
+                  AGB
+                </Link>{' '}
+                und habe die{' '}
+                <Link to="/datenschutz" className={styles.termsLink} target="_blank">
+                  Datenschutzerklärung
+                </Link>{' '}
+                gelesen.
+              </span>
+            </label>
           </div>
 
           <button
             type="submit"
-            className={styles.primaryButton}
-            disabled={isLoading || !name || !email || !password || !confirmPassword}
+            className={styles.submitButton}
+            disabled={isLoading || !acceptedTerms}
           >
             {loading ? (
               <span className={styles.buttonLoading}>
@@ -255,13 +248,6 @@ function Register() {
             )}
           </button>
         </form>
-
-        {/* Terms */}
-        <p className={styles.terms}>
-          Mit der Registrierung akzeptierst du unsere{' '}
-          <Link to="/terms" className={styles.termsLink}>AGB</Link> und{' '}
-          <Link to="/privacy" className={styles.termsLink}>Datenschutzerklärung</Link>.
-        </p>
 
         {/* Divider */}
         <div className={styles.divider}>
@@ -292,6 +278,13 @@ function Register() {
             </>
           )}
         </button>
+
+        {/* Hinweis unter Google Button */}
+        {!acceptedTerms && (
+          <p className={styles.termsNote}>
+            Bitte akzeptiere zuerst die AGB und Datenschutzerklärung
+          </p>
+        )}
 
         {/* Login Link */}
         <p className={styles.switchAuth}>

@@ -7,6 +7,7 @@ const earningsRoutes = require('./earnings.routes');
 const promotionRoutes = require('./promotion.routes');
 const paymentsRoutes = require('./payments.routes');
 const usersRoutes = require('./users.routes');
+const messagesRoutes = require('./messages.routes');
 
 // ============================================
 // API Routes
@@ -26,5 +27,8 @@ router.use('/payments', paymentsRoutes);
 
 // Users
 router.use('/users', usersRoutes);
+
+// Messages
+router.use('/messages', messagesRoutes);
 
 module.exports = router;

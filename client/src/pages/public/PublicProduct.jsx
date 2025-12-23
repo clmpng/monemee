@@ -31,6 +31,9 @@ function PublicProduct() {
   const [purchasing, setPurchasing] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [purchaseData, setPurchaseData] = useState(null);
+  
+  // Widerrufs-Checkbox State (§ 356 Abs. 5 BGB)
+  const [acceptedWaiver, setAcceptedWaiver] = useState(false);
 
   // Affiliate-Code speichern & tracken
   useEffect(() => {
@@ -95,6 +98,12 @@ function PublicProduct() {
   const handleBuy = async () => {
     if (!isAuthenticated) {
       navigate('/login?redirect=' + encodeURIComponent(`/p/${productId}`));
+      return;
+    }
+
+    // Prüfe Widerrufs-Checkbox für kostenpflichtige Produkte
+    if (product.price > 0 && !acceptedWaiver) {
+      alert('Bitte bestätige, dass du auf dein Widerrufsrecht verzichtest, um den sofortigen Zugang zu erhalten.');
       return;
     }
     
@@ -237,7 +246,7 @@ function PublicProduct() {
     );
   }
 
-  const isOwnProduct =  false; //user?.id === product.user_id;
+  const isOwnProduct = false; //user?.id === product.user_id;
 
   // Success State nach Kauf
   if (purchaseSuccess) {
@@ -358,13 +367,38 @@ function PublicProduct() {
               <span className={styles.priceNote}>Einmalzahlung</span>
             )}
           </div>
+
+          {/* Widerrufs-Checkbox für kostenpflichtige digitale Produkte */}
+          {product.price > 0 && !isOwnProduct && (
+            <div className={styles.waiverCheckbox}>
+              <label className={styles.waiverLabel}>
+                <input
+                  type="checkbox"
+                  checked={acceptedWaiver}
+                  onChange={(e) => setAcceptedWaiver(e.target.checked)}
+                  className={styles.waiverInput}
+                />
+                <span className={styles.waiverCustomCheckbox}>
+                  {acceptedWaiver && <Icon name="check" size={12} />}
+                </span>
+                <span className={styles.waiverText}>
+                  Ich stimme zu, dass der Zugang zum digitalen Inhalt sofort nach Kauf bereitgestellt wird, 
+                  und mir ist bekannt, dass ich dadurch mein{' '}
+                  <Link to="/widerruf" target="_blank" className={styles.waiverLink}>
+                    Widerrufsrecht
+                  </Link>{' '}
+                  verliere.
+                </span>
+              </label>
+            </div>
+          )}
           
           <Button 
             variant="primary" 
             size="large" 
             fullWidth 
             onClick={handleBuy}
-            disabled={purchasing || isOwnProduct}
+            disabled={purchasing || isOwnProduct || (product.price > 0 && !acceptedWaiver)}
             icon={purchasing ? null : <Icon name="shoppingBag" size="sm" />}
           >
             {purchasing ? 'Wird verarbeitet...' : 
@@ -558,6 +592,17 @@ function PublicProduct() {
             )}
           </Card>
         )}
+
+        {/* Legal Footer */}
+        <div className={styles.legalFooter}>
+          <Link to="/agb">AGB</Link>
+          <span>•</span>
+          <Link to="/datenschutz">Datenschutz</Link>
+          <span>•</span>
+          <Link to="/widerruf">Widerrufsrecht</Link>
+          <span>•</span>
+          <Link to="/impressum">Impressum</Link>
+        </div>
       </div>
     </div>
   );

@@ -24,6 +24,9 @@ import Settings from '../pages/settings/Settings';
 import { PublicStore, PublicProduct } from '../pages/public';
 import LandingPage from '../pages/public/LandingPage';
 
+// Legal Pages
+import { Impressum, Datenschutz, AGB, Widerruf } from '../pages/legal';
+
 /**
  * Protected Route Wrapper
  * Redirects to login if not authenticated
@@ -81,6 +84,26 @@ function AppRoutes() {
       
       {/* Legacy: also support @username format */}
       <Route path="/@:username" element={<PublicStore />} />
+
+      {/* ================================
+          LEGAL PAGES (§ 5 TMG, DSGVO)
+          ================================ */}
+      
+      {/* Impressum - Pflicht nach § 5 TMG */}
+      <Route path="/impressum" element={<Impressum />} />
+      
+      {/* Datenschutzerklärung - Pflicht nach DSGVO */}
+      <Route path="/datenschutz" element={<Datenschutz />} />
+      
+      {/* AGB */}
+      <Route path="/agb" element={<AGB />} />
+      
+      {/* Widerrufsbelehrung */}
+      <Route path="/widerruf" element={<Widerruf />} />
+      
+      {/* Legacy routes for consistent linking */}
+      <Route path="/privacy" element={<Navigate to="/datenschutz" replace />} />
+      <Route path="/terms" element={<Navigate to="/agb" replace />} />
 
       {/* ================================
           AUTH ROUTES

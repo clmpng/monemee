@@ -8,7 +8,7 @@ import styles from '../../styles/pages/Store.module.css';
 
 /**
  * MyStore Page - Creator's main store view
- * Redesigned with clean, minimal UI
+ * Redesigned with consistent page-header and compact profile
  */
 function MyStore() {
   const navigate = useNavigate();
@@ -96,101 +96,94 @@ function MyStore() {
 
   return (
     <div className={`page ${styles.storePage}`}>
-      {/* Hero Card - Clean Design */}
-      <div className={styles.heroCard}>
-        <div className={styles.heroContent}>
-          {/* Avatar */}
-          <div className={styles.avatarWrapper}>
-            <div className={styles.avatar}>
-              {user?.avatar ? (
-                <img src={user.avatar} alt={user?.name} />
-              ) : (
-                <span>{getInitials(user?.name)}</span>
-              )}
-            </div>
-            {user?.level > 1 && (
-              <div className={styles.levelBadge}>
-                <Icon name="star" size="xs" />
-                <span>{user.level}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Info */}
-          <div className={styles.heroInfo}>
-            <h1 className={styles.userName}>{user?.name || 'Mein Store'}</h1>
-            <p className={styles.userHandle}>@{user?.username || 'username'}</p>
-            
-            {/* Store Link - dezent inline */}
-            {storeUrl && (
-              <div className={styles.storeLinkInline}>
-                <Icon name="link" size={14} />
-                <span>{storeUrl}</span>
-                <button 
-                  className={styles.copyButtonSmall}
-                  onClick={handleCopyLink}
-                  title="Link kopieren"
-                >
-                  <Icon name={copied ? 'check' : 'copy'} size={14} />
-                </button>
-                {copied && <span className={styles.copiedHint}>Kopiert!</span>}
-              </div>
-            )}
-            
-            {user?.bio && <p className={styles.userBio}>{user.bio}</p>}
-            
-            {/* Actions */}
-            <div className={styles.heroActions}>
-              <Link to="/settings?tab=store" className={styles.actionButton}>
-                <Icon name="edit" size="sm" />
-                <span>Store bearbeiten</span>
-              </Link>
-              {user?.username && (
-                <a 
-                  href={`/store/${user.username}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`${styles.actionButton} ${styles.actionButtonSecondary}`}
-                >
-                  <Icon name="externalLink" size="sm" />
-                  <span>Vorschau</span>
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Page Header - Consistent with other pages */}
+      <div className="page-header">
+        <h1 className="page-title">My Store</h1>
+        <p className="page-subtitle">Verwalte deine Produkte und deinen Store</p>
       </div>
 
-      {/* Quick Stats */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.statIconSuccess}`}>
-            <Icon name="wallet" size="md" />
+      {/* Profile Card with integrated Stats */}
+      <div className={styles.profileCard}>
+        {/* Top Section: Avatar + Info */}
+        <div className={styles.profileTop}>
+          <div className={styles.profileAvatar}>
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user?.name} />
+            ) : (
+              <span>{getInitials(user?.name)}</span>
+            )}
+            {user?.level > 1 && (
+              <div className={styles.profileLevelBadge}>
+                <Icon name="star" size={10} />
+              </div>
+            )}
           </div>
-          <div className={styles.statContent}>
-            <span className={styles.statValue}>{formatCurrency(stats.totalRevenue)}</span>
-            <span className={styles.statLabel}>Einnahmen</span>
+
+          <div className={styles.profileInfo}>
+            <h2 className={styles.profileName}>{user?.name || 'Mein Store'}</h2>
+            <p className={styles.profileHandle}>@{user?.username || 'username'}</p>
+            
+            {/* Store Link - Subtle inline */}
+            {storeUrl && (
+              <button 
+                className={styles.storeLinkSubtle}
+                onClick={handleCopyLink}
+                title="Link kopieren"
+              >
+                <Icon name="link" size={12} />
+                <span>{storeUrl}</span>
+                {copied ? (
+                  <span className={styles.copiedBadge}>Kopiert!</span>
+                ) : (
+                  <Icon name="copy" size={12} className={styles.copyIcon} />
+                )}
+              </button>
+            )}
           </div>
         </div>
-        
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.statIconPrimary}`}>
-            <Icon name="eye" size="md" />
+
+        {/* Stats Row - Integrated */}
+        <div className={styles.profileStats}>
+          <div className={styles.profileStatItem}>
+            <span className={styles.profileStatValue}>{formatCurrency(stats.totalRevenue)}</span>
+            <span className={styles.profileStatLabel}>Umsatz</span>
           </div>
-          <div className={styles.statContent}>
-            <span className={styles.statValue}>{stats.totalViews || 0}</span>
-            <span className={styles.statLabel}>Views</span>
+          <div className={styles.profileStatDivider} />
+          <div className={styles.profileStatItem}>
+            <span className={styles.profileStatValue}>{stats.totalViews || 0}</span>
+            <span className={styles.profileStatLabel}>Views</span>
+          </div>
+          <div className={styles.profileStatDivider} />
+          <div className={styles.profileStatItem}>
+            <span className={styles.profileStatValue}>{stats.totalSales || 0}</span>
+            <span className={styles.profileStatLabel}>Verkäufe</span>
           </div>
         </div>
-        
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.statIconWarning}`}>
-            <Icon name="shoppingBag" size="md" />
+
+        {/* Bottom: Actions + More Link */}
+        <div className={styles.profileBottom}>
+          <div className={styles.profileActions}>
+            <Link to="/settings?tab=store" className={styles.profileActionBtn}>
+              <Icon name="edit" size={16} />
+              <span>Store bearbeiten</span>
+            </Link>
+            {user?.username && (
+              <a 
+                href={`/store/${user.username}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.profileActionBtn}
+              >
+                <Icon name="externalLink" size={16} />
+                <span>Vorschau</span>
+              </a>
+            )}
           </div>
-          <div className={styles.statContent}>
-            <span className={styles.statValue}>{stats.totalSales || 0}</span>
-            <span className={styles.statLabel}>Verkäufe</span>
-          </div>
+          
+          <Link to="/earnings" className={styles.statsMoreLink}>
+            Statistiken
+            <Icon name="chevronRight" size={16} />
+          </Link>
         </div>
       </div>
 

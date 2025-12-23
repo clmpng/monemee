@@ -826,4 +826,111 @@
   }
 }
 
+/* ========================================
+   PublicProduct - Additional Styles
+   Für Widerrufs-Checkbox und Legal Footer
+   ======================================== */
+
+/* Diese Styles müssen am Ende der PublicProduct.module.css eingefügt werden */
+
+/* Widerrufs-Checkbox (§ 356 Abs. 5 BGB) */
+.waiverCheckbox {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.waiverLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.waiverInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.waiverCustomCheckbox {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-top: 2px;
+}
+
+.waiverCustomCheckbox svg {
+  color: white;
+}
+
+.waiverInput:checked + .waiverCustomCheckbox {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.waiverInput:focus + .waiverCustomCheckbox {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.waiverLabel:hover .waiverCustomCheckbox {
+  border-color: var(--color-primary);
+}
+
+.waiverText {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.waiverLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.waiverLink:hover {
+  text-decoration: underline;
+}
+
+/* Legal Footer */
+.legalFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.legalFooter a {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.legalFooter a:hover {
+  color: var(--color-primary);
+}
+
+.legalFooter span {
+  color: var(--color-border);
+  font-size: var(--font-size-xs);
+}
+
+
 
