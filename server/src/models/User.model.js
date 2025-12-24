@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { getPlatformFee: getLevelFee } = require('../config/levels.config');
 
 /**
  * User Model
@@ -13,6 +14,8 @@ const UserModel = {
       SELECT 
         id, firebase_uid, email, username, name,
         bio, avatar_url, role, level, total_earnings,
+        available_balance, pending_balance,
+        payout_iban, payout_account_holder,
         stripe_account_id, created_at, updated_at
       FROM users 
       WHERE id = $1
@@ -102,7 +105,8 @@ const UserModel = {
   async update(id, data) {
     const allowedFields = [
       'username', 'name', 'bio', 'avatar_url', 
-      'role', 'stripe_account_id'
+      'role', 'stripe_account_id',
+      'payout_iban', 'payout_account_holder'
     ];
 
     const updates = [];
@@ -135,12 +139,14 @@ const UserModel = {
 
   /**
    * Update user earnings and check for level up
+   * WICHTIG: Diese Funktion aktualisiert auch available_balance!
    */
   async updateEarnings(id, amount) {
     const query = `
       UPDATE users 
       SET 
         total_earnings = total_earnings + $1,
+        available_balance = available_balance + $1,
         level = CASE
           WHEN total_earnings + $1 >= 5000 THEN 5
           WHEN total_earnings + $1 >= 2000 THEN 4
@@ -150,7 +156,7 @@ const UserModel = {
         END,
         updated_at = NOW()
       WHERE id = $2
-      RETURNING id, level, total_earnings
+      RETURNING id, level, total_earnings, available_balance
     `;
     
     const result = await db.query(query, [amount, id]);
@@ -158,17 +164,82 @@ const UserModel = {
   },
 
   /**
+   * Update user balance (for payouts - kann negativ sein)
+   */
+  async updateBalance(id, amount) {
+    const query = `
+      UPDATE users 
+      SET 
+        available_balance = available_balance + $1,
+        updated_at = NOW()
+      WHERE id = $2
+      RETURNING id, available_balance, pending_balance
+    `;
+    
+    const result = await db.query(query, [amount, id]);
+    return result.rows[0];
+  },
+
+  /**
+   * Move amount from available to pending (für Clearing)
+   */
+  async moveToPending(id, amount) {
+    const query = `
+      UPDATE users 
+      SET 
+        available_balance = available_balance - $1,
+        pending_balance = pending_balance + $1,
+        updated_at = NOW()
+      WHERE id = $2 AND available_balance >= $1
+      RETURNING id, available_balance, pending_balance
+    `;
+    
+    const result = await db.query(query, [amount, id]);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Release pending to available (nach Clearing)
+   */
+  async releasePending(id, amount) {
+    const query = `
+      UPDATE users 
+      SET 
+        pending_balance = pending_balance - $1,
+        available_balance = available_balance + $1,
+        updated_at = NOW()
+      WHERE id = $2 AND pending_balance >= $1
+      RETURNING id, available_balance, pending_balance
+    `;
+    
+    const result = await db.query(query, [amount, id]);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Update payout details (IBAN, Kontoinhaber)
+   */
+  async updatePayoutDetails(id, { iban, accountHolder }) {
+    const query = `
+      UPDATE users 
+      SET 
+        payout_iban = $1,
+        payout_account_holder = $2,
+        updated_at = NOW()
+      WHERE id = $3
+      RETURNING id, payout_iban, payout_account_holder
+    `;
+    
+    const result = await db.query(query, [iban, accountHolder, id]);
+    return result.rows[0];
+  },
+
+  /**
    * Get platform fee based on user level
+   * Nutzt zentrale Config
    */
   getPlatformFee(level) {
-    const fees = {
-      1: 15,  // 15%
-      2: 12,  // 12%
-      3: 10,  // 10%
-      4: 8,   // 8%
-      5: 5    // 5%
-    };
-    return fees[level] || 15;
+    return getLevelFee(level);
   },
 
   /**

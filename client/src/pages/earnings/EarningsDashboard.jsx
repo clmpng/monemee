@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from '../../components/common';
-import { earningsService } from '../../services';
+import { LevelInfoModal, PayoutModal, PayoutHistory } from '../../components/earnings';
+import { earningsService, payoutsService } from '../../services';
+import { PAYOUT_CONFIG } from '../../config/platform.config';
 import styles from '../../styles/pages/Earnings.module.css';
 
 /**
  * Earnings Dashboard Page
- * Shows real earnings data from the API
+ * Shows earnings data, level progress, balance and payout options
  */
 function EarningsDashboard() {
   const [activeTab, setActiveTab] = useState('products');
@@ -13,39 +15,50 @@ function EarningsDashboard() {
   // State for API data
   const [dashboard, setDashboard] = useState(null);
   const [level, setLevel] = useState(null);
+  const [balance, setBalance] = useState(null);
   const [topProducts, setTopProducts] = useState([]);
   const [affiliateEarnings, setAffiliateEarnings] = useState([]);
+  const [payoutHistory, setPayoutHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Modal states
+  const [showLevelInfo, setShowLevelInfo] = useState(false);
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
+  const [payoutLoading, setPayoutLoading] = useState(false);
 
   // Fetch all data on mount
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const [dashboardRes, levelRes, productsRes, affiliatesRes] = await Promise.all([
-          earningsService.getDashboard(),
-          earningsService.getLevelInfo(),
-          earningsService.getProductEarnings(),
-          earningsService.getAffiliateEarnings()
-        ]);
-
-        if (dashboardRes.success) setDashboard(dashboardRes.data);
-        if (levelRes.success) setLevel(levelRes.data);
-        if (productsRes.success) setTopProducts(productsRes.data || []);
-        if (affiliatesRes.success) setAffiliateEarnings(affiliatesRes.data || []);
-      } catch (err) {
-        console.error('Error fetching earnings:', err);
-        setError('Daten konnten nicht geladen werden');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [dashboardRes, levelRes, balanceRes, productsRes, affiliatesRes, payoutsRes] = await Promise.all([
+        earningsService.getDashboard(),
+        earningsService.getLevelInfo(),
+        payoutsService.getBalance(),
+        earningsService.getProductEarnings(),
+        earningsService.getAffiliateEarnings(),
+        payoutsService.getHistory({ limit: 10 })
+      ]);
+
+      if (dashboardRes.success) setDashboard(dashboardRes.data);
+      if (levelRes.success) setLevel(levelRes.data);
+      if (balanceRes.success) setBalance(balanceRes.data);
+      if (productsRes.success) setTopProducts(productsRes.data || []);
+      if (affiliatesRes.success) setAffiliateEarnings(affiliatesRes.data || []);
+      if (payoutsRes.success) setPayoutHistory(payoutsRes.data || []);
+    } catch (err) {
+      console.error('Error fetching earnings:', err);
+      setError('Daten konnten nicht geladen werden');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -56,9 +69,41 @@ function EarningsDashboard() {
   };
 
   // Calculate level progress
-  const levelProgress = level?.nextLevel 
-    ? Math.min((level.progress / level.nextLevel) * 100, 100) 
-    : 100;
+  const levelProgress = level?.progressPercent || 0;
+
+  // Handle payout request
+  const handleRequestPayout = async (amount) => {
+    try {
+      setPayoutLoading(true);
+      const response = await payoutsService.requestPayout(amount);
+      
+      if (response.success) {
+        // Refresh data
+        await fetchData();
+        return response;
+      } else {
+        throw new Error(response.message || 'Auszahlung fehlgeschlagen');
+      }
+    } catch (err) {
+      throw err;
+    } finally {
+      setPayoutLoading(false);
+    }
+  };
+
+  // Handle payout cancel
+  const handleCancelPayout = async (payoutId) => {
+    if (!window.confirm('Auszahlung wirklich stornieren?')) return;
+    
+    try {
+      const response = await payoutsService.cancelPayout(payoutId);
+      if (response.success) {
+        await fetchData();
+      }
+    } catch (err) {
+      console.error('Cancel payout error:', err);
+    }
+  };
 
   // Loading State
   if (loading) {
@@ -88,6 +133,9 @@ function EarningsDashboard() {
     );
   }
 
+  const availableBalance = balance?.availableBalance || 0;
+  const canPayout = availableBalance >= PAYOUT_CONFIG.absoluteMinPayout;
+
   return (
     <div className={`page ${styles.earningsPage}`}>
       <div className="page-header">
@@ -108,17 +156,52 @@ function EarningsDashboard() {
         </p>
       </div>
 
+      {/* Balance & Payout Card */}
+      <div className={styles.balanceCard}>
+        <div className={styles.balanceMain}>
+          <div className={styles.balanceInfo}>
+            <span className={styles.balanceLabel}>Verfügbar zur Auszahlung</span>
+            <span className={styles.balanceAmount}>{formatCurrency(availableBalance)}</span>
+            {availableBalance > 0 && availableBalance < PAYOUT_CONFIG.minFreePayoutAmount && (
+              <span className={styles.balanceHint}>
+                Noch {formatCurrency(PAYOUT_CONFIG.minFreePayoutAmount - availableBalance)} bis zur kostenlosen Auszahlung
+              </span>
+            )}
+          </div>
+          <button 
+            className={styles.payoutButton}
+            onClick={() => setShowPayoutModal(true)}
+            disabled={!canPayout}
+          >
+            <Icon name="wallet" size="sm" />
+            Auszahlen
+          </button>
+        </div>
+        {balance?.totalPaidOut > 0 && (
+          <div className={styles.balanceStats}>
+            <span>Bereits ausgezahlt: {formatCurrency(balance.totalPaidOut)}</span>
+          </div>
+        )}
+      </div>
+
       {/* Level Card */}
       {level && (
         <div className={styles.levelCard}>
           <div className={styles.levelHeader}>
             <div className={styles.levelBadge}>
-              <div className={styles.levelIcon}>
+              <div 
+                className={styles.levelIcon}
+                style={{ backgroundColor: level.color }}
+              >
                 <Icon name="star" size="sm" />
               </div>
               <div className={styles.levelInfo}>
-                <h3>Level {level.current} - {level.name}</h3>
-                <p>{level.nextLevel ? `${formatCurrency(level.nextLevel - level.progress)} bis Level ${level.current + 1}` : 'Maximum erreicht! 🎉'}</p>
+                <h3>Level {level.current} – {level.name}</h3>
+                <p>
+                  {level.nextLevel 
+                    ? `${formatCurrency(level.amountToNext)} bis Level ${level.current + 1}` 
+                    : 'Maximum erreicht! 🎉'}
+                </p>
               </div>
             </div>
             <div className={styles.levelFee}>
@@ -135,9 +218,18 @@ function EarningsDashboard() {
               />
             </div>
           </div>
-          <p className={styles.progressText}>
-            {formatCurrency(level.progress)} / {formatCurrency(level.nextLevel)}
-          </p>
+          <div className={styles.levelFooter}>
+            <p className={styles.progressText}>
+              {formatCurrency(level.progress)} / {formatCurrency(level.nextLevel)}
+            </p>
+            <button 
+              className={styles.levelInfoButton}
+              onClick={() => setShowLevelInfo(true)}
+            >
+              <Icon name="info" size="sm" />
+              Alle Level ansehen
+            </button>
+          </div>
         </div>
       )}
 
@@ -187,21 +279,25 @@ function EarningsDashboard() {
           onClick={() => setActiveTab('affiliates')}
         >
           <Icon name="share2" size="sm" />
-          <span>Affiliate-Einnahmen</span>
+          <span>Affiliate</span>
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'payouts' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('payouts')}
+        >
+          <Icon name="creditCard" size="sm" />
+          <span>Auszahlungen</span>
         </button>
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'products' ? (
+      {activeTab === 'products' && (
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Top Produkte</h2>
           {topProducts.length > 0 ? (
             <div className={styles.topProductsList}>
-              {topProducts.map((product, index) => (
+              {topProducts.map((product) => (
                 <div key={product.id} className={styles.topProductItem}>
-                  <div className={`${styles.productRank} ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}`}>
-                    {index + 1}
-                  </div>
                   <div className={styles.productThumb}>
                     {product.thumbnail ? (
                       <img src={product.thumbnail} alt={product.title} />
@@ -229,7 +325,9 @@ function EarningsDashboard() {
             </div>
           )}
         </section>
-      ) : (
+      )}
+
+      {activeTab === 'affiliates' && (
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Affiliate-Einnahmen</h2>
           {affiliateEarnings.length > 0 ? (
@@ -266,6 +364,47 @@ function EarningsDashboard() {
           )}
         </section>
       )}
+
+      {activeTab === 'payouts' && (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Auszahlungshistorie</h2>
+          <PayoutHistory 
+            payouts={payoutHistory}
+            onCancel={handleCancelPayout}
+          />
+        </section>
+      )}
+
+      {/* Sticky Payout CTA (Mobile) */}
+      {canPayout && (
+        <div className={styles.stickyPayoutCta}>
+          <div className={styles.stickyPayoutInfo}>
+            <span className={styles.stickyPayoutLabel}>Verfügbar</span>
+            <span className={styles.stickyPayoutAmount}>{formatCurrency(availableBalance)}</span>
+          </div>
+          <button 
+            className={styles.stickyPayoutButton}
+            onClick={() => setShowPayoutModal(true)}
+          >
+            Jetzt auszahlen
+          </button>
+        </div>
+      )}
+
+      {/* Modals */}
+      <LevelInfoModal 
+        isOpen={showLevelInfo}
+        onClose={() => setShowLevelInfo(false)}
+        currentLevel={level?.current || 1}
+      />
+      
+      <PayoutModal 
+        isOpen={showPayoutModal}
+        onClose={() => setShowPayoutModal(false)}
+        availableBalance={availableBalance}
+        onRequestPayout={handleRequestPayout}
+        loading={payoutLoading}
+      />
     </div>
   );
 }

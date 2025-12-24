@@ -48,8 +48,8 @@ const AffiliateModel = {
         (
           SELECT COUNT(*) FROM transactions t 
           WHERE t.promoter_id = al.promoter_id 
-          AND t.product_id = al.product_id
-        ) as conversions
+          AND t.product_id = al.product_id 
+          AND t.status = 'completed') as conversions
       FROM affiliate_links al
       JOIN products p ON al.product_id = p.id
       WHERE al.promoter_id = $1

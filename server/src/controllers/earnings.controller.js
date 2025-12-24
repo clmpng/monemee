@@ -1,12 +1,12 @@
 const TransactionModel = require('../models/Transaction.model');
 const UserModel = require('../models/User.model');
+const { getLevelByNumber, getNextLevel, calculateLevelProgress, getAllLevels } = require('../config/levels.config');
 
 /**
  * Earnings Controller
  * Handles all earnings/statistics related HTTP requests
  * 
  * WICHTIG: Alle Endpoints erfordern Authentifizierung!
- * Kein Fallback auf userId=1 mehr (war ein Bug der fremde Daten anzeigte)
  */
 const earningsController = {
   /**
@@ -17,7 +17,6 @@ const earningsController = {
     try {
       const userId = req.userId;
       
-      // Auth Check - kein Fallback mehr!
       if (!userId) {
         return res.status(401).json({
           success: false,
@@ -89,7 +88,6 @@ const earningsController = {
     try {
       const userId = req.userId;
       
-      // Auth Check - kein Fallback mehr!
       if (!userId) {
         return res.status(401).json({
           success: false,
@@ -122,7 +120,6 @@ const earningsController = {
     try {
       const userId = req.userId;
       
-      // Auth Check - kein Fallback mehr!
       if (!userId) {
         return res.status(401).json({
           success: false,
@@ -155,7 +152,6 @@ const earningsController = {
     try {
       const userId = req.userId;
       
-      // Auth Check - kein Fallback mehr!
       if (!userId) {
         return res.status(401).json({
           success: false,
@@ -172,17 +168,10 @@ const earningsController = {
         });
       }
       
-      // Level thresholds
-      const levels = [
-        { level: 1, name: 'Starter', threshold: 0, fee: 15 },
-        { level: 2, name: 'Rising Star', threshold: 100, fee: 12 },
-        { level: 3, name: 'Pro', threshold: 500, fee: 10 },
-        { level: 4, name: 'Expert', threshold: 2000, fee: 8 },
-        { level: 5, name: 'Legend', threshold: 5000, fee: 5 }
-      ];
-      
-      const currentLevel = levels.find(l => l.level === user.level) || levels[0];
-      const nextLevel = levels.find(l => l.level === user.level + 1);
+      const totalEarnings = parseFloat(user.total_earnings || 0);
+      const currentLevel = getLevelByNumber(user.level);
+      const nextLevel = getNextLevel(user.level);
+      const progress = calculateLevelProgress(totalEarnings, user.level);
       
       res.json({
         success: true,
@@ -190,10 +179,30 @@ const earningsController = {
           current: user.level,
           name: currentLevel.name,
           fee: currentLevel.fee,
-          progress: parseFloat(user.total_earnings || 0),
-          nextLevel: nextLevel ? nextLevel.threshold : null,
-          nextLevelName: nextLevel ? nextLevel.name : null
+          color: currentLevel.color,
+          description: currentLevel.description,
+          progress: totalEarnings,
+          nextLevel: nextLevel ? nextLevel.minEarnings : null,
+          nextLevelName: nextLevel ? nextLevel.name : null,
+          nextLevelFee: nextLevel ? nextLevel.fee : null,
+          amountToNext: progress.amountToNext,
+          progressPercent: progress.progress
         }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Get all levels info (public)
+   * GET /api/v1/earnings/levels
+   */
+  async getAllLevelsInfo(req, res, next) {
+    try {
+      res.json({
+        success: true,
+        data: getAllLevels()
       });
     } catch (error) {
       next(error);

@@ -2,322 +2,502 @@
    Earnings/Statistics Page Styles
    ======================================== */
 
-   .earningsPage {
-    padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-lg));
+.earningsPage {
+  padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-lg) + 80px);
+}
+
+/* Loading & Error States */
+.loadingState,
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: var(--spacing-md);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.errorState h3 {
+  margin: var(--spacing-md) 0 var(--spacing-sm);
+  color: var(--color-text-primary);
+}
+
+.retryButton {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+}
+
+/* Total Earnings Card */
+.totalEarnings {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.totalEarnings::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.totalLabel {
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+  margin-bottom: var(--spacing-xs);
+}
+
+.totalValue {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  margin-bottom: var(--spacing-sm);
+}
+
+.totalChange {
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  opacity: 0.9;
+}
+
+.changePositive {
+  color: #86efac;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.changeNegative {
+  color: #fca5a5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Balance Card */
+.balanceCard {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--color-border);
+}
+
+.balanceMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.balanceInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.balanceLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.balanceAmount {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.balanceHint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.payoutButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-success);
+  color: white;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.payoutButton:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.payoutButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.balanceStats {
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+}
+
+/* Level Progress */
+.levelCard {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+}
+
+.levelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.levelBadge {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.levelIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-warning);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.levelInfo h3 {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.levelInfo p {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.levelFee {
+  text-align: right;
+}
+
+.feeValue {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.feeLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.levelProgress {
+  margin-bottom: var(--spacing-sm);
+}
+
+.progressBar {
+  height: 8px;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow);
+}
+
+.levelFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progressText {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.levelInfoButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  font-weight: 500;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.levelInfoButton:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.statCard {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+}
+
+.statIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.statIconPrimary {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--color-primary);
+}
+
+.statIconSuccess {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+}
+
+.statIconWarning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.statIconDanger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+}
+
+.statValue {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.statLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xs);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.tab:hover {
+  color: var(--color-text-primary);
+}
+
+.tabActive {
+  background: var(--color-bg-secondary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Section */
+.section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Top Products List */
+.topProductsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.topProductItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+}
+
+.productThumb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-tertiary);
+  overflow: hidden;
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+
+.productThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.productInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.productName {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.productStats {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.productRevenue {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+
+/* Sticky Payout CTA */
+.stickyPayoutCta {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-height) + var(--spacing-md));
+  left: var(--spacing-md);
+  right: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+}
+
+.stickyPayoutInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.stickyPayoutLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.stickyPayoutAmount {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.stickyPayoutButton {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-success);
+  color: white;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.stickyPayoutButton:hover {
+  filter: brightness(1.1);
+}
+
+/* Desktop */
+@media (min-width: 768px) {
+  .earningsPage {
+    padding-bottom: var(--spacing-xl);
   }
   
-  /* Total Earnings Card */
-  .totalEarnings {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
-    color: white;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .totalEarnings::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  
-  .totalLabel {
-    font-size: var(--font-size-sm);
-    opacity: 0.9;
-    margin-bottom: var(--spacing-xs);
-  }
-  
-  .totalValue {
-    font-size: var(--font-size-3xl);
-    font-weight: 700;
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  .totalChange {
-    font-size: var(--font-size-sm);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    opacity: 0.9;
-  }
-  
-  .changePositive {
-    color: #86efac;
-  }
-  
-  .changeNegative {
-    color: #fca5a5;
-  }
-  
-  /* Level Progress */
-  .levelCard {
-    background: var(--color-bg-secondary);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
-    border: 1px solid var(--color-border);
-  }
-  
-  .levelHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--spacing-md);
-  }
-  
-  .levelBadge {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-  }
-  
-  .levelIcon {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-md);
-    background: var(--color-warning);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-  }
-  
-  .levelInfo h3 {
-    font-size: var(--font-size-base);
-    font-weight: 600;
-    color: var(--color-text-primary);
-  }
-  
-  .levelInfo p {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-  }
-  
-  .levelFee {
-    text-align: right;
-  }
-  
-  .feeValue {
-    font-size: var(--font-size-xl);
-    font-weight: 700;
-    color: var(--color-success);
-  }
-  
-  .feeLabel {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-  }
-  
-  .levelProgress {
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  .progressBar {
-    height: 8px;
-    background: var(--color-bg-tertiary);
-    border-radius: var(--radius-full);
-    overflow: hidden;
-  }
-  
-  .progressFill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-    border-radius: var(--radius-full);
-    transition: width var(--transition-slow);
-  }
-  
-  .progressText {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-    text-align: center;
-  }
-  
-  /* Stats Grid */
   .statsGrid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
+    grid-template-columns: repeat(4, 1fr);
   }
   
-  .statCard {
-    background: var(--color-bg-secondary);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
-    border: 1px solid var(--color-border);
+  .stickyPayoutCta {
+    display: none;
   }
-  
-  .statIcon {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  .statIconPrimary {
-    background: rgba(99, 102, 241, 0.15);
-    color: var(--color-primary);
-  }
-  
-  .statIconSuccess {
-    background: rgba(16, 185, 129, 0.15);
-    color: var(--color-success);
-  }
-  
-  .statIconWarning {
-    background: rgba(245, 158, 11, 0.15);
-    color: var(--color-warning);
-  }
-  
-  .statIconDanger {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--color-danger);
-  }
-  
-  .statValue {
-    font-size: var(--font-size-xl);
-    font-weight: 700;
-    color: var(--color-text-primary);
-    margin-bottom: 2px;
-  }
-  
-  .statLabel {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-  }
-  
-  /* Section */
-  .section {
-    margin-bottom: var(--spacing-xl);
-  }
-  
-  .sectionTitle {
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin-bottom: var(--spacing-md);
-  }
-  
-  /* Top Products List */
-  .topProductsList {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-  }
-  
-  .topProductItem {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    background: var(--color-bg-secondary);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
-    border: 1px solid var(--color-border);
-  }
-  
-  .productRank {
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-text-secondary);
-  }
-  
-  .productRank.gold {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-    color: white;
-  }
-  
-  .productRank.silver {
-    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
-    color: white;
-  }
-  
-  .productRank.bronze {
-    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-    color: white;
-  }
-  
-  .productThumb {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-md);
-    background: var(--color-bg-tertiary);
-    overflow: hidden;
-  }
-  
-  .productThumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .productInfo {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .productName {
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    color: var(--color-text-primary);
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .productStats {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-  }
-  
-  .productRevenue {
-    font-size: var(--font-size-base);
-    font-weight: 600;
-    color: var(--color-success);
-  }
-  
-  /* Tabs */
-  .tabs {
-    display: flex;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: var(--spacing-sm);
-  }
-  
-  .tab {
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    color: var(--color-text-secondary);
-    border-radius: var(--radius-md);
-    transition: all var(--transition-fast);
-  }
-  
-  .tab:hover {
-    color: var(--color-text-primary);
-    background: var(--color-bg-tertiary);
-  }
-  
-  .tabActive {
-    color: var(--color-primary);
-    background: rgba(99, 102, 241, 0.1);
-  }
+}

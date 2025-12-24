@@ -83,7 +83,7 @@ const paymentsController = {
       if (affiliateCode) {
         const affiliateLink = await AffiliateModel.findByCode(affiliateCode);
         
-        if (affiliateLink && affiliateLink.product_id === productId && affiliateLink.is_active) {
+        if (affiliateLink && affiliateLink.product_id === parseInt(productId) && affiliateLink.is_active) {
           // Prüfe dass Promoter nicht der Käufer ist
           if (affiliateLink.promoter_id !== buyerId) {
             promoterId = affiliateLink.promoter_id;

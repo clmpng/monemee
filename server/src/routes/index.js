@@ -8,6 +8,7 @@ const promotionRoutes = require('./promotion.routes');
 const paymentsRoutes = require('./payments.routes');
 const usersRoutes = require('./users.routes');
 const messagesRoutes = require('./messages.routes');
+const payoutsRoutes = require('./payouts.routes');
 
 // ============================================
 // API Routes
@@ -24,6 +25,9 @@ router.use('/promotion', promotionRoutes);
 
 // Payments (Stripe)
 router.use('/payments', paymentsRoutes);
+
+// Payouts (Auszahlungen)
+router.use('/payouts', payoutsRoutes);
 
 // Users
 router.use('/users', usersRoutes);

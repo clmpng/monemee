@@ -12,7 +12,15 @@ const promotionController = {
    */
   async generateLink(req, res, next) {
     try {
-      const userId = req.userId || 1;
+      const userId = req.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
+
       const { productId } = req.body;
       
       if (!productId) {
@@ -58,7 +66,14 @@ const promotionController = {
    */
   async getMyPromotions(req, res, next) {
     try {
-      const userId = req.userId || 1;
+      const userId = req.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
       
       const promotions = await AffiliateModel.findByPromoterId(userId);
       
@@ -89,7 +104,14 @@ const promotionController = {
    */
   async getMyNetwork(req, res, next) {
     try {
-      const userId = req.userId || 1;
+      const userId = req.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
       
       // Get all products by user
       const products = await ProductModel.findByUserId(userId);

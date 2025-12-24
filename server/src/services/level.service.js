@@ -1,72 +1,58 @@
 const UserModel = require('../models/User.model');
+const { 
+  LEVELS,
+  getLevelByNumber,
+  getLevelByEarnings,
+  getPlatformFee,
+  getNextLevel,
+  calculateLevelProgress
+} = require('../config/levels.config');
 
 /**
  * Level Service
  * Handles level progression and platform fee calculation
+ * 
+ * Nutzt zentrale Konfiguration aus /config/levels.config.js
  */
 const LevelService = {
   /**
-   * Level thresholds and fees
+   * Level thresholds and fees (re-export from config)
    */
-  levels: [
-    { level: 1, minEarnings: 0, fee: 15, name: 'Starter' },
-    { level: 2, minEarnings: 100, fee: 12, name: 'Rising Star' },
-    { level: 3, minEarnings: 500, fee: 10, name: 'Creator' },
-    { level: 4, minEarnings: 2000, fee: 8, name: 'Pro' },
-    { level: 5, minEarnings: 5000, fee: 5, name: 'Elite' }
-  ],
+  levels: LEVELS,
 
   /**
    * Get level info by earnings
    */
-  getLevelByEarnings(totalEarnings) {
-    let currentLevel = this.levels[0];
-    
-    for (const level of this.levels) {
-      if (totalEarnings >= level.minEarnings) {
-        currentLevel = level;
-      }
-    }
-    
-    return currentLevel;
-  },
+  getLevelByEarnings,
 
   /**
    * Get platform fee percentage for user
    */
-  getPlatformFee(level) {
-    const levelInfo = this.levels.find(l => l.level === level);
-    return levelInfo ? levelInfo.fee : 15;
-  },
+  getPlatformFee,
 
   /**
    * Calculate progress to next level
    */
   getProgressToNextLevel(totalEarnings, currentLevel) {
-    const nextLevelIndex = this.levels.findIndex(l => l.level === currentLevel) + 1;
+    const currentLevelInfo = getLevelByNumber(currentLevel);
+    const nextLevelInfo = getNextLevel(currentLevel);
     
-    if (nextLevelIndex >= this.levels.length) {
-      // Already at max level
+    if (!nextLevelInfo) {
       return {
-        currentLevel,
+        currentLevel: currentLevelInfo,
         nextLevel: null,
         progress: 100,
         amountToNext: 0
       };
     }
-
-    const currentLevelInfo = this.levels.find(l => l.level === currentLevel);
-    const nextLevelInfo = this.levels[nextLevelIndex];
     
-    const progressRange = nextLevelInfo.minEarnings - currentLevelInfo.minEarnings;
-    const currentProgress = totalEarnings - currentLevelInfo.minEarnings;
-    const progressPercent = Math.min((currentProgress / progressRange) * 100, 100);
+    const progress = calculateLevelProgress(totalEarnings, currentLevel);
     
     return {
       currentLevel: currentLevelInfo,
       nextLevel: nextLevelInfo,
-      progress: Math.round(progressPercent),
-      amountToNext: Math.max(nextLevelInfo.minEarnings - totalEarnings, 0)
+      progress: progress.progress,
+      amountToNext: progress.amountToNext
     };
   },
 
@@ -78,7 +64,7 @@ const LevelService = {
     if (!user) return null;
 
     const newTotal = parseFloat(user.total_earnings) + newEarnings;
-    const newLevelInfo = this.getLevelByEarnings(newTotal);
+    const newLevelInfo = getLevelByEarnings(newTotal);
 
     if (newLevelInfo.level > user.level) {
       // Level up!
@@ -99,6 +85,25 @@ const LevelService = {
     return {
       leveledUp: false,
       currentLevel: user.level
+    };
+  },
+
+  /**
+   * Calculate fee savings compared to starter level
+   */
+  calculateFeeSavings(totalEarnings, currentLevel) {
+    const starterFee = LEVELS[0].fee;
+    const currentFee = getPlatformFee(currentLevel);
+    const feeReduction = starterFee - currentFee;
+    
+    // Berechne wie viel gespart wurde basierend auf bisherigen Einnahmen
+    const savedAmount = totalEarnings * (feeReduction / 100);
+    
+    return {
+      starterFee,
+      currentFee,
+      feeReduction,
+      savedAmount: Math.round(savedAmount * 100) / 100
     };
   }
 };
