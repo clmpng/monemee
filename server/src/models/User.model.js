@@ -15,8 +15,10 @@ const UserModel = {
         id, firebase_uid, email, username, name,
         bio, avatar_url, role, level, total_earnings,
         available_balance, pending_balance,
-        payout_iban, payout_account_holder,
-        stripe_account_id, created_at, updated_at
+        stripe_account_id, stripe_account_status,
+        stripe_charges_enabled, stripe_payouts_enabled,
+        stripe_onboarding_complete, stripe_account_updated_at,
+        created_at, updated_at
       FROM users 
       WHERE id = $1
     `;
@@ -68,6 +70,19 @@ const UserModel = {
   },
 
   /**
+   * Find user by Stripe Account ID
+   */
+  async findByStripeAccountId(stripeAccountId) {
+    const query = `
+      SELECT * FROM users 
+      WHERE stripe_account_id = $1
+    `;
+    
+    const result = await db.query(query, [stripeAccountId]);
+    return result.rows[0] || null;
+  },
+
+  /**
    * Create new user
    */
   async create(data) {
@@ -105,8 +120,7 @@ const UserModel = {
   async update(id, data) {
     const allowedFields = [
       'username', 'name', 'bio', 'avatar_url', 
-      'role', 'stripe_account_id',
-      'payout_iban', 'payout_account_holder'
+      'role', 'stripe_account_id'
     ];
 
     const updates = [];
@@ -129,6 +143,56 @@ const UserModel = {
     const query = `
       UPDATE users 
       SET ${updates.join(', ')}, updated_at = NOW()
+      WHERE id = $${paramCount}
+      RETURNING *
+    `;
+
+    const result = await db.query(query, values);
+    return result.rows[0] || null;
+  },
+
+  /**
+   * Update Stripe Connect Status
+   * Wird vom Stripe Service aufgerufen
+   */
+  async updateStripeStatus(id, data) {
+    const allowedFields = [
+      'stripe_account_id',
+      'stripe_account_status',
+      'stripe_charges_enabled',
+      'stripe_payouts_enabled',
+      'stripe_onboarding_complete',
+      'stripe_account_details'
+    ];
+
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    for (const [key, value] of Object.entries(data)) {
+      if (allowedFields.includes(key)) {
+        if (key === 'stripe_account_details') {
+          updates.push(`${key} = $${paramCount}::jsonb`);
+          values.push(JSON.stringify(value));
+        } else {
+          updates.push(`${key} = $${paramCount}`);
+          values.push(value);
+        }
+        paramCount++;
+      }
+    }
+
+    if (updates.length === 0) {
+      return this.findById(id);
+    }
+
+    updates.push(`stripe_account_updated_at = NOW()`);
+    updates.push(`updated_at = NOW()`);
+
+    values.push(id);
+    const query = `
+      UPDATE users 
+      SET ${updates.join(', ')}
       WHERE id = $${paramCount}
       RETURNING *
     `;
@@ -217,21 +281,18 @@ const UserModel = {
   },
 
   /**
-   * Update payout details (IBAN, Kontoinhaber)
+   * Check if user can receive payouts
+   * Requires: Stripe account with payouts enabled
    */
-  async updatePayoutDetails(id, { iban, accountHolder }) {
-    const query = `
-      UPDATE users 
-      SET 
-        payout_iban = $1,
-        payout_account_holder = $2,
-        updated_at = NOW()
-      WHERE id = $3
-      RETURNING id, payout_iban, payout_account_holder
-    `;
+  async canReceivePayouts(id) {
+    const user = await this.findById(id);
+    if (!user) return false;
     
-    const result = await db.query(query, [iban, accountHolder, id]);
-    return result.rows[0];
+    return !!(
+      user.stripe_account_id &&
+      user.stripe_payouts_enabled &&
+      user.stripe_onboarding_complete
+    );
   },
 
   /**

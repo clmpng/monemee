@@ -690,3 +690,298 @@
     }
   }
   
+  /* ========================================
+   Stripe Connect Styles
+   ======================================== */
+
+/* Status Dot in Tab */
+.statusDot {
+  width: 8px;
+  height: 8px;
+  background: var(--color-success);
+  border-radius: 50%;
+  margin-left: var(--spacing-xs);
+}
+
+/* Loading & Error States */
+.stripeLoading,
+.stripeError,
+.stripeNotConfigured {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.stripeLoading p,
+.stripeError p,
+.stripeNotConfigured p {
+  margin-top: var(--spacing-md);
+  margin-bottom: 0;
+}
+
+.stripeNotConfigured h3,
+.stripeError h3 {
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-md);
+}
+
+.retryButton {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retryButton:hover {
+  background: var(--color-bg-primary);
+  border-color: var(--color-primary);
+}
+
+/* Stripe Setup (No Account) */
+.stripeSetup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.stripeIntro {
+  text-align: center;
+  padding: var(--spacing-lg) 0;
+}
+
+.stripeIntroIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(129, 140, 248, 0.1) 100%);
+  color: var(--color-primary);
+  border-radius: 50%;
+  margin-bottom: var(--spacing-lg);
+}
+
+.stripeIntro h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.stripeIntro p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Stripe Features */
+.stripeFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .stripeFeatures {
+    flex-direction: row;
+  }
+}
+
+.stripeFeature {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-lg);
+  flex: 1;
+}
+
+.stripeFeature svg {
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.stripeFeature strong {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.stripeFeature p {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Stripe Buttons */
+.stripePrimaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #818cf8 100%);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stripePrimaryButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.stripePrimaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.stripeSecondaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stripeSecondaryButton:hover:not(:disabled) {
+  background: var(--color-bg-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.stripeSecondaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.stripeDisclaimer {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  margin: 0;
+}
+
+/* Stripe Status Card */
+.stripeStatusCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+@media (max-width: 640px) {
+  .stripeStatusCard {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+.stripeStatusIconSuccess {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.stripeStatusIconWarning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning, #F59E0B);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.stripeStatusInfo h3 {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.stripeStatusInfo p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Requirements List */
+.requirementsList {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: var(--radius-md);
+}
+
+.requirementsList strong {
+  font-size: 12px;
+  color: var(--color-warning, #F59E0B);
+  font-weight: 600;
+}
+
+.requirementsList ul {
+  margin: var(--spacing-sm) 0 0;
+  padding-left: var(--spacing-lg);
+}
+
+.requirementsList li {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+/* Stripe Enabled & Incomplete States */
+.stripeEnabled,
+.stripeIncomplete {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}

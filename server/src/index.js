@@ -31,7 +31,21 @@ app.use(cors({
 // Request logging
 app.use(morgan('dev'));
 
-// Parse JSON bodies
+// ============================================
+// WICHTIG: Stripe Webhooks brauchen Raw Body!
+// Diese Routes müssen VOR express.json() definiert werden
+// ============================================
+
+// Stripe Webhooks mit Raw Body Parser
+// Die Webhook-Routes sind in routes/stripe.routes.js definiert
+// und haben ihren eigenen express.raw() Middleware
+app.use('/api/v1/stripe/webhooks', express.raw({ type: 'application/json' }));
+
+// ============================================
+// JSON & URL-encoded Body Parser für alle anderen Routes
+// ============================================
+
+// Parse JSON bodies (für alle anderen Requests)
 app.use(express.json());
 
 // Parse URL-encoded bodies
@@ -43,7 +57,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    stripe: {
+      configured: !!process.env.STRIPE_SECRET_KEY_TEST || !!process.env.STRIPE_SECRET_KEY,
+      mode: process.env.STRIPE_MODE || 'test'
+    }
+  });
 });
 
 // API routes
@@ -70,17 +91,19 @@ app.use(errorHandler);
 // ============================================
 
 const PORT = process.env.PORT || 5000;
+const STRIPE_MODE = process.env.STRIPE_MODE || 'test';
 
 app.listen(PORT, () => {
   console.log(`
   ╔═══════════════════════════════════════╗
   ║                                       ║
   ║   💸 Monemee API Server               ║
-  ║   Running on http://localhost:${PORT} ║
+  ║   Running on http://localhost:${PORT}    ║
+  ║                                       ║
+  ║   Stripe Mode: ${STRIPE_MODE.padEnd(20)}║
   ║                                       ║
   ╚═══════════════════════════════════════╝
   `);
 });
 
 module.exports = app;
-

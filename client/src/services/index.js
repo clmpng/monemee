@@ -6,3 +6,4 @@ export { default as usersService } from './users.service';
 export { default as paymentsService } from './payments.service';
 export { default as messagesService } from './messages.service';
 export { default as payoutsService } from './payouts.service';
+export { default as stripeService } from './stripe.service';

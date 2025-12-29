@@ -1,56 +1,55 @@
 /**
- * Level & Payout Configuration - Client Side
+ * Platform Configuration
+ * Zentrale Konfiguration für Level, Payouts und Stripe Status
  * 
- * Diese Datei spiegelt die Server-Konfiguration wider.
- * Bei Änderungen an den Werten muss auch die Server-Config angepasst werden.
- * 
- * HINWEIS: In Zukunft können diese Werte auch per API geladen werden,
- * um eine echte Single Source of Truth zu haben.
+ * Diese Datei spiegelt die Backend-Konfiguration wider
+ * und wird für UI-Darstellungen verwendet
  */
 
 // ============================================
 // LEVEL KONFIGURATION
 // ============================================
+
 export const LEVELS = [
   {
     level: 1,
     name: 'Starter',
     minEarnings: 0,
-    fee: 15,
+    platformFee: 15,
     color: '#64748B',
-    description: 'Dein Einstieg als Creator'
+    icon: '🌱'
   },
   {
     level: 2,
-    name: 'Rising Star',
+    name: 'Rising',
     minEarnings: 100,
-    fee: 12,
+    platformFee: 12,
     color: '#3B82F6',
-    description: 'Du hast deine ersten Verkäufe gemacht'
+    icon: '⭐'
   },
   {
     level: 3,
-    name: 'Creator',
+    name: 'Pro',
     minEarnings: 500,
-    fee: 10,
+    platformFee: 10,
     color: '#8B5CF6',
-    description: 'Du bist ein etablierter Creator'
+    icon: '💎'
   },
   {
     level: 4,
-    name: 'Pro',
+    name: 'Expert',
     minEarnings: 2000,
-    fee: 8,
+    platformFee: 8,
     color: '#F59E0B',
-    description: 'Du gehörst zu den Top-Verkäufern'
+    icon: '🏆'
   },
   {
     level: 5,
-    name: 'Elite',
+    name: 'Legend',
     minEarnings: 5000,
-    fee: 5,
-    color: '#10B981',
-    description: 'Die höchste Stufe - maximale Vorteile'
+    platformFee: 5,
+    color: '#EF4444',
+    icon: '👑'
   }
 ];
 
@@ -58,14 +57,25 @@ export function getLevelByNumber(levelNumber) {
   return LEVELS.find(l => l.level === levelNumber) || LEVELS[0];
 }
 
-export function getNextLevel(currentLevelNumber) {
-  const nextIndex = LEVELS.findIndex(l => l.level === currentLevelNumber) + 1;
+export function getLevelByEarnings(totalEarnings) {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (totalEarnings >= LEVELS[i].minEarnings) {
+      return LEVELS[i];
+    }
+  }
+  return LEVELS[0];
+}
+
+export function getNextLevel(currentLevel) {
+  const currentIndex = LEVELS.findIndex(l => l.level === currentLevel);
+  const nextIndex = currentIndex + 1;
   return nextIndex < LEVELS.length ? LEVELS[nextIndex] : null;
 }
 
 // ============================================
 // PAYOUT KONFIGURATION
 // ============================================
+
 export const PAYOUT_CONFIG = {
   minFreePayoutAmount: 50,
   smallPayoutFee: 1,
@@ -135,4 +145,45 @@ export function getStatusLabel(status) {
 
 export function getStatusColor(status) {
   return PAYOUT_CONFIG.statusColors[status] || '#64748B';
+}
+
+// ============================================
+// STRIPE CONNECT STATUS
+// ============================================
+
+export const STRIPE_STATUS = {
+  NOT_CREATED: 'not_created',
+  PENDING: 'pending',
+  RESTRICTED: 'restricted',
+  ENABLED: 'enabled'
+};
+
+export const STRIPE_STATUS_LABELS = {
+  not_created: 'Nicht eingerichtet',
+  pending: 'Einrichtung ausstehend',
+  restricted: 'Eingeschränkt',
+  enabled: 'Aktiv'
+};
+
+export const STRIPE_STATUS_COLORS = {
+  not_created: '#64748B',
+  pending: '#F59E0B',
+  restricted: '#EF4444',
+  enabled: '#10B981'
+};
+
+export function getStripeStatusLabel(status) {
+  return STRIPE_STATUS_LABELS[status] || status;
+}
+
+export function getStripeStatusColor(status) {
+  return STRIPE_STATUS_COLORS[status] || '#64748B';
+}
+
+/**
+ * Prüft ob User Auszahlungen anfordern kann
+ * Basierend auf Stripe Connect Status
+ */
+export function canReceivePayouts(stripeStatus) {
+  return stripeStatus === STRIPE_STATUS.ENABLED;
 }

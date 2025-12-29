@@ -9,6 +9,7 @@ const paymentsRoutes = require('./payments.routes');
 const usersRoutes = require('./users.routes');
 const messagesRoutes = require('./messages.routes');
 const payoutsRoutes = require('./payouts.routes');
+const stripeRoutes = require('./stripe.routes');
 
 // ============================================
 // API Routes
@@ -23,11 +24,14 @@ router.use('/earnings', earningsRoutes);
 // Promotion / Affiliates
 router.use('/promotion', promotionRoutes);
 
-// Payments (Stripe)
+// Payments (Legacy - für simulierte Käufe)
 router.use('/payments', paymentsRoutes);
 
 // Payouts (Auszahlungen)
 router.use('/payouts', payoutsRoutes);
+
+// Stripe Connect & Webhooks
+router.use('/stripe', stripeRoutes);
 
 // Users
 router.use('/users', usersRoutes);

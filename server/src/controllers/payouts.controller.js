@@ -1,5 +1,6 @@
 const PayoutModel = require('../models/Payout.model');
 const UserModel = require('../models/User.model');
+const stripeService = require('../services/stripe.service');
 const { PAYOUT_CONFIG, calculatePayoutFee, calculateNetPayout, canRequestPayout } = require('../config/payout.config');
 const { getAllLevels } = require('../config/levels.config');
 
@@ -7,8 +8,10 @@ const { getAllLevels } = require('../config/levels.config');
  * Payouts Controller
  * Handles all payout-related HTTP requests
  * 
- * DUMMY MODE: Simuliert Auszahlungen ohne echte Stripe-Integration
- * SPÄTER: Stripe Connect für echte Auszahlungen
+ * STRIPE CONNECT INTEGRATION:
+ * - Auszahlungen erfolgen via Stripe Transfer zum Connect Account
+ * - User muss Stripe Connect Onboarding abgeschlossen haben
+ * - Stripe überweist das Geld automatisch auf das Bankkonto des Users
  */
 const payoutsController = {
   /**
@@ -46,6 +49,20 @@ const payoutsController = {
           totalPaidOut: payoutStats.totalPaid,
           pendingPayouts: payoutStats.pendingCount,
           pendingPayoutAmount: payoutStats.pendingAmount,
+          
+          // Stripe Connect Status
+          stripeConnected: !!user.stripe_account_id,
+          stripePayoutsEnabled: user.stripe_payouts_enabled || false,
+          stripeOnboardingComplete: user.stripe_onboarding_complete || false,
+          
+          // Kann User Auszahlungen anfordern?
+          canRequestPayout: !!(
+            user.stripe_account_id &&
+            user.stripe_payouts_enabled &&
+            user.stripe_onboarding_complete &&
+            parseFloat(user.available_balance || 0) >= PAYOUT_CONFIG.absoluteMinPayout
+          ),
+          
           // Payout-Regeln für Frontend
           config: {
             minFreePayoutAmount: PAYOUT_CONFIG.minFreePayoutAmount,
@@ -64,8 +81,9 @@ const payoutsController = {
    * Request a payout
    * POST /api/v1/payouts/request
    * 
-   * DUMMY: Erstellt Payout und markiert sofort als 'processing'
-   * SPÄTER: Stripe Transfer erstellen
+   * STRIPE INTEGRATION:
+   * - Erstellt Stripe Transfer zum Connect Account
+   * - Stripe überweist automatisch auf das Bankkonto
    */
   async requestPayout(req, res, next) {
     try {
@@ -94,6 +112,34 @@ const payoutsController = {
           message: 'User nicht gefunden'
         });
       }
+
+      // ============================================
+      // Stripe Connect Prüfung
+      // ============================================
+      
+      if (!user.stripe_account_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bitte richte zuerst dein Auszahlungskonto ein',
+          code: 'NO_STRIPE_ACCOUNT'
+        });
+      }
+
+      if (!user.stripe_onboarding_complete) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bitte schließe die Kontoeinrichtung ab',
+          code: 'ONBOARDING_INCOMPLETE'
+        });
+      }
+
+      if (!user.stripe_payouts_enabled) {
+        return res.status(400).json({
+          success: false,
+          message: 'Auszahlungen sind für dein Konto noch nicht freigeschaltet. Bitte überprüfe deine Angaben bei Stripe.',
+          code: 'PAYOUTS_NOT_ENABLED'
+        });
+      }
       
       const availableBalance = parseFloat(user.available_balance || 0);
       
@@ -110,40 +156,67 @@ const payoutsController = {
       const fee = calculatePayoutFee(amount);
       const netAmount = calculateNetPayout(amount);
       
+      // ============================================
       // Payout erstellen
+      // ============================================
+      
       const payout = await PayoutModel.create({
         user_id: userId,
         amount: amount,
         fee: fee,
         net_amount: netAmount,
-        iban_last4: user.payout_iban ? user.payout_iban.slice(-4) : null,
-        account_holder: user.payout_account_holder,
-        status: 'pending'
+        status: 'pending',
+        stripe_destination: user.stripe_account_id
       });
       
       // Balance reduzieren
       await UserModel.updateBalance(userId, -amount);
       
       // ============================================
-      // DUMMY: Sofort als 'processing' markieren
-      // In Production würde hier Stripe Transfer kommen
+      // Stripe Transfer erstellen
       // ============================================
-      const updatedPayout = await PayoutModel.updateStatus(payout.id, 'processing');
       
-      // DUMMY: Nach 3 Sekunden als 'completed' markieren (simuliert Bearbeitung)
-      // In Production: Stripe Webhook würde Status updaten
-      setTimeout(async () => {
+      if (stripeService.isStripeConfigured()) {
         try {
-          await PayoutModel.updateStatus(payout.id, 'completed', {
-            stripe_transfer_id: `DUMMY_TR_${Date.now()}`
+          const transfer = await stripeService.createPayout({
+            userId: userId,
+            amount: netAmount,
+            accountId: user.stripe_account_id,
+            payoutId: payout.id,
+            description: `Monemee Auszahlung #${payout.reference_number}`
           });
-          console.log(`[DUMMY PAYOUT] Payout ${payout.id} completed: ${netAmount}€`);
-        } catch (err) {
-          console.error('Error completing dummy payout:', err);
+          
+          // Payout mit Stripe-Daten aktualisieren
+          await PayoutModel.updateStatus(payout.id, 'processing', {
+            stripe_transfer_id: transfer.id
+          });
+          
+          console.log(`[Payout] Transfer erstellt: ${transfer.id} (${netAmount}€) für User ${userId}`);
+          
+        } catch (stripeError) {
+          // Bei Stripe-Fehler: Payout als failed markieren und Balance zurückgeben
+          console.error('[Payout] Stripe Transfer fehlgeschlagen:', stripeError);
+          
+          await PayoutModel.updateStatus(payout.id, 'failed', {
+            failure_reason: stripeError.message
+          });
+          
+          // Balance zurückgeben
+          await UserModel.updateBalance(userId, amount);
+          
+          return res.status(500).json({
+            success: false,
+            message: 'Auszahlung konnte nicht verarbeitet werden. Bitte versuche es später erneut.',
+            code: 'STRIPE_ERROR'
+          });
         }
-      }, 3000);
+      } else {
+        // Stripe nicht konfiguriert - Payout bleibt pending
+        console.warn('[Payout] Stripe nicht konfiguriert - Payout wartet auf manuelle Verarbeitung');
+      }
       
-      console.log(`[DUMMY PAYOUT] Requested: ${amount}€, Fee: ${fee}€, Net: ${netAmount}€`);
+      // Aktuellen Payout-Status holen
+      const updatedPayout = await PayoutModel.findById(payout.id);
       
       res.json({
         success: true,
@@ -155,9 +228,7 @@ const payoutsController = {
           netAmount: parseFloat(updatedPayout.net_amount),
           status: updatedPayout.status,
           createdAt: updatedPayout.created_at,
-          // Info für User
-          estimatedArrival: new Date(Date.now() + PAYOUT_CONFIG.processingDays * 24 * 60 * 60 * 1000),
-          isDummy: true
+          estimatedArrival: new Date(Date.now() + PAYOUT_CONFIG.processingDays * 24 * 60 * 60 * 1000)
         },
         message: fee > 0 
           ? `Auszahlung beantragt! Gebühr: ${fee}€` 
@@ -177,7 +248,7 @@ const payoutsController = {
   async getHistory(req, res, next) {
     try {
       const userId = req.userId;
-      const { limit = 20, offset = 0, status } = req.query;
+      const { limit = 50, offset = 0, status } = req.query;
       
       if (!userId) {
         return res.status(401).json({
@@ -201,14 +272,13 @@ const payoutsController = {
           fee: parseFloat(p.fee),
           netAmount: parseFloat(p.net_amount),
           status: p.status,
-          statusLabel: PAYOUT_CONFIG.statusLabels[p.status],
-          ibanLast4: p.iban_last4,
           createdAt: p.created_at,
           processedAt: p.processed_at,
           completedAt: p.completed_at,
           failureReason: p.failure_reason
         }))
       });
+      
     } catch (error) {
       next(error);
     }
@@ -221,7 +291,7 @@ const payoutsController = {
   async cancelPayout(req, res, next) {
     try {
       const userId = req.userId;
-      const { id } = req.params;
+      const payoutId = parseInt(req.params.id);
       
       if (!userId) {
         return res.status(401).json({
@@ -230,8 +300,7 @@ const payoutsController = {
         });
       }
       
-      // Payout laden
-      const payout = await PayoutModel.findById(id);
+      const payout = await PayoutModel.findById(payoutId);
       
       if (!payout) {
         return res.status(404).json({
@@ -243,52 +312,64 @@ const payoutsController = {
       if (payout.user_id !== userId) {
         return res.status(403).json({
           success: false,
-          message: 'Kein Zugriff auf diese Auszahlung'
+          message: 'Keine Berechtigung'
         });
       }
       
+      // Nur pending Payouts können storniert werden
       if (payout.status !== 'pending') {
         return res.status(400).json({
           success: false,
-          message: 'Nur ausstehende Auszahlungen können storniert werden'
+          message: `Auszahlung kann nicht storniert werden (Status: ${payout.status})`
         });
       }
       
-      // Stornieren
-      const cancelled = await PayoutModel.cancel(id, userId);
+      // Payout stornieren
+      await PayoutModel.updateStatus(payoutId, 'cancelled');
       
-      if (cancelled) {
-        // Balance zurückbuchen
-        await UserModel.updateBalance(userId, parseFloat(payout.amount));
-      }
+      // Balance zurückgeben
+      await UserModel.updateBalance(userId, parseFloat(payout.amount));
       
       res.json({
         success: true,
         message: 'Auszahlung storniert'
       });
+      
     } catch (error) {
       next(error);
     }
   },
 
   /**
-   * Get platform configuration (levels, fees, etc.)
+   * Get platform configuration
    * GET /api/v1/payouts/config
    */
   async getConfig(req, res, next) {
     try {
+      const levels = getAllLevels();
+      
       res.json({
         success: true,
         data: {
-          levels: getAllLevels(),
+          levels: levels.map(l => ({
+            level: l.level,
+            name: l.name,
+            minEarnings: l.minEarnings,
+            platformFee: l.platformFee,
+            color: l.color
+          })),
           payout: {
             minFreePayoutAmount: PAYOUT_CONFIG.minFreePayoutAmount,
             smallPayoutFee: PAYOUT_CONFIG.smallPayoutFee,
             absoluteMinPayout: PAYOUT_CONFIG.absoluteMinPayout,
             processingDays: PAYOUT_CONFIG.processingDays
-          }
+          },
+          // Info für Frontend
+          stripeConfigured: stripeService.isStripeConfigured(),
+          stripeMode: stripeService.STRIPE_MODE
         }
       });
+      
     } catch (error) {
       next(error);
     }
