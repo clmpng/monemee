@@ -1,0 +1,155 @@
+/* ========================================
+   LegalFooter Component Styles
+   Rechtlich erforderliche Links
+   Wiederverwendbar auf allen Seiten
+   ======================================== */
+
+   .legalFooter {
+    width: 100%;
+  }
+  
+  /* Links */
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  
+  .link {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    padding: 4px 6px;
+  }
+  
+  .link:hover {
+    color: var(--color-primary);
+  }
+  
+  .separator {
+    color: var(--color-text-muted);
+    font-size: 10px;
+    user-select: none;
+  }
+  
+  /* ========================================
+     Minimal Variant (App-Bereich)
+     ======================================== */
+  
+  .minimal {
+    padding: 16px;
+    margin-top: auto;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-primary);
+  }
+  
+  .minimal .links {
+    gap: 2px;
+  }
+  
+  .minimal .link {
+    font-size: 11px;
+    padding: 4px;
+  }
+  
+  /* ========================================
+     Compact Variant (Öffentliche Seiten)
+     ======================================== */
+  
+  .compact {
+    padding: 20px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+  }
+  
+  .compactContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .poweredBy {
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+  }
+  
+  .brandLink {
+    color: var(--color-primary);
+    font-weight: 500;
+    text-decoration: none;
+  }
+  
+  .brandLink:hover {
+    text-decoration: underline;
+  }
+  
+  .compact .links {
+    gap: 4px;
+  }
+  
+  .compact .link {
+    font-size: 12px;
+  }
+  
+  /* Desktop: Eine Zeile */
+  @media (min-width: 768px) {
+    .compactContent {
+      flex-direction: row;
+      justify-content: space-between;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+  }
+  
+  /* ========================================
+     Full Variant (Landing-ähnlich)
+     ======================================== */
+  
+  .full {
+    padding: 24px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+  }
+  
+  .fullContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .full .links {
+    gap: 8px;
+  }
+  
+  .full .link {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+  
+  .copyright {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+  
+  @media (min-width: 768px) {
+    .full {
+      padding: 32px 24px;
+    }
+    
+    .fullContent {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    
+    .full .links {
+      gap: 16px;
+    }
+  }

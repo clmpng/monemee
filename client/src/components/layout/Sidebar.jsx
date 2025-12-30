@@ -11,7 +11,7 @@ function Sidebar({ user }) {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const navItems = [
-    { path: '/', icon: 'store', label: 'My Store' },
+    { path: '/', icon: 'store', label: 'Meine Produkte' },
     { path: '/earnings', icon: 'wallet', label: 'Fortschritt' },
     { path: '/promotion', icon: 'megaphone', label: 'Promotion' },
     { path: '/messages', icon: 'message', label: 'Nachrichten' },
@@ -134,6 +134,15 @@ function Sidebar({ user }) {
             </button>
           </div>
         )}
+      </div>
+
+      {/* Legal Links */}
+      <div className={styles.sidebarFooter}>
+        <nav className={styles.legalLinks}>
+          <NavLink to="/impressum" className={styles.legalLink}>Impressum</NavLink>
+          <NavLink to="/datenschutz" className={styles.legalLink}>Datenschutz</NavLink>
+          <NavLink to="/agb" className={styles.legalLink}>AGB</NavLink>
+        </nav>
       </div>
     </aside>
   );

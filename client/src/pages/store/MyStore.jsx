@@ -98,7 +98,7 @@ function MyStore() {
     <div className={`page ${styles.storePage}`}>
       {/* Page Header - Consistent with other pages */}
       <div className="page-header">
-        <h1 className="page-title">My Store</h1>
+        <h1 className="page-title">Meine Produkte</h1>
         <p className="page-subtitle">Verwalte deine Produkte und deinen Store</p>
       </div>
 

@@ -1,7 +1,7 @@
 // client/src/pages/public/PublicProduct.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Button, Card, Badge, Icon } from '../../components/common';
+import { Button, Card, Badge, Icon, LegalFooter} from '../../components/common';
 import { productsService, promotionService, paymentsService } from '../../services';
 import { useAuth } from '../../context/AuthContext';
 import styles from '../../styles/pages/PublicProduct.module.css';

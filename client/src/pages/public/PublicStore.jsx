@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Icon } from '../../components/common';
 import { usersService, messagesService } from '../../services';
 import styles from '../../styles/pages/PublicStore.module.css';
+import { LegalFooter } from '../../components/common';
 
 /**
  * Public Store Page - Buyer View
@@ -361,14 +362,7 @@ function PublicStore() {
       )}
 
       {/* Footer */}
-      <footer className={styles.footer}>
-        <p>
-          Powered by{' '}
-          <Link to="/" className={styles.footerLink}>
-            MoneMee
-          </Link>
-        </p>
-      </footer>
+      <LegalFooter variant="compact" />
     </div>
   );
 }
