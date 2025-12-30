@@ -1,7 +1,7 @@
 // client/src/pages/public/PublicProduct.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Button, Card, Badge, Icon, LegalFooter} from '../../components/common';
+import { Button, Card, Badge, Icon} from '../../components/common';
 import { productsService, promotionService, paymentsService } from '../../services';
 import { useAuth } from '../../context/AuthContext';
 import styles from '../../styles/pages/PublicProduct.module.css';
@@ -16,6 +16,7 @@ function PublicProduct() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const affiliateCode = searchParams.get('ref');
+  const checkoutStatus = searchParams.get('checkout'); // 'cancelled'
   const { user, isAuthenticated } = useAuth();
   
   // State
@@ -29,8 +30,7 @@ function PublicProduct() {
   
   // Kauf-State
   const [purchasing, setPurchasing] = useState(false);
-  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
-  const [purchaseData, setPurchaseData] = useState(null);
+  const [purchaseError, setPurchaseError] = useState(null);
   
   // Widerrufs-Checkbox State (§ 356 Abs. 5 BGB)
   const [acceptedWaiver, setAcceptedWaiver] = useState(false);
@@ -45,6 +45,13 @@ function PublicProduct() {
       promotionService.trackClick(affiliateCode).catch(console.error);
     }
   }, [affiliateCode, productId]);
+
+  // Checkout cancelled Hinweis
+  useEffect(() => {
+    if (checkoutStatus === 'cancelled') {
+      setPurchaseError('Zahlung abgebrochen. Du kannst es jederzeit erneut versuchen.');
+    }
+  }, [checkoutStatus]);
 
   // Produkt laden
   useEffect(() => {
@@ -91,10 +98,8 @@ function PublicProduct() {
 
   /**
    * Kaufen Handler
-   * DUMMY: Simuliert einen echten Kauf - erstellt Transaktionen in der DB
-   * SPÄTER: Wird durch echten Stripe-Checkout ersetzt
+   * Erstellt Stripe Checkout Session und leitet weiter
    */
-  
   const handleBuy = async () => {
     if (!isAuthenticated) {
       navigate('/login?redirect=' + encodeURIComponent(`/p/${productId}`));
@@ -103,19 +108,21 @@ function PublicProduct() {
 
     // Prüfe Widerrufs-Checkbox für kostenpflichtige Produkte
     if (product.price > 0 && !acceptedWaiver) {
-      alert('Bitte bestätige, dass du auf dein Widerrufsrecht verzichtest, um den sofortigen Zugang zu erhalten.');
+      setPurchaseError('Bitte bestätige, dass du auf dein Widerrufsrecht verzichtest, um den sofortigen Zugang zu erhalten.');
       return;
     }
     
+    // Eigenes Produkt prüfen
     // DUMMY/TESTING: Auskommentiert - eigenes Produkt kaufen erlaubt
     // TODO: Vor Production wieder aktivieren!
     // if (isOwnProduct) {
-    //   alert('Du kannst dein eigenes Produkt nicht kaufen.');
+    //   setPurchaseError('Du kannst dein eigenes Produkt nicht kaufen.');
     //   return;
     // }
     
     try {
       setPurchasing(true);
+      setPurchaseError(null);
       
       // Affiliate-Code aus LocalStorage holen
       const refCode = localStorage.getItem('monemee_ref');
@@ -124,27 +131,32 @@ function PublicProduct() {
       // Nur Affiliate-Code verwenden wenn er für dieses Produkt gilt
       const useAffiliateCode = (refCode && refProduct === productId) ? refCode : null;
       
-      // DUMMY: Simulierten Kauf ausführen
-      const response = await paymentsService.simulatePurchase(
+      // Stripe Checkout Session erstellen
+      const response = await paymentsService.createCheckout(
         parseInt(productId), 
         useAffiliateCode
       );
       
-      if (response.success) {
-        setPurchaseSuccess(true);
-        setPurchaseData(response.data);
-        
-        // Affiliate-Code aus LocalStorage entfernen
-        localStorage.removeItem('monemee_ref');
-        localStorage.removeItem('monemee_ref_product');
-        
-        // Produkt-State aktualisieren (Sales +1)
-        setProduct(prev => prev ? { ...prev, sales: (prev.sales || 0) + 1 } : prev);
+      if (response.success && response.data?.checkoutUrl) {
+        // Zu Stripe Checkout weiterleiten
+        window.location.href = response.data.checkoutUrl;
+      } else {
+        throw new Error(response.message || 'Checkout konnte nicht erstellt werden');
       }
       
     } catch (err) {
-      console.error('Purchase error:', err);
-      alert(err.message || 'Kauf fehlgeschlagen. Bitte versuche es erneut.');
+      console.error('Checkout error:', err);
+      
+      // Spezifische Fehlermeldungen
+      if (err.code === 'SELLER_NO_STRIPE') {
+        setPurchaseError('Der Verkäufer hat noch kein Zahlungskonto eingerichtet. Bitte versuche es später erneut.');
+      } else if (err.code === 'SELLER_CHARGES_DISABLED') {
+        setPurchaseError('Der Verkäufer kann derzeit keine Zahlungen empfangen.');
+      } else if (err.code === 'STRIPE_NOT_CONFIGURED') {
+        setPurchaseError('Zahlungen sind derzeit nicht verfügbar. Bitte versuche es später erneut.');
+      } else {
+        setPurchaseError(err.message || 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+      }
     } finally {
       setPurchasing(false);
     }
@@ -246,47 +258,7 @@ function PublicProduct() {
     );
   }
 
-  const isOwnProduct = false; //user?.id === product.user_id;
-
-  // Success State nach Kauf
-  if (purchaseSuccess) {
-    return (
-      <div className={styles.successContainer}>
-        <div className={styles.successIcon}>
-          <Icon name="checkCircle" size={80} />
-        </div>
-        <h1 className={styles.successTitle}>Kauf erfolgreich! 🎉</h1>
-        <p className={styles.successText}>
-          Du hast <strong>{product.title}</strong> gekauft.
-        </p>
-        {purchaseData?.payment && (
-          <div className={styles.successDetails}>
-            <div className={styles.successDetailRow}>
-              <span>Betrag:</span>
-              <span>{formatPrice(purchaseData.payment.amount)}</span>
-            </div>
-            {purchaseData.payment.promoterCommission > 0 && (
-              <div className={styles.successDetailRow}>
-                <span>Affiliate-Bonus:</span>
-                <span>{formatPrice(purchaseData.payment.promoterCommission)}</span>
-              </div>
-            )}
-          </div>
-        )}
-        <p className={styles.successNote}>
-          (Dies ist eine Simulation - echte Zahlung kommt bald!)
-        </p>
-        <div className={styles.successActions}>
-          <Button variant="primary" onClick={() => navigate('/')}>
-            Zur Startseite
-          </Button>
-          <Button variant="secondary" onClick={() => setPurchaseSuccess(false)}>
-            Zurück zum Produkt
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const isOwnProduct = false // user?.id === product.user_id;
 
   return (
     <div className={styles.productPage}>
@@ -368,6 +340,14 @@ function PublicProduct() {
             )}
           </div>
 
+          {/* Error Message */}
+          {purchaseError && (
+            <div className={styles.purchaseError}>
+              <Icon name="alertCircle" size="sm" />
+              <span>{purchaseError}</span>
+            </div>
+          )}
+
           {/* Widerrufs-Checkbox für kostenpflichtige digitale Produkte */}
           {product.price > 0 && !isOwnProduct && (
             <div className={styles.waiverCheckbox}>
@@ -375,7 +355,10 @@ function PublicProduct() {
                 <input
                   type="checkbox"
                   checked={acceptedWaiver}
-                  onChange={(e) => setAcceptedWaiver(e.target.checked)}
+                  onChange={(e) => {
+                    setAcceptedWaiver(e.target.checked);
+                    setPurchaseError(null);
+                  }}
                   className={styles.waiverInput}
                 />
                 <span className={styles.waiverCustomCheckbox}>
@@ -401,7 +384,7 @@ function PublicProduct() {
             disabled={purchasing || isOwnProduct || (product.price > 0 && !acceptedWaiver)}
             icon={purchasing ? null : <Icon name="shoppingBag" size="sm" />}
           >
-            {purchasing ? 'Wird verarbeitet...' : 
+            {purchasing ? 'Weiter zur Zahlung...' : 
              isOwnProduct ? 'Dein eigenes Produkt' :
              product.price > 0 ? 'Jetzt kaufen' : 'Kostenlos herunterladen'}
           </Button>
@@ -413,7 +396,7 @@ function PublicProduct() {
             </div>
             <div className={styles.trustItem}>
               <Icon name="creditCard" size="sm" />
-              <span>Sichere Zahlung</span>
+              <span>Sichere Zahlung via Stripe</span>
             </div>
           </div>
         </Card>

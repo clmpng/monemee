@@ -10,7 +10,7 @@ const LEVELS = [
     level: 1,
     name: 'Starter',
     minEarnings: 0,
-    fee: 15,
+    fee: 29,
     color: '#64748B',
     description: 'Dein Einstieg als Creator'
   },
@@ -18,7 +18,7 @@ const LEVELS = [
     level: 2,
     name: 'Rising Star',
     minEarnings: 100,
-    fee: 12,
+    fee: 20,
     color: '#3B82F6',
     description: 'Du hast deine ersten Verkäufe gemacht'
   },
@@ -26,7 +26,7 @@ const LEVELS = [
     level: 3,
     name: 'Creator',
     minEarnings: 500,
-    fee: 10,
+    fee: 15,
     color: '#8B5CF6',
     description: 'Du bist ein etablierter Creator'
   },
@@ -34,7 +34,7 @@ const LEVELS = [
     level: 4,
     name: 'Pro',
     minEarnings: 2000,
-    fee: 8,
+    fee: 12,
     color: '#F59E0B',
     description: 'Du gehörst zu den Top-Verkäufern'
   },
@@ -42,7 +42,7 @@ const LEVELS = [
     level: 5,
     name: 'Elite',
     minEarnings: 5000,
-    fee: 5,
+    fee: 9,
     color: '#10B981',
     description: 'Die höchste Stufe - maximale Vorteile'
   }

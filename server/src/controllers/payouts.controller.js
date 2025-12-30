@@ -6,19 +6,23 @@ const { getAllLevels } = require('../config/levels.config');
 
 /**
  * Payouts Controller
- * Handles all payout-related HTTP requests
  * 
- * STRIPE CONNECT INTEGRATION:
- * - Auszahlungen erfolgen via Stripe Transfer zum Connect Account
- * - User muss Stripe Connect Onboarding abgeschlossen haben
- * - Stripe überweist das Geld automatisch auf das Bankkonto des Users
+ * WICHTIG: Dieser Controller handhabt NUR Affiliate-Auszahlungen!
+ * 
+ * Produkt-Einnahmen werden automatisch via Stripe Destination Charges
+ * direkt an den Seller ausgezahlt - kein manueller Payout nötig.
+ * 
+ * Affiliate-Provisionen hingegen sammeln sich auf der Plattform und
+ * können nach einer 7-Tage Clearing-Phase manuell ausgezahlt werden.
  */
 const payoutsController = {
   /**
-   * Get user balance and payout info
-   * GET /api/v1/payouts/balance
+   * Get affiliate balance info
+   * GET /api/v1/payouts/affiliate-balance
+   * 
+   * Zeigt NUR Affiliate-Provisionen, nicht Produkt-Einnahmen!
    */
-  async getBalance(req, res, next) {
+  async getAffiliateBalance(req, res, next) {
     try {
       const userId = req.userId;
       
@@ -40,12 +44,22 @@ const payoutsController = {
       
       const payoutStats = await PayoutModel.getStats(userId);
       
+      // Berechne verfügbare und pending Affiliate-Balance
+      // Nach Migration: affiliate_balance und affiliate_pending_balance
+      // Fallback für alte Struktur: available_balance und pending_balance
+      const availableBalance = parseFloat(user.affiliate_balance ?? user.available_balance ?? 0);
+      const pendingBalance = parseFloat(user.affiliate_pending_balance ?? user.pending_balance ?? 0);
+      const totalEarnings = parseFloat(user.affiliate_earnings_total ?? 0);
+      
       res.json({
         success: true,
         data: {
-          availableBalance: parseFloat(user.available_balance || 0),
-          pendingBalance: parseFloat(user.pending_balance || 0),
-          totalEarnings: parseFloat(user.total_earnings || 0),
+          // Affiliate-spezifische Balances
+          availableBalance: availableBalance,
+          pendingBalance: pendingBalance,
+          totalEarnings: totalEarnings,
+          
+          // Payout Stats
           totalPaidOut: payoutStats.totalPaid,
           pendingPayouts: payoutStats.pendingCount,
           pendingPayoutAmount: payoutStats.pendingAmount,
@@ -60,8 +74,11 @@ const payoutsController = {
             user.stripe_account_id &&
             user.stripe_payouts_enabled &&
             user.stripe_onboarding_complete &&
-            parseFloat(user.available_balance || 0) >= PAYOUT_CONFIG.absoluteMinPayout
+            availableBalance >= PAYOUT_CONFIG.absoluteMinPayout
           ),
+          
+          // Clearing Info
+          clearingDays: 7,
           
           // Payout-Regeln für Frontend
           config: {
@@ -78,12 +95,8 @@ const payoutsController = {
   },
 
   /**
-   * Request a payout
+   * Request a payout (nur für Affiliate-Provisionen!)
    * POST /api/v1/payouts/request
-   * 
-   * STRIPE INTEGRATION:
-   * - Erstellt Stripe Transfer zum Connect Account
-   * - Stripe überweist automatisch auf das Bankkonto
    */
   async requestPayout(req, res, next) {
     try {
@@ -120,7 +133,7 @@ const payoutsController = {
       if (!user.stripe_account_id) {
         return res.status(400).json({
           success: false,
-          message: 'Bitte richte zuerst dein Auszahlungskonto ein',
+          message: 'Bitte richte zuerst dein Auszahlungskonto in den Einstellungen ein.',
           code: 'NO_STRIPE_ACCOUNT'
         });
       }
@@ -128,7 +141,7 @@ const payoutsController = {
       if (!user.stripe_onboarding_complete) {
         return res.status(400).json({
           success: false,
-          message: 'Bitte schließe die Kontoeinrichtung ab',
+          message: 'Bitte schließe die Kontoeinrichtung bei Stripe ab.',
           code: 'ONBOARDING_INCOMPLETE'
         });
       }
@@ -136,12 +149,13 @@ const payoutsController = {
       if (!user.stripe_payouts_enabled) {
         return res.status(400).json({
           success: false,
-          message: 'Auszahlungen sind für dein Konto noch nicht freigeschaltet. Bitte überprüfe deine Angaben bei Stripe.',
+          message: 'Auszahlungen sind für dein Konto noch nicht freigeschaltet.',
           code: 'PAYOUTS_NOT_ENABLED'
         });
       }
       
-      const availableBalance = parseFloat(user.available_balance || 0);
+      // Affiliate Balance prüfen (nach Migration: affiliate_balance)
+      const availableBalance = parseFloat(user.affiliate_balance ?? user.available_balance ?? 0);
       
       // Validierung
       const validation = canRequestPayout(availableBalance, amount);
@@ -166,11 +180,12 @@ const payoutsController = {
         fee: fee,
         net_amount: netAmount,
         status: 'pending',
+        source_type: 'affiliate',
         stripe_destination: user.stripe_account_id
       });
       
-      // Balance reduzieren
-      await UserModel.updateBalance(userId, -amount);
+      // Affiliate Balance reduzieren
+      await UserModel.updateAffiliateBalance(userId, -amount);
       
       // ============================================
       // Stripe Transfer erstellen
@@ -183,7 +198,7 @@ const payoutsController = {
             amount: netAmount,
             accountId: user.stripe_account_id,
             payoutId: payout.id,
-            description: `Monemee Auszahlung #${payout.reference_number}`
+            description: `Monemee Affiliate-Provision #${payout.reference_number}`
           });
           
           // Payout mit Stripe-Daten aktualisieren
@@ -191,7 +206,7 @@ const payoutsController = {
             stripe_transfer_id: transfer.id
           });
           
-          console.log(`[Payout] Transfer erstellt: ${transfer.id} (${netAmount}€) für User ${userId}`);
+          console.log(`[Payout] Affiliate Transfer erstellt: ${transfer.id} (${netAmount}€) für User ${userId}`);
           
         } catch (stripeError) {
           // Bei Stripe-Fehler: Payout als failed markieren und Balance zurückgeben
@@ -202,7 +217,7 @@ const payoutsController = {
           });
           
           // Balance zurückgeben
-          await UserModel.updateBalance(userId, amount);
+          await UserModel.updateAffiliateBalance(userId, amount);
           
           return res.status(500).json({
             success: false,
@@ -211,7 +226,6 @@ const payoutsController = {
           });
         }
       } else {
-        // Stripe nicht konfiguriert - Payout bleibt pending
         console.warn('[Payout] Stripe nicht konfiguriert - Payout wartet auf manuelle Verarbeitung');
       }
       
@@ -231,7 +245,7 @@ const payoutsController = {
           estimatedArrival: new Date(Date.now() + PAYOUT_CONFIG.processingDays * 24 * 60 * 60 * 1000)
         },
         message: fee > 0 
-          ? `Auszahlung beantragt! Gebühr: ${fee}€` 
+          ? `Auszahlung beantragt! Gebühr: ${fee.toFixed(2)}€` 
           : 'Auszahlung beantragt!'
       });
       
@@ -272,6 +286,7 @@ const payoutsController = {
           fee: parseFloat(p.fee),
           netAmount: parseFloat(p.net_amount),
           status: p.status,
+          sourceType: p.source_type || 'affiliate',
           createdAt: p.created_at,
           processedAt: p.processed_at,
           completedAt: p.completed_at,
@@ -327,8 +342,8 @@ const payoutsController = {
       // Payout stornieren
       await PayoutModel.updateStatus(payoutId, 'cancelled');
       
-      // Balance zurückgeben
-      await UserModel.updateBalance(userId, parseFloat(payout.amount));
+      // Affiliate Balance zurückgeben
+      await UserModel.updateAffiliateBalance(userId, parseFloat(payout.amount));
       
       res.json({
         success: true,
@@ -355,16 +370,16 @@ const payoutsController = {
             level: l.level,
             name: l.name,
             minEarnings: l.minEarnings,
-            platformFee: l.platformFee,
+            platformFee: l.fee,
             color: l.color
           })),
           payout: {
             minFreePayoutAmount: PAYOUT_CONFIG.minFreePayoutAmount,
             smallPayoutFee: PAYOUT_CONFIG.smallPayoutFee,
             absoluteMinPayout: PAYOUT_CONFIG.absoluteMinPayout,
-            processingDays: PAYOUT_CONFIG.processingDays
+            processingDays: PAYOUT_CONFIG.processingDays,
+            clearingDays: 7
           },
-          // Info für Frontend
           stripeConfigured: stripeService.isStripeConfigured(),
           stripeMode: stripeService.STRIPE_MODE
         }

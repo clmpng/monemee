@@ -1,503 +1,704 @@
-/* ========================================
-   Earnings/Statistics Page Styles
-   ======================================== */
-
-.earningsPage {
-  padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-lg) + 80px);
-}
-
-/* Loading & Error States */
-.loadingState,
-.errorState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 50vh;
-  text-align: center;
-  color: var(--color-text-secondary);
-}
-
-.loadingSpinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-bottom: var(--spacing-md);
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.errorState h3 {
-  margin: var(--spacing-md) 0 var(--spacing-sm);
-  color: var(--color-text-primary);
-}
-
-.retryButton {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background: var(--color-primary);
-  color: white;
-  border-radius: var(--radius-md);
-  font-weight: 500;
-}
-
-/* Total Earnings Card */
-.totalEarnings {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-md);
-  color: white;
-  position: relative;
-  overflow: hidden;
-}
-
-.totalEarnings::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.totalLabel {
-  font-size: var(--font-size-sm);
-  opacity: 0.9;
-  margin-bottom: var(--spacing-xs);
-}
-
-.totalValue {
-  font-size: var(--font-size-3xl);
-  font-weight: 700;
-  margin-bottom: var(--spacing-sm);
-}
-
-.totalChange {
-  font-size: var(--font-size-sm);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  opacity: 0.9;
-}
-
-.changePositive {
-  color: #86efac;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.changeNegative {
-  color: #fca5a5;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* Balance Card */
-.balanceCard {
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
-  border: 1px solid var(--color-border);
-}
-
-.balanceMain {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-}
-
-.balanceInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.balanceLabel {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.balanceAmount {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--color-success);
-}
-
-.balanceHint {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-}
-
-.payoutButton {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background: var(--color-success);
-  color: white;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  font-size: var(--font-size-sm);
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-}
-
-.payoutButton:hover:not(:disabled) {
-  filter: brightness(1.1);
-}
-
-.payoutButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.balanceStats {
-  margin-top: var(--spacing-sm);
-  padding-top: var(--spacing-sm);
-  border-top: 1px solid var(--color-border);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-tertiary);
-}
-
-/* Level Progress */
-.levelCard {
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-  border: 1px solid var(--color-border);
-}
-
-.levelHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-md);
-}
-
-.levelBadge {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.levelIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--color-warning);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-}
-
-.levelInfo h3 {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.levelInfo p {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-}
-
-.levelFee {
-  text-align: right;
-}
-
-.feeValue {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--color-success);
-}
-
-.feeLabel {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-}
-
-.levelProgress {
-  margin-bottom: var(--spacing-sm);
-}
-
-.progressBar {
-  height: 8px;
-  background: var(--color-bg-tertiary);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.progressFill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-  border-radius: var(--radius-full);
-  transition: width var(--transition-slow);
-}
-
-.levelFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.progressText {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-}
-
-.levelInfoButton {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--font-size-xs);
-  color: var(--color-primary);
-  font-weight: 500;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
-}
-
-.levelInfoButton:hover {
-  background: rgba(99, 102, 241, 0.1);
-}
-
-/* Stats Grid */
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-}
-
-.statCard {
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
-  border: 1px solid var(--color-border);
-}
-
-.statIcon {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--spacing-sm);
-}
-
-.statIconPrimary {
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--color-primary);
-}
-
-.statIconSuccess {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--color-success);
-}
-
-.statIconWarning {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--color-warning);
-}
-
-.statIconDanger {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--color-danger);
-}
-
-.statValue {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.statLabel {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  margin-top: 2px;
-}
-
-/* Tabs */
-.tabs {
-  display: flex;
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-lg);
-  background: var(--color-bg-tertiary);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xs);
-}
-
-.tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
-}
-
-.tab:hover {
-  color: var(--color-text-primary);
-}
-
-.tabActive {
-  background: var(--color-bg-secondary);
-  color: var(--color-primary);
-  box-shadow: var(--shadow-sm);
-}
-
-/* Section */
-.section {
-  margin-bottom: var(--spacing-xl);
-}
-
-.sectionTitle {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-md);
-}
-
-/* Top Products List */
-.topProductsList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.topProductItem {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
-}
-
-.productThumb {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  background: var(--color-bg-tertiary);
-  overflow: hidden;
-  flex-shrink: 0;
-  color: var(--color-text-tertiary);
-}
-
-.productThumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.productInfo {
-  flex: 1;
-  min-width: 0;
-}
-
-.productName {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.productStats {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  margin-top: 2px;
-}
-
-.productRevenue {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--color-success);
-  flex-shrink: 0;
-}
-
-/* Sticky Payout CTA */
-.stickyPayoutCta {
-  position: fixed;
-  bottom: calc(var(--bottom-nav-height) + var(--spacing-md));
-  left: var(--spacing-md);
-  right: var(--spacing-md);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-md);
-  box-shadow: var(--shadow-lg);
-  z-index: 50;
-}
-
-.stickyPayoutInfo {
-  display: flex;
-  flex-direction: column;
-}
-
-.stickyPayoutLabel {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-}
-
-.stickyPayoutAmount {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  color: var(--color-success);
-}
-
-.stickyPayoutButton {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background: var(--color-success);
-  color: white;
-  border-radius: var(--radius-lg);
-  font-weight: 600;
-  font-size: var(--font-size-sm);
-  white-space: nowrap;
-  transition: all var(--transition-fast);
-}
-
-.stickyPayoutButton:hover {
-  filter: brightness(1.1);
-}
-
-/* Desktop */
-@media (min-width: 768px) {
-  .earningsPage {
-    padding-bottom: var(--spacing-xl);
+/* ============================================
+   Earnings Dashboard Styles
+   Mobile-first, modernes Design
+   ============================================ */
+
+   .earningsPage {
+    padding-bottom: calc(var(--spacing-xl) + 80px);
   }
   
-  .statsGrid {
-    grid-template-columns: repeat(4, 1fr);
+  /* Loading & Error States */
+  .loadingState,
+  .errorState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    gap: var(--spacing-md);
+    color: var(--color-text-secondary);
   }
   
-  .stickyPayoutCta {
-    display: none;
+  .loadingSpinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
   }
-}
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .errorState svg {
+    color: var(--color-error);
+  }
+  
+  .retryButton {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--color-primary);
+    color: white;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+  }
+  
+  /* ============================================
+     Level Card
+     ============================================ */
+  
+  .levelCard {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--color-border);
+  }
+  
+  .levelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .levelBadge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+  
+  .levelIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+  
+  .levelInfo h3 {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 2px;
+  }
+  
+  .levelInfo p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+  
+  .levelFee {
+    text-align: right;
+  }
+  
+  .feeValue {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-success);
+  }
+  
+  .feeLabel {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+  }
+  
+  .levelProgress {
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .progressBar {
+    height: 8px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+  
+  .progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow);
+  }
+  
+  .levelFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .progressText {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+  
+  .levelInfoButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: var(--color-primary);
+    font-weight: 500;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+  }
+  
+  .levelInfoButton:hover {
+    background: rgba(99, 102, 241, 0.1);
+  }
+  
+  /* ============================================
+     Tab Navigation
+     ============================================ */
+  
+  .tabNavigation {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    background: var(--color-bg-secondary);
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+  }
+  
+  .tabButton {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+  }
+  
+  .tabButton:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-tertiary);
+  }
+  
+  .tabButton.tabActive {
+    background: var(--color-primary);
+    color: white;
+  }
+  
+  .tabButton.tabActive .tabBadge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+  
+  .tabBadge {
+    font-size: var(--font-size-xs);
+    padding: 2px 8px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    font-weight: 600;
+  }
+  
+  .tabBadgeHighlight {
+    background: var(--color-success);
+    color: white;
+  }
+  
+  /* ============================================
+     Tab Content
+     ============================================ */
+  
+  .tabContent {
+    animation: fadeIn 0.2s ease;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  /* ============================================
+     Info Boxes
+     ============================================ */
+  
+  .infoBox {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .infoIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--color-success);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .infoContent h4 {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+  }
+  
+  .infoContent p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+  
+  .infoBoxSecondary {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .infoBoxSecondary > svg {
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  
+  .infoBoxSecondary strong {
+    display: block;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+  }
+  
+  .infoBoxSecondary p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+  
+  /* ============================================
+     Stats Row
+     ============================================ */
+  
+  .statsRow {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .statBox {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    text-align: center;
+  }
+  
+  .statValue {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+  }
+  
+  .statLabel {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+  
+  /* ============================================
+     Stripe Dashboard Button
+     ============================================ */
+  
+  .stripeDashboardButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+    transition: all var(--transition-fast);
+  }
+  
+  .stripeDashboardButton:hover {
+    border-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.05);
+  }
+  
+  .stripeButtonContent {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+  }
+  
+  .stripeButtonContent > svg {
+    width: 40px;
+    height: 40px;
+    padding: var(--spacing-sm);
+    background: var(--color-primary);
+    color: white;
+    border-radius: var(--radius-md);
+  }
+  
+  .stripeButtonTitle {
+    display: block;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 2px;
+  }
+  
+  .stripeButtonSubtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+  
+  .stripeSetupHint {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .stripeSetupHint > svg {
+    color: var(--color-warning);
+    flex-shrink: 0;
+  }
+  
+  .stripeSetupHint strong {
+    display: block;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+  }
+  
+  .stripeSetupHint p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+  
+  .stripeSetupHint a {
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+  
+  /* ============================================
+     Affiliate Balance Card
+     ============================================ */
+  
+  .affiliateBalanceCard {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #4f46e5 100%);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    color: white;
+  }
+  
+  .balanceHeader {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .balanceLabel {
+    display: block;
+    font-size: var(--font-size-sm);
+    opacity: 0.8;
+    margin-bottom: 4px;
+  }
+  
+  .balanceAmount {
+    display: block;
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+  }
+  
+  .pendingInfo {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    opacity: 0.8;
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+  }
+  
+  .payoutButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: white;
+    color: var(--color-primary);
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+  }
+  
+  .payoutButton:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .payoutButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .balanceHint {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    opacity: 0.8;
+    margin-top: var(--spacing-md);
+    text-align: center;
+    justify-content: center;
+  }
+  
+  .balanceHint a {
+    color: white;
+    text-decoration: underline;
+  }
+  
+  /* ============================================
+     Sections
+     ============================================ */
+  
+  .section {
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .sectionTitle svg {
+    color: var(--color-text-secondary);
+  }
+  
+  /* ============================================
+     Product List
+     ============================================ */
+  
+  .productList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .productItem {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+  
+  .productRank {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    width: 28px;
+  }
+  
+  .productThumb {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-tertiary);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+  }
+  
+  .productThumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .productInfo {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .productTitle {
+    display: block;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  
+  .productSales {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+  
+  .productRevenue {
+    font-weight: 600;
+    color: var(--color-success);
+    white-space: nowrap;
+  }
+  
+  /* ============================================
+     Affiliate List
+     ============================================ */
+  
+  .affiliateList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .affiliateItem {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+  
+  .affiliateThumb {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-tertiary);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+  }
+  
+  .affiliateThumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .affiliateInfo {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .affiliateTitle {
+    display: block;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  
+  .affiliateDate {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+  
+  .affiliateCommission {
+    font-weight: 600;
+    color: var(--color-success);
+    white-space: nowrap;
+  }
+  
+  /* ============================================
+     Empty State
+     ============================================ */
+  
+  .emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    background: var(--color-bg-secondary);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+  }
+  
+  .emptyState svg {
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .emptyState p {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+  }
+  
+  .emptyState span {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+  
+  /* ============================================
+     Desktop Styles
+     ============================================ */
+  
+  @media (min-width: 768px) {
+    .tabNavigation {
+      max-width: 400px;
+    }
+    
+    .tabButton span:first-of-type {
+      display: inline;
+    }
+  
+    .statsRow {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  
+    .stripeDashboardButton {
+      max-width: 500px;
+    }
+  
+    .affiliateBalanceCard {
+      max-width: 400px;
+    }
+  
+    .productList,
+    .affiliateList {
+      max-width: 600px;
+    }
+  }
+  

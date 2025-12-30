@@ -3,15 +3,24 @@ import api from './api';
 /**
  * Payouts Service
  * Handles all payout-related API calls
+ * 
+ * WICHTIG: Payouts sind NUR für Affiliate-Provisionen!
+ * Produkt-Einnahmen werden automatisch via Stripe ausgezahlt.
  */
 const payoutsService = {
   /**
-   * Get user balance and payout info
+   * Get affiliate balance and payout info
+   * (Ersetzt getBalance - nur für Affiliate-Provisionen)
    */
-  getBalance: () => api.get('/payouts/balance'),
+  getAffiliateBalance: () => api.get('/payouts/affiliate-balance'),
   
   /**
-   * Request a payout
+   * Legacy: Get user balance (deprecated, use getAffiliateBalance)
+   */
+  getBalance: () => api.get('/payouts/affiliate-balance'),
+  
+  /**
+   * Request a payout (nur für Affiliate-Provisionen)
    */
   requestPayout: (amount) => api.post('/payouts/request', { amount }),
   

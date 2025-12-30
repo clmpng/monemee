@@ -1,28 +1,36 @@
+// client/src/pages/earnings/EarningsDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { Icon } from '../../components/common';
 import { LevelInfoModal, PayoutModal, PayoutHistory } from '../../components/earnings';
-import { earningsService, payoutsService } from '../../services';
+import { earningsService, payoutsService, stripeService } from '../../services';
 import { PAYOUT_CONFIG } from '../../config/platform.config';
 import styles from '../../styles/pages/Earnings.module.css';
 
 /**
  * Earnings Dashboard Page
- * Shows earnings data, level progress, balance and payout options
+ * 
+ * Zwei Tabs:
+ * 1. PRODUKTE: Zeigt Produktverkäufe (Auszahlung via Stripe automatisch)
+ * 2. PROVISIONEN: Zeigt Affiliate-Einnahmen (manuelle Auszahlung)
  */
 function EarningsDashboard() {
+  // Tab State
   const [activeTab, setActiveTab] = useState('products');
   
-  // State for API data
+  // API Data States
   const [dashboard, setDashboard] = useState(null);
   const [level, setLevel] = useState(null);
-  const [balance, setBalance] = useState(null);
+  const [affiliateData, setAffiliateData] = useState(null);
   const [topProducts, setTopProducts] = useState([]);
-  const [affiliateEarnings, setAffiliateEarnings] = useState([]);
+  const [affiliateSales, setAffiliateSales] = useState([]);
   const [payoutHistory, setPayoutHistory] = useState([]);
+  const [stripeStatus, setStripeStatus] = useState(null);
+  
+  // UI States
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Modal states
+  // Modal States
   const [showLevelInfo, setShowLevelInfo] = useState(false);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [payoutLoading, setPayoutLoading] = useState(false);
@@ -37,21 +45,32 @@ function EarningsDashboard() {
       setLoading(true);
       setError(null);
 
-      const [dashboardRes, levelRes, balanceRes, productsRes, affiliatesRes, payoutsRes] = await Promise.all([
+      const [
+        dashboardRes, 
+        levelRes, 
+        affiliateRes, 
+        productsRes, 
+        affiliateSalesRes, 
+        payoutsRes,
+        stripeRes
+      ] = await Promise.all([
         earningsService.getDashboard(),
         earningsService.getLevelInfo(),
-        payoutsService.getBalance(),
+        payoutsService.getAffiliateBalance(),
         earningsService.getProductEarnings(),
         earningsService.getAffiliateEarnings(),
-        payoutsService.getHistory({ limit: 10 })
+        payoutsService.getHistory({ limit: 10 }),
+        stripeService.getConnectStatus().catch(() => ({ success: false }))
       ]);
 
       if (dashboardRes.success) setDashboard(dashboardRes.data);
       if (levelRes.success) setLevel(levelRes.data);
-      if (balanceRes.success) setBalance(balanceRes.data);
+      if (affiliateRes.success) setAffiliateData(affiliateRes.data);
       if (productsRes.success) setTopProducts(productsRes.data || []);
-      if (affiliatesRes.success) setAffiliateEarnings(affiliatesRes.data || []);
+      if (affiliateSalesRes.success) setAffiliateSales(affiliateSalesRes.data || []);
       if (payoutsRes.success) setPayoutHistory(payoutsRes.data || []);
+      if (stripeRes.success) setStripeStatus(stripeRes.data);
+
     } catch (err) {
       console.error('Error fetching earnings:', err);
       setError('Daten konnten nicht geladen werden');
@@ -68,17 +87,25 @@ function EarningsDashboard() {
     }).format(amount || 0);
   };
 
+  // Format date
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   // Calculate level progress
   const levelProgress = level?.progressPercent || 0;
 
-  // Handle payout request
+  // Handle payout request (nur für Affiliate)
   const handleRequestPayout = async (amount) => {
     try {
       setPayoutLoading(true);
       const response = await payoutsService.requestPayout(amount);
       
       if (response.success) {
-        // Refresh data
         await fetchData();
         return response;
       } else {
@@ -105,13 +132,25 @@ function EarningsDashboard() {
     }
   };
 
+  // Open Stripe Dashboard
+  const handleOpenStripeDashboard = async () => {
+    try {
+      const response = await stripeService.getDashboardLink();
+      if (response.success && response.data?.url) {
+        window.open(response.data.url, '_blank');
+      }
+    } catch (err) {
+      console.error('Error opening Stripe dashboard:', err);
+    }
+  };
+
   // Loading State
   if (loading) {
     return (
       <div className={`page ${styles.earningsPage}`}>
         <div className={styles.loadingState}>
           <div className={styles.loadingSpinner} />
-          <p>Einnahmen werden geladen...</p>
+          <p>Daten werden geladen...</p>
         </div>
       </div>
     );
@@ -133,58 +172,20 @@ function EarningsDashboard() {
     );
   }
 
-  const availableBalance = balance?.availableBalance || 0;
-  const canPayout = availableBalance >= PAYOUT_CONFIG.absoluteMinPayout;
+  // Affiliate balance data
+  const affiliateBalance = affiliateData?.availableBalance || 0;
+  const affiliatePending = affiliateData?.pendingBalance || 0;
+  const canPayout = affiliateBalance >= PAYOUT_CONFIG.absoluteMinPayout && stripeStatus?.payoutsEnabled;
 
   return (
     <div className={`page ${styles.earningsPage}`}>
+      {/* Header */}
       <div className="page-header">
         <h1 className="page-title">Fortschritt</h1>
-        <p className="page-subtitle">Deine Statistiken und Einnahmen</p>
+        <p className="page-subtitle">Deine Einnahmen und Level-Fortschritt</p>
       </div>
 
-      {/* Total Earnings Card */}
-      <div className={styles.totalEarnings}>
-        <p className={styles.totalLabel}>Gesamteinnahmen</p>
-        <p className={styles.totalValue}>{formatCurrency(dashboard?.total)}</p>
-        <p className={styles.totalChange}>
-          <span className={dashboard?.change >= 0 ? styles.changePositive : styles.changeNegative}>
-            <Icon name={dashboard?.change >= 0 ? 'trendingUp' : 'trendingDown'} size="sm" />
-            {dashboard?.change >= 0 ? '+' : ''}{dashboard?.change || 0}%
-          </span>
-          <span> vs. letzten Monat</span>
-        </p>
-      </div>
-
-      {/* Balance & Payout Card */}
-      <div className={styles.balanceCard}>
-        <div className={styles.balanceMain}>
-          <div className={styles.balanceInfo}>
-            <span className={styles.balanceLabel}>Verfügbar zur Auszahlung</span>
-            <span className={styles.balanceAmount}>{formatCurrency(availableBalance)}</span>
-            {availableBalance > 0 && availableBalance < PAYOUT_CONFIG.minFreePayoutAmount && (
-              <span className={styles.balanceHint}>
-                Noch {formatCurrency(PAYOUT_CONFIG.minFreePayoutAmount - availableBalance)} bis zur kostenlosen Auszahlung
-              </span>
-            )}
-          </div>
-          <button 
-            className={styles.payoutButton}
-            onClick={() => setShowPayoutModal(true)}
-            disabled={!canPayout}
-          >
-            <Icon name="wallet" size="sm" />
-            Auszahlen
-          </button>
-        </div>
-        {balance?.totalPaidOut > 0 && (
-          <div className={styles.balanceStats}>
-            <span>Bereits ausgezahlt: {formatCurrency(balance.totalPaidOut)}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Level Card */}
+      {/* Level Card - Always visible */}
       {level && (
         <div className={styles.levelCard}>
           <div className={styles.levelHeader}>
@@ -233,161 +234,230 @@ function EarningsDashboard() {
         </div>
       )}
 
-      {/* Quick Stats */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.statIconPrimary}`}>
-            <Icon name="shoppingBag" size="md" />
-          </div>
-          <div className={styles.statValue}>{dashboard?.totalSales || 0}</div>
-          <div className={styles.statLabel}>Verkäufe</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.statIconSuccess}`}>
-            <Icon name="wallet" size="md" />
-          </div>
-          <div className={styles.statValue}>{formatCurrency(dashboard?.productEarnings)}</div>
-          <div className={styles.statLabel}>Produkteinnahmen</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.statIconWarning}`}>
-            <Icon name="link" size="md" />
-          </div>
-          <div className={styles.statValue}>{dashboard?.totalReferrals || 0}</div>
-          <div className={styles.statLabel}>Referrals</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.statIconDanger}`}>
-            <Icon name="gift" size="md" />
-          </div>
-          <div className={styles.statValue}>{formatCurrency(dashboard?.affiliateEarnings)}</div>
-          <div className={styles.statLabel}>Affiliate Einnahmen</div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className={styles.tabs}>
+      {/* Tab Navigation */}
+      <div className={styles.tabNavigation}>
         <button 
-          className={`${styles.tab} ${activeTab === 'products' ? styles.tabActive : ''}`}
+          className={`${styles.tabButton} ${activeTab === 'products' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('products')}
         >
-          <Icon name="package" size="sm" />
-          <span>Meine Produkte</span>
+          <Icon name="shoppingBag" size="sm" />
+          <span>Produkte</span>
+          <span className={styles.tabBadge}>{formatCurrency(dashboard?.productEarnings)}</span>
         </button>
         <button 
-          className={`${styles.tab} ${activeTab === 'affiliates' ? styles.tabActive : ''}`}
+          className={`${styles.tabButton} ${activeTab === 'affiliates' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('affiliates')}
         >
-          <Icon name="share2" size="sm" />
-          <span>Affiliate</span>
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'payouts' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('payouts')}
-        >
-          <Icon name="creditCard" size="sm" />
-          <span>Auszahlungen</span>
+          <Icon name="link" size="sm" />
+          <span>Provisionen</span>
+          {affiliateBalance > 0 && (
+            <span className={`${styles.tabBadge} ${styles.tabBadgeHighlight}`}>
+              {formatCurrency(affiliateBalance)}
+            </span>
+          )}
         </button>
       </div>
 
-      {/* Tab Content */}
+      {/* ==================== PRODUKTE TAB ==================== */}
       {activeTab === 'products' && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Top Produkte</h2>
-          {topProducts.length > 0 ? (
-            <div className={styles.topProductsList}>
-              {topProducts.map((product) => (
-                <div key={product.id} className={styles.topProductItem}>
-                  <div className={styles.productThumb}>
-                    {product.thumbnail ? (
-                      <img src={product.thumbnail} alt={product.title} />
-                    ) : (
-                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                        <Icon name="image" size="md" />
-                      </span>
-                    )}
-                  </div>
-                  <div className={styles.productInfo}>
-                    <div className={styles.productName}>{product.title}</div>
-                    <div className={styles.productStats}>{product.sales} Verkäufe</div>
-                  </div>
-                  <div className={styles.productRevenue}>{formatCurrency(product.revenue)}</div>
-                </div>
-              ))}
+        <div className={styles.tabContent}>
+          {/* Info Box */}
+          <div className={styles.infoBox}>
+            <div className={styles.infoIcon}>
+              <Icon name="checkCircle" size="md" />
             </div>
-          ) : (
-            <div className="empty-state">
-              <div className="empty-state-icon">📦</div>
-              <h3 className="empty-state-title">Noch keine Verkäufe</h3>
-              <p className="empty-state-text">
-                Erstelle dein erstes Produkt und starte mit dem Verkaufen!
+            <div className={styles.infoContent}>
+              <h4>Automatische Auszahlung</h4>
+              <p>
+                Deine Produkteinnahmen werden direkt via Stripe auf dein Bankkonto überwiesen. 
+                Du musst nichts weiter tun!
               </p>
             </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === 'affiliates' && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Affiliate-Einnahmen</h2>
-          {affiliateEarnings.length > 0 ? (
-            <div className={styles.topProductsList}>
-              {affiliateEarnings.map((item) => (
-                <div key={item.id} className={styles.topProductItem}>
-                  <div className={styles.productThumb}>
-                    {item.productThumbnail ? (
-                      <img src={item.productThumbnail} alt={item.productTitle} />
-                    ) : (
-                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                        <Icon name="image" size="md" />
-                      </span>
-                    )}
-                  </div>
-                  <div className={styles.productInfo}>
-                    <div className={styles.productName}>{item.productTitle}</div>
-                    <div className={styles.productStats}>
-                      {new Date(item.date).toLocaleDateString('de-DE')}
-                    </div>
-                  </div>
-                  <div className={styles.productRevenue}>+{formatCurrency(item.commission)}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <div className="empty-state-icon">🔗</div>
-              <h3 className="empty-state-title">Noch keine Affiliate-Einnahmen</h3>
-              <p className="empty-state-text">
-                Bewerbe Produkte anderer Creator und verdiene Provisionen!
-              </p>
-            </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === 'payouts' && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Auszahlungshistorie</h2>
-          <PayoutHistory 
-            payouts={payoutHistory}
-            onCancel={handleCancelPayout}
-          />
-        </section>
-      )}
-
-      {/* Sticky Payout CTA (Mobile) */}
-      {canPayout && (
-        <div className={styles.stickyPayoutCta}>
-          <div className={styles.stickyPayoutInfo}>
-            <span className={styles.stickyPayoutLabel}>Verfügbar</span>
-            <span className={styles.stickyPayoutAmount}>{formatCurrency(availableBalance)}</span>
           </div>
-          <button 
-            className={styles.stickyPayoutButton}
-            onClick={() => setShowPayoutModal(true)}
-          >
-            Jetzt auszahlen
-          </button>
+
+          {/* Stats Overview */}
+          <div className={styles.statsRow}>
+            <div className={styles.statBox}>
+              <div className={styles.statValue}>{formatCurrency(dashboard?.productEarnings)}</div>
+              <div className={styles.statLabel}>Gesamteinnahmen</div>
+            </div>
+            <div className={styles.statBox}>
+              <div className={styles.statValue}>{dashboard?.totalSales || 0}</div>
+              <div className={styles.statLabel}>Verkäufe</div>
+            </div>
+          </div>
+
+          {/* Stripe Dashboard Link */}
+          {stripeStatus?.payoutsEnabled ? (
+            <button 
+              className={styles.stripeDashboardButton}
+              onClick={handleOpenStripeDashboard}
+            >
+              <div className={styles.stripeButtonContent}>
+                <Icon name="externalLink" size="md" />
+                <div>
+                  <span className={styles.stripeButtonTitle}>Stripe Dashboard öffnen</span>
+                  <span className={styles.stripeButtonSubtitle}>
+                    Transaktionen, Auszahlungen & Bankverbindung verwalten
+                  </span>
+                </div>
+              </div>
+              <Icon name="chevronRight" size="md" />
+            </button>
+          ) : (
+            <div className={styles.stripeSetupHint}>
+              <Icon name="alertCircle" size="md" />
+              <div>
+                <strong>Stripe noch nicht eingerichtet</strong>
+                <p>Richte dein Auszahlungskonto in den <a href="/settings?tab=stripe">Einstellungen</a> ein, um Zahlungen zu empfangen.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Top Products */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Icon name="trendingUp" size="sm" />
+              Top Produkte
+            </h3>
+            
+            {topProducts.length > 0 ? (
+              <div className={styles.productList}>
+                {topProducts.map((product, index) => (
+                  <div key={product.id} className={styles.productItem}>
+                    <span className={styles.productRank}>#{index + 1}</span>
+                    <div className={styles.productThumb}>
+                      {product.thumbnail ? (
+                        <img src={product.thumbnail} alt={product.title} />
+                      ) : (
+                        <Icon name="package" size="sm" />
+                      )}
+                    </div>
+                    <div className={styles.productInfo}>
+                      <span className={styles.productTitle}>{product.title}</span>
+                      <span className={styles.productSales}>{product.sales} Verkäufe</span>
+                    </div>
+                    <span className={styles.productRevenue}>{formatCurrency(product.revenue)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                <Icon name="package" size="xl" />
+                <p>Noch keine Verkäufe</p>
+                <span>Erstelle dein erstes Produkt und starte durch!</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ==================== PROVISIONEN TAB ==================== */}
+      {activeTab === 'affiliates' && (
+        <div className={styles.tabContent}>
+          {/* Balance Card */}
+          <div className={styles.affiliateBalanceCard}>
+            <div className={styles.balanceHeader}>
+              <span className={styles.balanceLabel}>Verfügbares Guthaben</span>
+              <span className={styles.balanceAmount}>{formatCurrency(affiliateBalance)}</span>
+            </div>
+            
+            {affiliatePending > 0 && (
+              <div className={styles.pendingInfo}>
+                <Icon name="clock" size="sm" />
+                <span>{formatCurrency(affiliatePending)} in Freigabe (7 Tage)</span>
+              </div>
+            )}
+
+            <button 
+              className={styles.payoutButton}
+              onClick={() => setShowPayoutModal(true)}
+              disabled={!canPayout}
+            >
+              <Icon name="wallet" size="sm" />
+              {canPayout ? 'Auszahlung anfordern' : `Mind. ${formatCurrency(PAYOUT_CONFIG.absoluteMinPayout)}`}
+            </button>
+
+            {!stripeStatus?.payoutsEnabled && affiliateBalance > 0 && (
+              <p className={styles.balanceHint}>
+                <Icon name="info" size="xs" />
+                Richte erst dein <a href="/settings?tab=stripe">Stripe-Konto</a> ein
+              </p>
+            )}
+          </div>
+
+          {/* Info Box - Why manual? */}
+          <div className={styles.infoBoxSecondary}>
+            <Icon name="info" size="sm" />
+            <div>
+              <strong>Warum manuelle Auszahlung?</strong>
+              <p>
+                Affiliate-Provisionen werden nach einer 7-tägigen Sicherheitsphase freigegeben. 
+                Dies schützt vor Rückbuchungen und Betrug. Danach kannst du sie jederzeit auszahlen.
+              </p>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className={styles.statsRow}>
+            <div className={styles.statBox}>
+              <div className={styles.statValue}>{formatCurrency(affiliateData?.totalEarnings || dashboard?.affiliateEarnings)}</div>
+              <div className={styles.statLabel}>Gesamtprovisionen</div>
+            </div>
+            <div className={styles.statBox}>
+              <div className={styles.statValue}>{dashboard?.totalReferrals || 0}</div>
+              <div className={styles.statLabel}>Referrals</div>
+            </div>
+          </div>
+
+          {/* Recent Affiliate Sales */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Icon name="link" size="sm" />
+              Letzte Provisionen
+            </h3>
+            
+            {affiliateSales.length > 0 ? (
+              <div className={styles.affiliateList}>
+                {affiliateSales.map((sale) => (
+                  <div key={sale.id} className={styles.affiliateItem}>
+                    <div className={styles.affiliateThumb}>
+                      {sale.productThumbnail ? (
+                        <img src={sale.productThumbnail} alt={sale.productTitle} />
+                      ) : (
+                        <Icon name="package" size="sm" />
+                      )}
+                    </div>
+                    <div className={styles.affiliateInfo}>
+                      <span className={styles.affiliateTitle}>{sale.productTitle}</span>
+                      <span className={styles.affiliateDate}>{formatDate(sale.date)}</span>
+                    </div>
+                    <span className={styles.affiliateCommission}>+{formatCurrency(sale.commission)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                <Icon name="link" size="xl" />
+                <p>Noch keine Provisionen</p>
+                <span>Teile Produkte mit deinem Affiliate-Link!</span>
+              </div>
+            )}
+          </div>
+
+          {/* Payout History */}
+          {payoutHistory.length > 0 && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>
+                <Icon name="clock" size="sm" />
+                Auszahlungshistorie
+              </h3>
+              <PayoutHistory 
+                payouts={payoutHistory}
+                onCancel={handleCancelPayout}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -401,9 +471,11 @@ function EarningsDashboard() {
       <PayoutModal 
         isOpen={showPayoutModal}
         onClose={() => setShowPayoutModal(false)}
-        availableBalance={availableBalance}
+        availableBalance={affiliateBalance}
         onRequestPayout={handleRequestPayout}
         loading={payoutLoading}
+        title="Affiliate-Provision auszahlen"
+        description="Deine Provisionen werden auf dein Stripe-Konto überwiesen."
       />
     </div>
   );

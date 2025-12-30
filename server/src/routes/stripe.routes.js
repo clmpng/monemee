@@ -26,17 +26,16 @@ router.get('/connect/status', authenticate, stripeController.getConnectStatus);
 router.post('/connect/start', authenticate, stripeController.startOnboarding);
 
 /**
- * POST /api/v1/stripe/connect/continue
- * Setzt das Onboarding fort (neuer Link falls alter abgelaufen)
+ * GET /api/v1/stripe/connect/onboarding-link
+ * Neuer Onboarding-Link (für Fortsetzung)
  */
-router.post('/connect/continue', authenticate, stripeController.continueOnboarding);
+router.get('/connect/onboarding-link', authenticate, stripeController.getOnboardingLink);
 
 /**
- * GET /api/v1/stripe/connect/dashboard
+ * GET /api/v1/stripe/connect/dashboard-link
  * Gibt einen Link zum Stripe Express Dashboard zurück
- * Nur verfügbar wenn Onboarding abgeschlossen
  */
-router.get('/connect/dashboard', authenticate, stripeController.getDashboardLink);
+router.get('/connect/dashboard-link', authenticate, stripeController.getDashboardLink);
 
 // ============================================
 // Webhook Routes (nicht authentifiziert!)
@@ -46,8 +45,6 @@ router.get('/connect/dashboard', authenticate, stripeController.getDashboardLink
 /**
  * POST /api/v1/stripe/webhooks/connect
  * Webhook für Connect Account Events
- * - account.updated
- * - account.application.deauthorized
  */
 router.post(
   '/webhooks/connect',
@@ -58,11 +55,6 @@ router.post(
 /**
  * POST /api/v1/stripe/webhooks/payments
  * Webhook für Payment Events
- * - checkout.session.completed
- * - transfer.created
- * - transfer.paid
- * - payout.paid
- * - payout.failed
  */
 router.post(
   '/webhooks/payments',

@@ -9,7 +9,7 @@ import styles from '../../styles/pages/Settings.module.css';
 
 /**
  * Settings Page
- * All settings on one page with tab navigation and sticky save button
+ * Tab "Stripe" statt "Auszahlung"
  */
 function Settings() {
   const navigate = useNavigate();
@@ -19,7 +19,9 @@ function Settings() {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs = ['profile', 'store', 'payout', 'account'];
+    // Support both 'payout' (legacy) and 'stripe' (new)
+    if (tabParam === 'payout') return 'stripe';
+    const validTabs = ['profile', 'store', 'stripe', 'account'];
     return validTabs.includes(tabParam) ? tabParam : 'profile';
   });
   
@@ -47,10 +49,10 @@ function Settings() {
   // Check for Stripe return status
   useEffect(() => {
     const status = searchParams.get('status');
-    if (status === 'success' && activeTab === 'payout') {
+    if (status === 'success' && activeTab === 'stripe') {
       setSuccess('Kontoeinrichtung erfolgreich! Dein Status wird aktualisiert.');
       fetchStripeStatus();
-    } else if (status === 'refresh' && activeTab === 'payout') {
+    } else if (status === 'refresh' && activeTab === 'stripe') {
       setError('Die Einrichtung wurde unterbrochen. Bitte versuche es erneut.');
     }
   }, [searchParams, activeTab]);
@@ -104,9 +106,9 @@ function Settings() {
     return () => clearTimeout(timeoutId);
   }, [formData.username, user?.username]);
 
-  // Fetch Stripe status when payout tab is active
+  // Fetch Stripe status when stripe tab is active
   useEffect(() => {
-    if (activeTab === 'payout') {
+    if (activeTab === 'stripe') {
       fetchStripeStatus();
     }
   }, [activeTab]);
@@ -136,12 +138,10 @@ function Settings() {
       const response = await stripeService.startOnboarding();
       if (response.success && response.data?.onboardingUrl) {
         window.location.href = response.data.onboardingUrl;
-      } else {
-        setStripeError(response.message || 'Fehler beim Starten der Einrichtung');
       }
     } catch (err) {
-      console.error('Start onboarding error:', err);
-      setStripeError(err.message || 'Fehler beim Starten der Einrichtung');
+      console.error('Stripe onboarding error:', err);
+      setStripeError('Onboarding konnte nicht gestartet werden');
     } finally {
       setStripeLoading(false);
     }
@@ -152,14 +152,13 @@ function Settings() {
     setStripeLoading(true);
     setStripeError(null);
     try {
-      const response = await stripeService.continueOnboarding();
-      if (response.success && response.data?.onboardingUrl) {
-        window.location.href = response.data.onboardingUrl;
-      } else {
-        setStripeError(response.message || 'Fehler beim Fortsetzen der Einrichtung');
+      const response = await stripeService.getOnboardingLink();
+      if (response.success && response.data?.url) {
+        window.location.href = response.data.url;
       }
     } catch (err) {
-      setStripeError(err.message || 'Fehler beim Fortsetzen der Einrichtung');
+      console.error('Stripe onboarding error:', err);
+      setStripeError('Link konnte nicht erstellt werden');
     } finally {
       setStripeLoading(false);
     }
@@ -170,82 +169,53 @@ function Settings() {
     setStripeLoading(true);
     try {
       const response = await stripeService.getDashboardLink();
-      if (response.success && response.data?.dashboardUrl) {
-        window.open(response.data.dashboardUrl, '_blank');
+      if (response.success && response.data?.url) {
+        window.open(response.data.url, '_blank');
       }
     } catch (err) {
-      setStripeError('Dashboard konnte nicht geöffnet werden');
+      console.error('Stripe dashboard error:', err);
     } finally {
       setStripeLoading(false);
     }
   };
 
-  // Get initials from name
-  const getInitials = (name) => {
-    if (!name || name.trim() === '') return 'U';
-    const parts = name.trim().split(' ').filter(Boolean);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.trim().slice(0, 2).toUpperCase();
-  };
-
-  // Handle input change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    if (name === 'username') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value.toLowerCase().replace(/[^a-z0-9_]/g, '')
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-    
-    setError(null);
-    setSuccess(null);
-  };
-
-  // Handle avatar upload
+  // Handle avatar click
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
 
-  const handleAvatarChange = async (e) => {
+  // Handle avatar upload
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setError('Bitte wähle ein Bild aus');
-      return;
-    }
 
     if (file.size > 5 * 1024 * 1024) {
       setError('Bild darf maximal 5MB groß sein');
       return;
     }
 
-    setUploadingAvatar(true);
-    setError(null);
+    if (!file.type.startsWith('image/')) {
+      setError('Bitte wähle ein Bild aus');
+      return;
+    }
 
     try {
-      const ext = file.name.split('.').pop();
-      const filename = `avatars/${user.id}_${Date.now()}.${ext}`;
-      const storageRef = ref(storage, filename);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
+      setUploadingAvatar(true);
+      setError(null);
+
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `avatars/${user.id}_${Date.now()}.${fileExtension}`;
+      const storageRef = ref(storage, fileName);
       
-      setFormData(prev => ({
-        ...prev,
-        avatar: downloadURL
-      }));
+      await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(storageRef);
+
+      setFormData(prev => ({ ...prev, avatar: downloadUrl }));
+      setSuccess('Avatar hochgeladen');
+      setTimeout(() => setSuccess(null), 2000);
     } catch (err) {
       console.error('Avatar upload error:', err);
-      setError('Fehler beim Hochladen des Bildes');
+      setError('Upload fehlgeschlagen');
     } finally {
       setUploadingAvatar(false);
     }
@@ -256,44 +226,32 @@ function Settings() {
     e.preventDefault();
     
     if (!hasChanges) return;
-    
-    if (!formData.name.trim()) {
-      setError('Name darf nicht leer sein');
-      return;
-    }
-    
-    if (formData.username && formData.username.length < 3) {
-      setError('Username muss mindestens 3 Zeichen haben');
-      return;
-    }
-    
+
     if (usernameStatus === 'taken') {
       setError('Dieser Username ist bereits vergeben');
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
     try {
-      const result = await updateProfile({
-        name: formData.name.trim(),
-        username: formData.username || undefined,
-        bio: formData.bio,
-        avatar_url: formData.avatar || null
-      });
+      setLoading(true);
+      setError(null);
 
-      if (result.success) {
-        setSuccess('Änderungen gespeichert');
-        setHasChanges(false);
-        await refreshUser();
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError(result.error || 'Fehler beim Speichern');
-      }
+      const updateData = {
+        name: formData.name,
+        username: formData.username.toLowerCase(),
+        bio: formData.bio,
+        avatar_url: formData.avatar
+      };
+
+      await updateProfile(updateData);
+      await refreshUser();
+      
+      setSuccess('Änderungen gespeichert');
+      setHasChanges(false);
+      setTimeout(() => setSuccess(null), 2000);
     } catch (err) {
-      setError(err.message || 'Fehler beim Speichern');
+      console.error('Update error:', err);
+      setError(err.message || 'Speichern fehlgeschlagen');
     } finally {
       setLoading(false);
     }
@@ -301,18 +259,20 @@ function Settings() {
 
   // Handle logout
   const handleLogout = async () => {
-    await logout();
-    navigate('/login', { replace: true });
+    try {
+      await logout();
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
-  // Helper to translate Stripe requirements
+  // Translate Stripe requirements
   const translateRequirement = (req) => {
     const translations = {
-      'individual.verification.document': 'Ausweisdokument',
-      'individual.verification.additional_document': 'Zusätzliches Dokument',
       'individual.first_name': 'Vorname',
       'individual.last_name': 'Nachname',
-      'individual.dob.day': 'Geburtsdatum',
+      'individual.dob.day': 'Geburtstag',
       'individual.dob.month': 'Geburtsmonat',
       'individual.dob.year': 'Geburtsjahr',
       'individual.address.line1': 'Adresse',
@@ -325,10 +285,11 @@ function Settings() {
     return translations[req] || req;
   };
 
+  // Tab configuration
   const tabs = [
     { id: 'profile', label: 'Profil', icon: 'user' },
     { id: 'store', label: 'Store', icon: 'store' },
-    { id: 'payout', label: 'Auszahlung', icon: 'wallet' },
+    { id: 'stripe', label: 'Stripe', icon: 'creditCard' },
     { id: 'account', label: 'Account', icon: 'lock' },
   ];
 
@@ -350,7 +311,7 @@ function Settings() {
           >
             <Icon name={tab.icon} size="sm" />
             <span>{tab.label}</span>
-            {tab.id === 'payout' && stripeStatus?.payoutsEnabled && (
+            {tab.id === 'stripe' && stripeStatus?.payoutsEnabled && (
               <span className={styles.statusDot} />
             )}
           </button>
@@ -382,99 +343,80 @@ function Settings() {
                   <img src={formData.avatar} alt="Avatar" />
                 ) : (
                   <span className={styles.avatarInitials}>
-                    {getInitials(formData.name)}
+                    {(formData.name || user?.email || '?').charAt(0)}
                   </span>
                 )}
                 <div className={styles.avatarOverlay}>
-                  <Icon name="camera" size="md" />
+                  <Icon name="camera" size="sm" />
                 </div>
-              </div>
-              <div className={styles.avatarInfo}>
-                <button 
-                  type="button" 
-                  className={styles.avatarButton}
-                  onClick={handleAvatarClick}
-                  disabled={uploadingAvatar}
-                >
-                  {uploadingAvatar ? 'Wird hochgeladen...' : 'Bild ändern'}
-                </button>
-                <p className={styles.avatarHint}>JPG, PNG oder GIF. Max 5MB.</p>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleAvatarChange}
+                onChange={handleAvatarUpload}
                 className={styles.hiddenInput}
               />
+              <p className={styles.avatarHint}>Klicke zum Ändern (max. 5MB)</p>
             </div>
 
             {/* Name */}
             <div className={styles.field}>
-              <label htmlFor="name" className={styles.label}>Name</label>
+              <label className={styles.label}>Name</label>
               <input
-                id="name"
-                name="name"
                 type="text"
                 value={formData.name}
-                onChange={handleChange}
-                className={styles.input}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Dein Name"
+                className={styles.input}
               />
             </div>
 
             {/* Username */}
             <div className={styles.field}>
-              <label htmlFor="username" className={styles.label}>
+              <label className={styles.label}>
                 Username
                 {usernameStatus === 'checking' && (
                   <span className={styles.usernameChecking}>
-                    <Icon name="loader" size={14} className={styles.spinner} />
+                    <Icon name="loader" size="xs" className={styles.spinner} /> Prüfe...
                   </span>
                 )}
                 {usernameStatus === 'available' && (
                   <span className={styles.usernameAvailable}>
-                    <Icon name="check" size={14} /> Verfügbar
+                    <Icon name="check" size="xs" /> Verfügbar
                   </span>
                 )}
                 {usernameStatus === 'taken' && (
                   <span className={styles.usernameTaken}>
-                    <Icon name="close" size={14} /> Vergeben
+                    <Icon name="x" size="xs" /> Vergeben
                   </span>
                 )}
               </label>
               <div className={styles.inputWithPrefix}>
                 <span className={styles.inputPrefix}>@</span>
                 <input
-                  id="username"
-                  name="username"
                   type="text"
                   value={formData.username}
-                  onChange={handleChange}
-                  className={styles.input}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+                  }))}
                   placeholder="username"
+                  className={styles.input}
                 />
               </div>
-              <p className={styles.fieldHint}>
-                Dein öffentlicher Store-Link: monemee.app/@{formData.username || 'username'}
-              </p>
             </div>
 
             {/* Bio */}
             <div className={styles.field}>
-              <label htmlFor="bio" className={styles.label}>Bio</label>
+              <label className={styles.label}>Bio</label>
               <textarea
-                id="bio"
-                name="bio"
                 value={formData.bio}
-                onChange={handleChange}
-                className={styles.textarea}
+                onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                 placeholder="Erzähle etwas über dich..."
-                rows={4}
+                className={styles.textarea}
+                rows={3}
               />
-              <p className={styles.fieldHint}>
-                {formData.bio.length}/500 Zeichen
-              </p>
             </div>
           </div>
         )}
@@ -484,62 +426,25 @@ function Settings() {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Store-Einstellungen</h2>
             <p className={styles.sectionDescription}>
-              Konfiguriere wie dein Store für Besucher aussieht.
+              Personalisiere deinen öffentlichen Store.
             </p>
 
-            {/* Store Preview Card */}
-            <div className={styles.storePreviewCard}>
-              <div className={styles.storePreviewHeader}>
-                <div className={styles.storePreviewAvatar}>
-                  {formData.avatar ? (
-                    <img src={formData.avatar} alt="Avatar" />
-                  ) : (
-                    <span>{getInitials(formData.name)}</span>
-                  )}
-                </div>
-                <div className={styles.storePreviewInfo}>
-                  <h3>{formData.name || 'Dein Name'}</h3>
-                  <p>@{formData.username || 'username'}</p>
-                </div>
-              </div>
-              {formData.bio && (
-                <p className={styles.storePreviewBio}>{formData.bio}</p>
-              )}
-              <div className={styles.storePreviewActions}>
-                <a 
-                  href={user?.username ? `/store/${user.username}` : '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.previewButton}
-                  onClick={(e) => {
-                    if (!user?.username) {
-                      e.preventDefault();
-                      setError('Speichere zuerst einen Username, um die Vorschau zu sehen');
-                    }
-                  }}
-                >
-                  <Icon name="externalLink" size="sm" />
-                  Store-Vorschau öffnen
-                </a>
-              </div>
-            </div>
-
-            {/* Public Link */}
+            {/* Store URL */}
             <div className={styles.field}>
-              <label className={styles.label}>Dein öffentlicher Store-Link</label>
+              <label className={styles.label}>Deine Store-URL</label>
               <div className={styles.copyLinkField}>
                 <input
                   type="text"
-                  value={user?.username ? `monemee.app/@${user.username}` : 'Kein Username gesetzt'}
-                  className={styles.input}
+                  value={`monemee.de/@${user?.username || 'username'}`}
                   readOnly
+                  className={styles.input}
                 />
-                <button 
+                <button
                   type="button"
                   className={styles.copyButton}
-                  onClick={() => {
+                  onClick={async () => {
                     if (user?.username) {
-                      navigator.clipboard.writeText(`https://monemee.app/@${user.username}`);
+                      await navigator.clipboard.writeText(`https://monemee.de/@${user.username}`);
                       setSuccess('Link kopiert!');
                       setTimeout(() => setSuccess(null), 2000);
                     }
@@ -556,12 +461,12 @@ function Settings() {
           </div>
         )}
 
-        {/* ========== Payout Tab (Stripe Connect) ========== */}
-        {activeTab === 'payout' && (
+        {/* ========== Stripe Tab ========== */}
+        {activeTab === 'stripe' && (
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Auszahlungskonto</h2>
+            <h2 className={styles.sectionTitle}>Stripe-Konto</h2>
             <p className={styles.sectionDescription}>
-              Verbinde dein Bankkonto, um Auszahlungen zu erhalten.
+              Verbinde dein Stripe-Konto, um Zahlungen zu empfangen. Produktverkäufe werden automatisch ausgezahlt, Affiliate-Provisionen kannst du unter "Fortschritt" manuell auszahlen.
             </p>
 
             {/* Loading State */}
@@ -596,7 +501,7 @@ function Settings() {
               </div>
             )}
 
-            {/* Stripe Enabled (fully set up) */}
+            {/* Stripe Enabled */}
             {!stripeLoading && stripeStatus?.stripeConfigured && stripeStatus?.payoutsEnabled && (
               <div className={styles.stripeEnabled}>
                 <div className={styles.stripeStatusCard}>
@@ -604,8 +509,8 @@ function Settings() {
                     <Icon name="checkCircle" size="xl" />
                   </div>
                   <div className={styles.stripeStatusInfo}>
-                    <h3>Auszahlungen aktiviert</h3>
-                    <p>Dein Konto ist vollständig eingerichtet. Auszahlungen werden automatisch auf dein Bankkonto überwiesen.</p>
+                    <h3>Stripe verbunden</h3>
+                    <p>Dein Konto ist vollständig eingerichtet. Zahlungen werden automatisch überwiesen.</p>
                   </div>
                 </div>
                 
@@ -625,7 +530,7 @@ function Settings() {
               </div>
             )}
 
-            {/* Stripe Account exists but incomplete */}
+            {/* Stripe Incomplete */}
             {!stripeLoading && stripeStatus?.stripeConfigured && stripeStatus?.hasStripeAccount && !stripeStatus?.payoutsEnabled && (
               <div className={styles.stripeIncomplete}>
                 <div className={styles.stripeStatusCard}>
@@ -634,7 +539,7 @@ function Settings() {
                   </div>
                   <div className={styles.stripeStatusInfo}>
                     <h3>Einrichtung fortsetzen</h3>
-                    <p>Die Kontoeinrichtung ist noch nicht abgeschlossen. Bitte vervollständige deine Angaben.</p>
+                    <p>Die Kontoeinrichtung ist noch nicht abgeschlossen.</p>
                     {stripeStatus.stripeDetails?.requirements?.length > 0 && (
                       <div className={styles.requirementsList}>
                         <strong>Noch erforderlich:</strong>
@@ -672,41 +577,41 @@ function Settings() {
               </div>
             )}
 
-            {/* No Stripe Account yet */}
+            {/* No Stripe Account Yet */}
             {!stripeLoading && stripeStatus?.stripeConfigured && !stripeStatus?.hasStripeAccount && (
               <div className={styles.stripeSetup}>
                 <div className={styles.stripeIntro}>
                   <div className={styles.stripeIntroIcon}>
-                    <Icon name="wallet" size="xl" />
+                    <Icon name="creditCard" size="xl" />
                   </div>
-                  <h3>Bankkonto verbinden</h3>
-                  <p>Um Auszahlungen zu erhalten, musst du einmalig dein Bankkonto bei unserem Zahlungspartner Stripe verifizieren.</p>
+                  <h3>Stripe-Konto einrichten</h3>
+                  <p>Verbinde dein Bankkonto, um Zahlungen für deine Produkte zu erhalten.</p>
                 </div>
-
+                
                 <div className={styles.stripeFeatures}>
                   <div className={styles.stripeFeature}>
-                    <Icon name="shield" size="md" />
+                    <Icon name="shield" size="sm" />
                     <div>
                       <strong>Sicher</strong>
-                      <p>Deine Bankdaten werden verschlüsselt bei Stripe gespeichert</p>
+                      <p>Stripe ist der führende Zahlungsanbieter weltweit.</p>
                     </div>
                   </div>
                   <div className={styles.stripeFeature}>
-                    <Icon name="zap" size="md" />
+                    <Icon name="zap" size="sm" />
                     <div>
-                      <strong>Schnell</strong>
-                      <p>Auszahlungen in 2-3 Werktagen auf deinem Konto</p>
+                      <strong>Automatisch</strong>
+                      <p>Verkäufe werden direkt auf dein Konto überwiesen.</p>
                     </div>
                   </div>
                   <div className={styles.stripeFeature}>
-                    <Icon name="clock" size="md" />
+                    <Icon name="creditCard" size="sm" />
                     <div>
-                      <strong>Einmalig</strong>
-                      <p>Die Einrichtung dauert nur wenige Minuten</p>
+                      <strong>Flexibel</strong>
+                      <p>Alle gängigen Zahlungsmethoden werden unterstützt.</p>
                     </div>
                   </div>
                 </div>
-
+                
                 <button
                   type="button"
                   onClick={handleStartOnboarding}
@@ -742,7 +647,7 @@ function Settings() {
               Verwalte deinen Account und deine Sicherheitseinstellungen.
             </p>
 
-            {/* Email (read-only) */}
+            {/* Email */}
             <div className={styles.field}>
               <label className={styles.label}>E-Mail</label>
               <div className={styles.readOnlyField}>
@@ -772,41 +677,38 @@ function Settings() {
               <p className={styles.dangerDescription}>
                 Du wirst von deinem Account abgemeldet.
               </p>
-              <button 
+              <button
                 type="button"
-                className={styles.logoutButton}
                 onClick={handleLogout}
+                className={styles.logoutButton}
               >
-                <Icon name="logout" size="sm" />
+                <Icon name="logOut" size="sm" />
                 Abmelden
               </button>
             </div>
           </div>
         )}
 
-        {/* Sticky Footer with Save Button */}
-        <div className={styles.stickyFooter}>
-          <div className={styles.footerContent}>
-            {/* Status Messages */}
-            {error && (
-              <div className={styles.errorMessage}>
-                <Icon name="alertCircle" size="sm" />
-                <span>{error}</span>
-              </div>
-            )}
-            {success && (
-              <div className={styles.successMessage}>
-                <Icon name="checkCircle" size="sm" />
-                <span>{success}</span>
-              </div>
-            )}
-
-            {/* Save Button (only show for profile/store tabs) */}
-            {(activeTab === 'profile' || activeTab === 'store') && (
+        {/* Sticky Save Button (nur für Profile/Store) */}
+        {(activeTab === 'profile' || activeTab === 'store') && hasChanges && (
+          <div className={styles.stickyFooter}>
+            <div className={styles.footerContent}>
+              {error && (
+                <div className={styles.errorMessage}>
+                  <Icon name="alertCircle" size="sm" />
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className={styles.successMessage}>
+                  <Icon name="checkCircle" size="sm" />
+                  {success}
+                </div>
+              )}
               <button
                 type="submit"
+                disabled={loading || usernameStatus === 'taken'}
                 className={styles.saveButton}
-                disabled={!hasChanges || loading || usernameStatus === 'taken'}
               >
                 {loading ? (
                   <>
@@ -814,12 +716,15 @@ function Settings() {
                     Speichern...
                   </>
                 ) : (
-                  'Änderungen speichern'
+                  <>
+                    <Icon name="check" size="sm" />
+                    Änderungen speichern
+                  </>
                 )}
               </button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </form>
     </div>
   );

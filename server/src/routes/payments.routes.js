@@ -1,39 +1,45 @@
 const express = require('express');
 const router = express.Router();
 const paymentsController = require('../controllers/payments.controller');
-const { authenticate, optionalAuth } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 
 // ============================================
-// Payments Routes (Stripe)
+// Payments Routes
+// 
+// Produkt-Zahlungen via Stripe Checkout
+// Webhooks laufen über /api/v1/stripe/webhooks/payments
 // ============================================
 
 /**
- * DUMMY: Simulierter Kauf für Testing
- * Erstellt echte Transaktionen in der DB
- * POST /api/v1/payments/simulate-purchase
- * 
- * Body: { productId: number, affiliateCode?: string }
- */
-router.post('/simulate-purchase', authenticate, paymentsController.simulatePurchase);
-
-/**
- * Create Stripe checkout session
+ * Create Stripe Checkout Session
  * POST /api/v1/payments/create-checkout
- * TODO: Echte Stripe Integration
  */
 router.post('/create-checkout', authenticate, paymentsController.createCheckout);
 
 /**
- * Stripe webhook
- * POST /api/v1/payments/webhook
- * WICHTIG: Kein authenticate middleware - Stripe sendet direkt
+ * Verify Checkout Session (nach Redirect von Stripe)
+ * GET /api/v1/payments/verify-session/:sessionId
  */
-router.post('/webhook', express.raw({ type: 'application/json' }), paymentsController.handleWebhook);
+router.get('/verify-session/:sessionId', authenticate, paymentsController.verifySession);
 
 /**
- * Get user transactions
+ * Get user transactions (als Verkäufer)
  * GET /api/v1/payments/transactions
  */
 router.get('/transactions', authenticate, paymentsController.getTransactions);
+
+/**
+ * Get user purchases (als Käufer)
+ * GET /api/v1/payments/purchases
+ */
+router.get('/purchases', authenticate, paymentsController.getPurchases);
+
+/**
+ * DUMMY: Simulierter Kauf für Testing
+ * POST /api/v1/payments/simulate-purchase
+ * 
+ * NUR in development verfügbar!
+ */
+router.post('/simulate-purchase', authenticate, paymentsController.simulatePurchase);
 
 module.exports = router;

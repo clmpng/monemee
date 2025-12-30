@@ -933,4 +933,27 @@
 }
 
 
+/* Purchase Error Message */
+.purchaseError {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--color-error-bg, rgba(239, 68, 68, 0.1));
+  border: 1px solid var(--color-error, #ef4444);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.purchaseError svg {
+  color: var(--color-error, #ef4444);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.purchaseError span {
+  font-size: var(--font-size-sm);
+  color: var(--color-error, #ef4444);
+  line-height: 1.5;
+}
 

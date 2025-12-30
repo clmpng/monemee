@@ -23,6 +23,7 @@ import Settings from '../pages/settings/Settings';
 // Public Pages
 import { PublicStore, PublicProduct } from '../pages/public';
 import LandingPage from '../pages/public/LandingPage';
+import CheckoutSuccess from '../pages/public/CheckoutSuccess';
 
 // Legal Pages
 import { Impressum, Datenschutz, AGB, Widerruf } from '../pages/legal';
@@ -84,6 +85,20 @@ function AppRoutes() {
       
       {/* Legacy: also support @username format */}
       <Route path="/@:username" element={<PublicStore />} />
+
+      {/* ================================
+          CHECKOUT ROUTES
+          ================================ */}
+      
+      {/* Checkout Success - Nach erfolgreicher Stripe-Zahlung */}
+      <Route 
+        path="/checkout/success" 
+        element={
+          <ProtectedRoute>
+            <CheckoutSuccess />
+          </ProtectedRoute>
+        } 
+      />
 
       {/* ================================
           LEGAL PAGES (§ 5 TMG, DSGVO)
@@ -168,6 +183,10 @@ function AppRoutes() {
         
         {/* Settings */}
         <Route path="/settings" element={<Settings />} />
+        
+        {/* Purchases / My bought products */}
+        {/* TODO: Implement Purchases page */}
+        {/* <Route path="/dashboard/purchases" element={<Purchases />} /> */}
       </Route>
 
       {/* ================================
@@ -218,14 +237,9 @@ function LoadingScreen() {
           border: '3px solid var(--color-border)',
           borderTopColor: 'var(--color-primary)',
           borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite'
-        }} 
+          animation: 'spin 1s linear infinite'
+        }}
       />
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }
@@ -238,10 +252,12 @@ function NotFound() {
     <div 
       style={{ 
         minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex', 
         flexDirection: 'column',
         alignItems: 'center', 
         justifyContent: 'center',
+        gap: '24px',
         padding: '24px',
         textAlign: 'center',
         background: 'var(--color-bg-primary)'
@@ -249,42 +265,51 @@ function NotFound() {
     >
       <div 
         style={{ 
-          fontSize: '72px',
-          fontWeight: '800',
-          color: 'var(--color-border)',
-          lineHeight: 1,
-          marginBottom: '16px'
+          width: '80px',
+          height: '80px',
+          background: 'var(--color-bg-secondary)',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--color-text-tertiary)'
         }}
       >
-        404
+        <Icon name="searchX" size={40} />
       </div>
-      <h1 style={{ 
-        fontSize: '24px', 
-        fontWeight: '600',
-        marginBottom: '8px',
-        color: 'var(--color-text-primary)'
-      }}>
-        Seite nicht gefunden
-      </h1>
-      <p style={{ 
-        color: 'var(--color-text-secondary)',
-        marginBottom: '24px'
-      }}>
-        Die gesuchte Seite existiert nicht oder wurde verschoben.
-      </p>
-      <a 
-        href="/"
-        style={{
-          padding: '12px 24px',
-          background: 'var(--color-primary)',
-          color: 'white',
-          borderRadius: 'var(--radius-md)',
-          textDecoration: 'none',
-          fontWeight: '500'
-        }}
-      >
-        Zur Startseite
-      </a>
+      <div>
+        <h1 style={{ 
+          fontSize: '24px', 
+          fontWeight: '600', 
+          color: 'var(--color-text-primary)',
+          marginBottom: '8px'
+        }}>
+          Seite nicht gefunden
+        </h1>
+        <p style={{ 
+          color: 'var(--color-text-secondary)',
+          marginBottom: '24px'
+        }}>
+          Die gesuchte Seite existiert nicht.
+        </p>
+        <a 
+          href="/"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 24px',
+            background: 'var(--color-primary)',
+            color: 'white',
+            borderRadius: '12px',
+            textDecoration: 'none',
+            fontWeight: '500'
+          }}
+        >
+          <Icon name="home" size={18} />
+          Zur Startseite
+        </a>
+      </div>
     </div>
   );
 }
