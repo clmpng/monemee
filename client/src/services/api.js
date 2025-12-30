@@ -13,9 +13,11 @@ const api = axios.create({
 // Request interceptor for auth token
 api.interceptors.request.use(
   async (config) => {
+    console.log('🚀 API Request starting:', config.url);
     try {
       // Get current Firebase user
       const currentUser = auth.currentUser;
+      console.log('🔑 Current user:', currentUser?.uid);
       
       if (currentUser) {
         // Get fresh token (automatically refreshes if expired)

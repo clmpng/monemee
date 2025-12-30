@@ -1,10 +1,9 @@
-/* ============================================
-   Earnings Dashboard Styles
-   Mobile-first, modernes Design
-   ============================================ */
+/* ========================================
+   Earnings/Statistics Page Styles
+   ======================================== */
 
    .earningsPage {
-    padding-bottom: calc(var(--spacing-xl) + 80px);
+    padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-lg) + 80px);
   }
   
   /* Loading & Error States */
@@ -14,8 +13,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 300px;
-    gap: var(--spacing-md);
+    min-height: 50vh;
+    text-align: center;
     color: var(--color-text-secondary);
   }
   
@@ -25,28 +24,31 @@
     border: 3px solid var(--color-border);
     border-top-color: var(--color-primary);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: var(--spacing-md);
   }
   
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
   
-  .errorState svg {
-    color: var(--color-error);
+  .errorState h3 {
+    margin: var(--spacing-md) 0 var(--spacing-sm);
+    color: var(--color-text-primary);
   }
   
   .retryButton {
+    margin-top: var(--spacing-md);
     padding: var(--spacing-sm) var(--spacing-lg);
     background: var(--color-primary);
     color: white;
     border-radius: var(--radius-md);
-    font-weight: 600;
+    font-weight: 500;
   }
   
-  /* ============================================
-     Level Card
-     ============================================ */
+  /* ========================================
+     Level Progress Card
+     ======================================== */
   
   .levelCard {
     background: var(--color-bg-secondary);
@@ -70,9 +72,10 @@
   }
   
   .levelIcon {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: var(--radius-md);
+    background: var(--color-warning);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -83,11 +86,10 @@
     font-size: var(--font-size-base);
     font-weight: 600;
     color: var(--color-text-primary);
-    margin-bottom: 2px;
   }
   
   .levelInfo p {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
   }
   
@@ -96,7 +98,7 @@
   }
   
   .feeValue {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
     font-weight: 700;
     color: var(--color-success);
   }
@@ -131,7 +133,7 @@
   }
   
   .progressText {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
   }
   
@@ -139,7 +141,7 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--color-primary);
     font-weight: 500;
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -151,21 +153,20 @@
     background: rgba(99, 102, 241, 0.1);
   }
   
-  /* ============================================
-     Tab Navigation
-     ============================================ */
+  /* ========================================
+     Tabs
+     ======================================== */
   
-  .tabNavigation {
+  .tabs {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
     margin-bottom: var(--spacing-lg);
-    background: var(--color-bg-secondary);
-    padding: var(--spacing-xs);
+    background: var(--color-bg-tertiary);
     border-radius: var(--radius-lg);
-    border: 1px solid var(--color-border);
+    padding: var(--spacing-xs);
   }
   
-  .tabButton {
+  .tab {
     flex: 1;
     display: flex;
     align-items: center;
@@ -179,367 +180,269 @@
     transition: all var(--transition-fast);
   }
   
-  .tabButton:hover {
+  .tab:hover {
     color: var(--color-text-primary);
-    background: var(--color-bg-tertiary);
   }
   
-  .tabButton.tabActive {
-    background: var(--color-primary);
-    color: white;
-  }
-  
-  .tabButton.tabActive .tabBadge {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-  }
-  
-  .tabBadge {
-    font-size: var(--font-size-xs);
-    padding: 2px 8px;
-    background: var(--color-bg-tertiary);
-    border-radius: var(--radius-full);
-    font-weight: 600;
-  }
-  
-  .tabBadgeHighlight {
-    background: var(--color-success);
-    color: white;
-  }
-  
-  /* ============================================
-     Tab Content
-     ============================================ */
-  
-  .tabContent {
-    animation: fadeIn 0.2s ease;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  /* ============================================
-     Info Boxes
-     ============================================ */
-  
-  .infoBox {
-    display: flex;
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--spacing-lg);
-  }
-  
-  .infoIcon {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-md);
-    background: var(--color-success);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  
-  .infoContent h4 {
-    font-size: var(--font-size-base);
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin-bottom: 4px;
-  }
-  
-  .infoContent p {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    line-height: 1.5;
-  }
-  
-  .infoBoxSecondary {
-    display: flex;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
+  .tabActive {
     background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--spacing-lg);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
   }
   
-  .infoBoxSecondary > svg {
-    color: var(--color-text-tertiary);
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
+  /* ========================================
+     Stats Grid
+     ======================================== */
   
-  .infoBoxSecondary strong {
-    display: block;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-primary);
-    margin-bottom: 4px;
-  }
-  
-  .infoBoxSecondary p {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    line-height: 1.5;
-  }
-  
-  /* ============================================
-     Stats Row
-     ============================================ */
-  
-  .statsRow {
+  .statsGrid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
   }
   
-  .statBox {
+  .statCard {
     background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: var(--spacing-md);
-    text-align: center;
+    border: 1px solid var(--color-border);
+  }
+  
+  .statIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .statIconPrimary {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--color-primary);
+  }
+  
+  .statIconSuccess {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--color-success);
+  }
+  
+  .statIconWarning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--color-warning);
+  }
+  
+  .statIconDanger {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--color-danger);
   }
   
   .statValue {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 700;
     color: var(--color-text-primary);
-    margin-bottom: 4px;
   }
   
   .statLabel {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
+    margin-top: 2px;
   }
   
-  /* ============================================
-     Stripe Dashboard Button
-     ============================================ */
+  /* ========================================
+     Stripe Info Card (Produkte Tab)
+     ======================================== */
   
-  .stripeDashboardButton {
-    width: 100%;
+  .stripeInfoCard {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: var(--spacing-md);
     padding: var(--spacing-md);
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.2);
     border-radius: var(--radius-lg);
     margin-bottom: var(--spacing-lg);
-    transition: all var(--transition-fast);
   }
   
-  .stripeDashboardButton:hover {
-    border-color: var(--color-primary);
-    background: rgba(99, 102, 241, 0.05);
-  }
-  
-  .stripeButtonContent {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-  }
-  
-  .stripeButtonContent > svg {
+  .stripeInfoIcon {
     width: 40px;
     height: 40px;
-    padding: var(--spacing-sm);
-    background: var(--color-primary);
-    color: white;
     border-radius: var(--radius-md);
-  }
-  
-  .stripeButtonTitle {
-    display: block;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin-bottom: 2px;
-  }
-  
-  .stripeButtonSubtitle {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-  }
-  
-  .stripeSetupHint {
+    background: var(--color-success);
+    color: white;
     display: flex;
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
-    background: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--spacing-lg);
-  }
-  
-  .stripeSetupHint > svg {
-    color: var(--color-warning);
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
   }
   
-  .stripeSetupHint strong {
-    display: block;
+  .stripeInfoContent h4 {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
     color: var(--color-text-primary);
     margin-bottom: 4px;
   }
   
-  .stripeSetupHint p {
+  .stripeInfoContent p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+  
+  .stripeInfoButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    transition: all var(--transition-fast);
+    align-self: flex-start;
+  }
+  
+  .stripeInfoButton:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  
+  /* ========================================
+     Balance Card (Provisionen Tab)
+     ======================================== */
+  
+  .balanceCard {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--color-border);
+  }
+  
+  .balanceMain {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+  }
+  
+  .balanceInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .balanceLabel {
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
   }
   
-  .stripeSetupHint a {
+  .balanceAmount {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-success);
+  }
+  
+  .balanceHint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+  }
+  
+  .payoutButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--color-success);
+    color: white;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+  }
+  
+  .payoutButton:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+  
+  .payoutButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .balanceStats {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    line-height: 1.5;
+  }
+  
+  .balanceStats svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  
+  .balanceStats a {
     color: var(--color-primary);
     font-weight: 500;
   }
   
-  /* ============================================
-     Affiliate Balance Card
-     ============================================ */
-  
-  .affiliateBalanceCard {
-    background: linear-gradient(135deg, var(--color-primary) 0%, #4f46e5 100%);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
-    color: white;
-  }
-  
-  .balanceHeader {
-    margin-bottom: var(--spacing-md);
-  }
-  
-  .balanceLabel {
-    display: block;
-    font-size: var(--font-size-sm);
-    opacity: 0.8;
-    margin-bottom: 4px;
-  }
-  
-  .balanceAmount {
-    display: block;
-    font-size: var(--font-size-3xl);
-    font-weight: 700;
-  }
-  
-  .pendingInfo {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    font-size: var(--font-size-sm);
-    opacity: 0.8;
-    margin-bottom: var(--spacing-md);
-    padding: var(--spacing-sm);
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-md);
-  }
-  
-  .payoutButton {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    background: white;
-    color: var(--color-primary);
-    font-weight: 600;
-    border-radius: var(--radius-md);
-    transition: all var(--transition-fast);
-  }
-  
-  .payoutButton:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-  
-  .payoutButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  
-  .balanceHint {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    font-size: var(--font-size-sm);
-    opacity: 0.8;
-    margin-top: var(--spacing-md);
-    text-align: center;
-    justify-content: center;
-  }
-  
-  .balanceHint a {
-    color: white;
-    text-decoration: underline;
-  }
-  
-  /* ============================================
-     Sections
-     ============================================ */
+  /* ========================================
+     Section
+     ======================================== */
   
   .section {
     margin-bottom: var(--spacing-xl);
   }
   
   .sectionTitle {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
     font-size: var(--font-size-base);
     font-weight: 600;
     color: var(--color-text-primary);
     margin-bottom: var(--spacing-md);
   }
   
-  .sectionTitle svg {
-    color: var(--color-text-secondary);
-  }
+  /* ========================================
+     Top Products / Affiliate Sales List
+     ======================================== */
   
-  /* ============================================
-     Product List
-     ============================================ */
-  
-  .productList {
+  .topProductsList {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
   }
   
-  .productItem {
+  .topProductItem {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
+    gap: var(--spacing-md);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
-  }
-  
-  .productRank {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-text-tertiary);
-    width: 28px;
+    padding: var(--spacing-md);
   }
   
   .productThumb {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     border-radius: var(--radius-md);
     background: var(--color-bg-tertiary);
     overflow: hidden;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--color-text-tertiary);
-    flex-shrink: 0;
   }
   
   .productThumb img {
@@ -553,95 +456,33 @@
     min-width: 0;
   }
   
-  .productTitle {
+  .productName {
     display: block;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     color: var(--color-text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 2px;
   }
   
-  .productSales {
-    font-size: var(--font-size-sm);
+  .productStats {
+    display: block;
+    font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
+    margin-top: 2px;
   }
   
   .productRevenue {
+    font-size: var(--font-size-base);
     font-weight: 600;
     color: var(--color-success);
-    white-space: nowrap;
-  }
-  
-  /* ============================================
-     Affiliate List
-     ============================================ */
-  
-  .affiliateList {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-  }
-  
-  .affiliateItem {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-  }
-  
-  .affiliateThumb {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-md);
-    background: var(--color-bg-tertiary);
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-text-tertiary);
     flex-shrink: 0;
   }
   
-  .affiliateThumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .affiliateInfo {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .affiliateTitle {
-    display: block;
-    font-weight: 500;
-    color: var(--color-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 2px;
-  }
-  
-  .affiliateDate {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-  }
-  
-  .affiliateCommission {
-    font-weight: 600;
-    color: var(--color-success);
-    white-space: nowrap;
-  }
-  
-  /* ============================================
+  /* ========================================
      Empty State
-     ============================================ */
+     ======================================== */
   
   .emptyState {
     display: flex;
@@ -671,34 +512,103 @@
     color: var(--color-text-secondary);
   }
   
-  /* ============================================
+  /* ========================================
      Desktop Styles
-     ============================================ */
+     ======================================== */
   
   @media (min-width: 768px) {
-    .tabNavigation {
-      max-width: 400px;
-    }
-    
-    .tabButton span:first-of-type {
-      display: inline;
+    .earningsPage {
+      padding-bottom: var(--spacing-xl);
+      max-width: 900px;
+      margin: 0 auto;
     }
   
-    .statsRow {
-      grid-template-columns: repeat(4, 1fr);
+    /* Level Card */
+    .levelCard {
+      padding: var(--spacing-lg);
     }
   
-    .stripeDashboardButton {
-      max-width: 500px;
+    .levelIcon {
+      width: 48px;
+      height: 48px;
     }
   
-    .affiliateBalanceCard {
-      max-width: 400px;
+    .levelInfo h3 {
+      font-size: var(--font-size-lg);
     }
   
-    .productList,
-    .affiliateList {
-      max-width: 600px;
+    .feeValue {
+      font-size: var(--font-size-2xl);
+    }
+  
+    /* Tabs - volle Breite */
+    .tabs {
+      padding: var(--spacing-sm);
+    }
+  
+    .tab {
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--font-size-base);
+    }
+  
+    /* Stats Grid */
+    .statsGrid {
+      gap: var(--spacing-lg);
+    }
+  
+    .statCard {
+      padding: var(--spacing-lg);
+    }
+  
+    .statValue {
+      font-size: var(--font-size-xl);
+    }
+  
+    /* Stripe Info Card - horizontal layout */
+    .stripeInfoCard {
+      flex-direction: row;
+      align-items: center;
+      padding: var(--spacing-lg);
+    }
+  
+    .stripeInfoContent {
+      flex: 1;
+    }
+  
+    .stripeInfoButton {
+      align-self: center;
+      padding: var(--spacing-sm) var(--spacing-lg);
+    }
+  
+    /* Balance Card */
+    .balanceCard {
+      padding: var(--spacing-lg);
+    }
+  
+    .balanceAmount {
+      font-size: var(--font-size-2xl);
+    }
+  
+    .payoutButton {
+      padding: var(--spacing-md) var(--spacing-xl);
+    }
+  
+    /* Products List */
+    .topProductItem {
+      padding: var(--spacing-lg);
+    }
+  
+    .productThumb {
+      width: 56px;
+      height: 56px;
+    }
+  
+    .productName {
+      font-size: var(--font-size-base);
+    }
+  
+    .productRevenue {
+      font-size: var(--font-size-lg);
     }
   }
   

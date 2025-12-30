@@ -26,7 +26,7 @@ const stripeService = {
    * Get Stripe Express Dashboard link
    * Only available after onboarding is complete
    */
-  getDashboardLink: () => api.get('/stripe/connect/dashboard')
+  getDashboardLink: () => api.get('/stripe/connect/dashboard-link')
 };
 
 export default stripeService;

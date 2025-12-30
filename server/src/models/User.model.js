@@ -5,15 +5,9 @@ const { getPlatformFee: getLevelFee } = require('../config/levels.config');
  * User Model
  * Raw SQL queries for users table
  * 
- * BALANCE-KONZEPT:
- * - total_earnings: Gesamte Produkteinnahmen (für Level-Berechnung)
- *   → Wird automatisch via Stripe Destination Charges ausgezahlt
- * 
- * - affiliate_balance / available_balance: Verfügbare Affiliate-Provisionen
- *   → Kann manuell ausgezahlt werden
- * 
- * - affiliate_pending_balance / pending_balance: Affiliate-Provisionen in Clearing (7 Tage)
- *   → Wird nach Clearing-Zeit zu affiliate_balance verschoben
+ * NACH MIGRATION 009:
+ * - available_balance → affiliate_balance
+ * - pending_balance → affiliate_pending_balance
  */
 const UserModel = {
   /**
@@ -24,14 +18,8 @@ const UserModel = {
       SELECT 
         id, firebase_uid, email, username, name,
         bio, avatar_url, role, level, total_earnings,
-        -- Affiliate Balance (mit Fallback für alte Spaltennamen)
-        COALESCE(affiliate_balance, available_balance, 0) as affiliate_balance,
-        COALESCE(affiliate_pending_balance, pending_balance, 0) as affiliate_pending_balance,
+        affiliate_balance, affiliate_pending_balance,
         COALESCE(affiliate_earnings_total, 0) as affiliate_earnings_total,
-        -- Legacy-Spalten für Kompatibilität
-        COALESCE(available_balance, 0) as available_balance,
-        COALESCE(pending_balance, 0) as pending_balance,
-        -- Stripe Connect
         stripe_account_id, stripe_account_status,
         stripe_charges_enabled, stripe_payouts_enabled,
         stripe_onboarding_complete, stripe_account_updated_at,
@@ -41,7 +29,15 @@ const UserModel = {
     `;
     
     const result = await db.query(query, [id]);
-    return result.rows[0] || null;
+    const user = result.rows[0] || null;
+    
+    // Aliase für Rückwärtskompatibilität
+    if (user) {
+      user.available_balance = user.affiliate_balance;
+      user.pending_balance = user.affiliate_pending_balance;
+    }
+    
+    return user;
   },
 
   /**
@@ -170,7 +166,6 @@ const UserModel = {
 
   /**
    * Update Stripe Connect Status
-   * Wird vom Stripe Service aufgerufen
    */
   async updateStripeStatus(id, data) {
     const allowedFields = [
@@ -220,10 +215,6 @@ const UserModel = {
 
   /**
    * Update product earnings (für Level-Berechnung)
-   * 
-   * WICHTIG: Diese Funktion aktualisiert NUR total_earnings für Level-Progression.
-   * Produkt-Einnahmen werden NICHT in available_balance gespeichert,
-   * da sie direkt via Stripe an den Seller gehen.
    */
   async updateEarnings(id, amount) {
     const query = `
@@ -247,14 +238,10 @@ const UserModel = {
   },
 
   /**
-   * Add affiliate commission (mit 7-Tage Clearing)
-   * 
-   * Provisionen landen zuerst in pending, werden nach 7 Tagen
-   * automatisch zu available verschoben.
+   * Add affiliate commission (geht in pending für Clearing)
    */
   async addAffiliateCommission(id, amount) {
-    // Versuche zuerst die neuen Spaltennamen, dann Fallback
-    let query = `
+    const query = `
       UPDATE users 
       SET 
         affiliate_pending_balance = COALESCE(affiliate_pending_balance, 0) + $1,
@@ -264,33 +251,15 @@ const UserModel = {
       RETURNING id, affiliate_pending_balance, affiliate_balance, affiliate_earnings_total
     `;
     
-    try {
-      const result = await db.query(query, [amount, id]);
-      return result.rows[0];
-    } catch (err) {
-      // Fallback für alte Spaltenstruktur
-      if (err.code === '42703') { // undefined_column
-        query = `
-          UPDATE users 
-          SET 
-            pending_balance = COALESCE(pending_balance, 0) + $1,
-            updated_at = NOW()
-          WHERE id = $2
-          RETURNING id, pending_balance, available_balance
-        `;
-        const result = await db.query(query, [amount, id]);
-        return result.rows[0];
-      }
-      throw err;
-    }
+    const result = await db.query(query, [amount, id]);
+    return result.rows[0];
   },
 
   /**
    * Update affiliate balance (für Auszahlungen - kann negativ sein)
    */
   async updateAffiliateBalance(id, amount) {
-    // Versuche zuerst die neuen Spaltennamen
-    let query = `
+    const query = `
       UPDATE users 
       SET 
         affiliate_balance = COALESCE(affiliate_balance, 0) + $1,
@@ -299,40 +268,22 @@ const UserModel = {
       RETURNING id, affiliate_balance, affiliate_pending_balance
     `;
     
-    try {
-      const result = await db.query(query, [amount, id]);
-      return result.rows[0];
-    } catch (err) {
-      // Fallback für alte Spaltenstruktur
-      if (err.code === '42703') {
-        query = `
-          UPDATE users 
-          SET 
-            available_balance = COALESCE(available_balance, 0) + $1,
-            updated_at = NOW()
-          WHERE id = $2
-          RETURNING id, available_balance, pending_balance
-        `;
-        const result = await db.query(query, [amount, id]);
-        return result.rows[0];
-      }
-      throw err;
-    }
+    const result = await db.query(query, [amount, id]);
+    return result.rows[0];
   },
 
   /**
-   * Legacy: Update user balance (für Kompatibilität)
-   * @deprecated Use updateAffiliateBalance instead
+   * Legacy: Update user balance
    */
   async updateBalance(id, amount) {
     return this.updateAffiliateBalance(id, amount);
   },
 
   /**
-   * Move affiliate commission from pending to available (nach Clearing)
+   * Release affiliate commission from pending to available
    */
   async releaseAffiliateClearing(id, amount) {
-    let query = `
+    const query = `
       UPDATE users 
       SET 
         affiliate_pending_balance = GREATEST(0, COALESCE(affiliate_pending_balance, 0) - $1),
@@ -342,26 +293,8 @@ const UserModel = {
       RETURNING id, affiliate_balance, affiliate_pending_balance
     `;
     
-    try {
-      const result = await db.query(query, [amount, id]);
-      return result.rows[0] || null;
-    } catch (err) {
-      // Fallback
-      if (err.code === '42703') {
-        query = `
-          UPDATE users 
-          SET 
-            pending_balance = GREATEST(0, COALESCE(pending_balance, 0) - $1),
-            available_balance = COALESCE(available_balance, 0) + $1,
-            updated_at = NOW()
-          WHERE id = $2 AND COALESCE(pending_balance, 0) >= $1
-          RETURNING id, available_balance, pending_balance
-        `;
-        const result = await db.query(query, [amount, id]);
-        return result.rows[0] || null;
-      }
-      throw err;
-    }
+    const result = await db.query(query, [amount, id]);
+    return result.rows[0] || null;
   },
 
   /**

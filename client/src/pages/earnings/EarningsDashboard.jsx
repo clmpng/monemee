@@ -10,8 +10,8 @@ import styles from '../../styles/pages/Earnings.module.css';
  * Earnings Dashboard Page
  * 
  * Zwei Tabs:
- * 1. PRODUKTE: Zeigt Produktverkäufe (Auszahlung via Stripe automatisch)
- * 2. PROVISIONEN: Zeigt Affiliate-Einnahmen (manuelle Auszahlung)
+ * 1. PRODUKTE: Produktverkäufe (automatische Auszahlung via Stripe)
+ * 2. PROVISIONEN: Affiliate-Einnahmen (manuelle Auszahlung)
  */
 function EarningsDashboard() {
   // Tab State
@@ -57,8 +57,8 @@ function EarningsDashboard() {
         earningsService.getDashboard(),
         earningsService.getLevelInfo(),
         payoutsService.getAffiliateBalance(),
-        earningsService.getProductEarnings(),
-        earningsService.getAffiliateEarnings(),
+        earningsService.getProductEarnings().catch(() => ({ success: true, data: [] })),
+        earningsService.getAffiliateEarnings().catch(() => ({ success: true, data: [] })),
         payoutsService.getHistory({ limit: 10 }),
         stripeService.getConnectStatus().catch(() => ({ success: false }))
       ]);
@@ -99,7 +99,7 @@ function EarningsDashboard() {
   // Calculate level progress
   const levelProgress = level?.progressPercent || 0;
 
-  // Handle payout request (nur für Affiliate)
+  // Handle payout request
   const handleRequestPayout = async (amount) => {
     try {
       setPayoutLoading(true);
@@ -185,7 +185,7 @@ function EarningsDashboard() {
         <p className="page-subtitle">Deine Einnahmen und Level-Fortschritt</p>
       </div>
 
-      {/* Level Card - Always visible */}
+      {/* Level Card */}
       {level && (
         <div className={styles.levelCard}>
           <div className={styles.levelHeader}>
@@ -220,112 +220,95 @@ function EarningsDashboard() {
             </div>
           </div>
           <div className={styles.levelFooter}>
-            <p className={styles.progressText}>
+            <span className={styles.progressText}>
               {formatCurrency(level.progress)} / {formatCurrency(level.nextLevel)}
-            </p>
+            </span>
             <button 
               className={styles.levelInfoButton}
               onClick={() => setShowLevelInfo(true)}
             >
               <Icon name="info" size="sm" />
-              Alle Level ansehen
+              Alle Level
             </button>
           </div>
         </div>
       )}
 
       {/* Tab Navigation */}
-      <div className={styles.tabNavigation}>
+      <div className={styles.tabs}>
         <button 
-          className={`${styles.tabButton} ${activeTab === 'products' ? styles.tabActive : ''}`}
+          className={`${styles.tab} ${activeTab === 'products' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('products')}
         >
           <Icon name="shoppingBag" size="sm" />
           <span>Produkte</span>
-          <span className={styles.tabBadge}>{formatCurrency(dashboard?.productEarnings)}</span>
         </button>
         <button 
-          className={`${styles.tabButton} ${activeTab === 'affiliates' ? styles.tabActive : ''}`}
+          className={`${styles.tab} ${activeTab === 'affiliates' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('affiliates')}
         >
           <Icon name="link" size="sm" />
           <span>Provisionen</span>
-          {affiliateBalance > 0 && (
-            <span className={`${styles.tabBadge} ${styles.tabBadgeHighlight}`}>
-              {formatCurrency(affiliateBalance)}
-            </span>
-          )}
         </button>
       </div>
 
       {/* ==================== PRODUKTE TAB ==================== */}
       {activeTab === 'products' && (
-        <div className={styles.tabContent}>
-          {/* Info Box */}
-          <div className={styles.infoBox}>
-            <div className={styles.infoIcon}>
-              <Icon name="checkCircle" size="md" />
-            </div>
-            <div className={styles.infoContent}>
-              <h4>Automatische Auszahlung</h4>
-              <p>
-                Deine Produkteinnahmen werden direkt via Stripe auf dein Bankkonto überwiesen. 
-                Du musst nichts weiter tun!
-              </p>
-            </div>
-          </div>
-
-          {/* Stats Overview */}
-          <div className={styles.statsRow}>
-            <div className={styles.statBox}>
+        <>
+          {/* Stats Grid */}
+          <div className={styles.statsGrid}>
+            <div className={styles.statCard}>
+              <div className={`${styles.statIcon} ${styles.statIconSuccess}`}>
+                <Icon name="dollarSign" size="sm" />
+              </div>
               <div className={styles.statValue}>{formatCurrency(dashboard?.productEarnings)}</div>
               <div className={styles.statLabel}>Gesamteinnahmen</div>
             </div>
-            <div className={styles.statBox}>
+            <div className={styles.statCard}>
+              <div className={`${styles.statIcon} ${styles.statIconPrimary}`}>
+                <Icon name="shoppingCart" size="sm" />
+              </div>
               <div className={styles.statValue}>{dashboard?.totalSales || 0}</div>
               <div className={styles.statLabel}>Verkäufe</div>
             </div>
           </div>
 
-          {/* Stripe Dashboard Link */}
-          {stripeStatus?.payoutsEnabled ? (
-            <button 
-              className={styles.stripeDashboardButton}
-              onClick={handleOpenStripeDashboard}
-            >
-              <div className={styles.stripeButtonContent}>
-                <Icon name="externalLink" size="md" />
-                <div>
-                  <span className={styles.stripeButtonTitle}>Stripe Dashboard öffnen</span>
-                  <span className={styles.stripeButtonSubtitle}>
-                    Transaktionen, Auszahlungen & Bankverbindung verwalten
-                  </span>
-                </div>
-              </div>
-              <Icon name="chevronRight" size="md" />
-            </button>
-          ) : (
-            <div className={styles.stripeSetupHint}>
-              <Icon name="alertCircle" size="md" />
-              <div>
-                <strong>Stripe noch nicht eingerichtet</strong>
-                <p>Richte dein Auszahlungskonto in den <a href="/settings?tab=stripe">Einstellungen</a> ein, um Zahlungen zu empfangen.</p>
-              </div>
+          {/* Stripe Info Card mit Dashboard Link */}
+          <div className={styles.stripeInfoCard}>
+            <div className={styles.stripeInfoIcon}>
+              <Icon name="checkCircle" size="md" />
             </div>
-          )}
+            <div className={styles.stripeInfoContent}>
+              <h4>Automatische Auszahlung via Stripe</h4>
+              <p>
+                Deine Produkteinnahmen werden automatisch auf dein Bankkonto überwiesen. 
+                Du musst nichts weiter tun.
+              </p>
+            </div>
+            {stripeStatus?.payoutsEnabled ? (
+              <button 
+                className={styles.stripeInfoButton}
+                onClick={handleOpenStripeDashboard}
+              >
+                <Icon name="externalLink" size="sm" />
+                <span>Stripe Dashboard</span>
+              </button>
+            ) : (
+              <a href="/settings?tab=stripe" className={styles.stripeInfoButton}>
+                <Icon name="settings" size="sm" />
+                <span>Einrichten</span>
+              </a>
+            )}
+          </div>
 
           {/* Top Products */}
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>
-              <Icon name="trendingUp" size="sm" />
-              Top Produkte
-            </h3>
+            <h3 className={styles.sectionTitle}>Top Produkte</h3>
             
             {topProducts.length > 0 ? (
-              <div className={styles.productList}>
-                {topProducts.map((product, index) => (
-                  <div key={product.id} className={styles.productItem}>
-                    <span className={styles.productRank}>#{index + 1}</span>
+              <div className={styles.topProductsList}>
+                {topProducts.map((product) => (
+                  <div key={product.id} className={styles.topProductItem}>
                     <div className={styles.productThumb}>
                       {product.thumbnail ? (
                         <img src={product.thumbnail} alt={product.title} />
@@ -334,8 +317,8 @@ function EarningsDashboard() {
                       )}
                     </div>
                     <div className={styles.productInfo}>
-                      <span className={styles.productTitle}>{product.title}</span>
-                      <span className={styles.productSales}>{product.sales} Verkäufe</span>
+                      <span className={styles.productName}>{product.title}</span>
+                      <span className={styles.productStats}>{product.sales} Verkäufe</span>
                     </div>
                     <span className={styles.productRevenue}>{formatCurrency(product.revenue)}</span>
                   </div>
@@ -345,66 +328,61 @@ function EarningsDashboard() {
               <div className={styles.emptyState}>
                 <Icon name="package" size="xl" />
                 <p>Noch keine Verkäufe</p>
-                <span>Erstelle dein erstes Produkt und starte durch!</span>
+                <span>Erstelle dein erstes Produkt!</span>
               </div>
             )}
           </div>
-        </div>
+        </>
       )}
 
       {/* ==================== PROVISIONEN TAB ==================== */}
       {activeTab === 'affiliates' && (
-        <div className={styles.tabContent}>
-          {/* Balance Card */}
-          <div className={styles.affiliateBalanceCard}>
-            <div className={styles.balanceHeader}>
-              <span className={styles.balanceLabel}>Verfügbares Guthaben</span>
-              <span className={styles.balanceAmount}>{formatCurrency(affiliateBalance)}</span>
-            </div>
-            
-            {affiliatePending > 0 && (
-              <div className={styles.pendingInfo}>
-                <Icon name="clock" size="sm" />
-                <span>{formatCurrency(affiliatePending)} in Freigabe (7 Tage)</span>
+        <>
+          {/* Balance Card mit integriertem Hinweis und Button */}
+          <div className={styles.balanceCard}>
+            <div className={styles.balanceMain}>
+              <div className={styles.balanceInfo}>
+                <span className={styles.balanceLabel}>Verfügbares Guthaben</span>
+                <span className={styles.balanceAmount}>{formatCurrency(affiliateBalance)}</span>
+                {affiliatePending > 0 && (
+                  <span className={styles.balanceHint}>
+                    + {formatCurrency(affiliatePending)} in Freigabe
+                  </span>
+                )}
               </div>
-            )}
-
-            <button 
-              className={styles.payoutButton}
-              onClick={() => setShowPayoutModal(true)}
-              disabled={!canPayout}
-            >
-              <Icon name="wallet" size="sm" />
-              {canPayout ? 'Auszahlung anfordern' : `Mind. ${formatCurrency(PAYOUT_CONFIG.absoluteMinPayout)}`}
-            </button>
-
-            {!stripeStatus?.payoutsEnabled && affiliateBalance > 0 && (
-              <p className={styles.balanceHint}>
-                <Icon name="info" size="xs" />
-                Richte erst dein <a href="/settings?tab=stripe">Stripe-Konto</a> ein
-              </p>
-            )}
-          </div>
-
-          {/* Info Box - Why manual? */}
-          <div className={styles.infoBoxSecondary}>
-            <Icon name="info" size="sm" />
-            <div>
-              <strong>Warum manuelle Auszahlung?</strong>
-              <p>
-                Affiliate-Provisionen werden nach einer 7-tägigen Sicherheitsphase freigegeben. 
-                Dies schützt vor Rückbuchungen und Betrug. Danach kannst du sie jederzeit auszahlen.
-              </p>
+              <button 
+                className={styles.payoutButton}
+                onClick={() => setShowPayoutModal(true)}
+                disabled={!canPayout}
+              >
+                <Icon name="wallet" size="sm" />
+                Auszahlen
+              </button>
+            </div>
+            <div className={styles.balanceStats}>
+              <Icon name="info" size="xs" />
+              <span>
+                Provisionen werden nach 7 Tagen freigegeben (Schutz vor Rückbuchungen).
+                {!stripeStatus?.payoutsEnabled && affiliateBalance > 0 && (
+                  <> <a href="/settings?tab=stripe">Stripe einrichten</a>, um auszuzahlen.</>
+                )}
+              </span>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className={styles.statsRow}>
-            <div className={styles.statBox}>
-              <div className={styles.statValue}>{formatCurrency(affiliateData?.totalEarnings || dashboard?.affiliateEarnings)}</div>
+          {/* Stats Grid */}
+          <div className={styles.statsGrid}>
+            <div className={styles.statCard}>
+              <div className={`${styles.statIcon} ${styles.statIconSuccess}`}>
+                <Icon name="dollarSign" size="sm" />
+              </div>
+              <div className={styles.statValue}>{formatCurrency(affiliateData?.totalEarnings || 0)}</div>
               <div className={styles.statLabel}>Gesamtprovisionen</div>
             </div>
-            <div className={styles.statBox}>
+            <div className={styles.statCard}>
+              <div className={`${styles.statIcon} ${styles.statIconPrimary}`}>
+                <Icon name="users" size="sm" />
+              </div>
               <div className={styles.statValue}>{dashboard?.totalReferrals || 0}</div>
               <div className={styles.statLabel}>Referrals</div>
             </div>
@@ -412,27 +390,24 @@ function EarningsDashboard() {
 
           {/* Recent Affiliate Sales */}
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>
-              <Icon name="link" size="sm" />
-              Letzte Provisionen
-            </h3>
+            <h3 className={styles.sectionTitle}>Letzte Provisionen</h3>
             
             {affiliateSales.length > 0 ? (
-              <div className={styles.affiliateList}>
+              <div className={styles.topProductsList}>
                 {affiliateSales.map((sale) => (
-                  <div key={sale.id} className={styles.affiliateItem}>
-                    <div className={styles.affiliateThumb}>
+                  <div key={sale.id} className={styles.topProductItem}>
+                    <div className={styles.productThumb}>
                       {sale.productThumbnail ? (
                         <img src={sale.productThumbnail} alt={sale.productTitle} />
                       ) : (
                         <Icon name="package" size="sm" />
                       )}
                     </div>
-                    <div className={styles.affiliateInfo}>
-                      <span className={styles.affiliateTitle}>{sale.productTitle}</span>
-                      <span className={styles.affiliateDate}>{formatDate(sale.date)}</span>
+                    <div className={styles.productInfo}>
+                      <span className={styles.productName}>{sale.productTitle}</span>
+                      <span className={styles.productStats}>{formatDate(sale.date)}</span>
                     </div>
-                    <span className={styles.affiliateCommission}>+{formatCurrency(sale.commission)}</span>
+                    <span className={styles.productRevenue}>+{formatCurrency(sale.commission)}</span>
                   </div>
                 ))}
               </div>
@@ -448,17 +423,14 @@ function EarningsDashboard() {
           {/* Payout History */}
           {payoutHistory.length > 0 && (
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>
-                <Icon name="clock" size="sm" />
-                Auszahlungshistorie
-              </h3>
+              <h3 className={styles.sectionTitle}>Auszahlungshistorie</h3>
               <PayoutHistory 
                 payouts={payoutHistory}
                 onCancel={handleCancelPayout}
               />
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Modals */}
@@ -474,8 +446,6 @@ function EarningsDashboard() {
         availableBalance={affiliateBalance}
         onRequestPayout={handleRequestPayout}
         loading={payoutLoading}
-        title="Affiliate-Provision auszahlen"
-        description="Deine Provisionen werden auf dein Stripe-Konto überwiesen."
       />
     </div>
   );
