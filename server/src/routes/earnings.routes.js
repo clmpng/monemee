@@ -16,6 +16,9 @@ router.get('/levels', earningsController.getAllLevelsInfo);
 // GET /api/v1/earnings/dashboard - Get earnings dashboard data
 router.get('/dashboard', authenticate, earningsController.getDashboard);
 
+// GET /api/v1/earnings/statistics - Get detailed statistics with chart data
+router.get('/statistics', authenticate, earningsController.getStatistics);
+
 // GET /api/v1/earnings/products - Get earnings by product
 router.get('/products', authenticate, earningsController.getProductEarnings);
 

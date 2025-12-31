@@ -26,6 +26,9 @@ function LevelInfoModal({ isOpen, onClose, currentLevel = 1 }) {
             const isActive = level.level === currentLevel;
             const isUnlocked = level.level <= currentLevel;
             
+            // Fee kann als 'fee' oder 'platformFee' kommen
+            const feeValue = level.fee ?? level.platformFee ?? 0;
+            
             return (
               <div 
                 key={level.level}
@@ -54,7 +57,7 @@ function LevelInfoModal({ isOpen, onClose, currentLevel = 1 }) {
                     </p>
                   </div>
                   <div className={styles.levelFee}>
-                    <span className={styles.feeValue}>{level.fee}%</span>
+                    <span className={styles.feeValue}>{feeValue}%</span>
                     <span className={styles.feeLabel}>Gebühr</span>
                   </div>
                 </div>

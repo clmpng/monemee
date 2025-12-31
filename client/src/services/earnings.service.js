@@ -4,6 +4,9 @@ const earningsService = {
   // Get dashboard data
   getDashboard: () => api.get('/earnings/dashboard'),
   
+  // Get detailed statistics with chart data
+  getStatistics: (period = '30d') => api.get(`/earnings/statistics?period=${period}`),
+  
   // Get earnings by product
   getProductEarnings: () => api.get('/earnings/products'),
   

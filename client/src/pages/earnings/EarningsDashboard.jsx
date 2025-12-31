@@ -1,7 +1,7 @@
 // client/src/pages/earnings/EarningsDashboard.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Icon } from '../../components/common';
-import { LevelInfoModal, PayoutModal, PayoutHistory } from '../../components/earnings';
+import { LevelInfoModal, PayoutModal, PayoutHistory, EarningsChart } from '../../components/earnings';
 import { earningsService, payoutsService, stripeService } from '../../services';
 import { PAYOUT_CONFIG } from '../../config/platform.config';
 import styles from '../../styles/pages/Earnings.module.css';
@@ -9,19 +9,35 @@ import styles from '../../styles/pages/Earnings.module.css';
 /**
  * Earnings Dashboard Page
  * 
- * Zwei Tabs:
- * 1. PRODUKTE: Produktverkäufe (automatische Auszahlung via Stripe)
- * 2. PROVISIONEN: Affiliate-Einnahmen (manuelle Auszahlung)
+ * Features:
+ * - Zeitraum-Auswahl (7T, 30T, 90T, 1J)
+ * - KPI-Karten mit Trends
+ * - Einnahmen-Chart
+ * - Top-Produkte mit Visualisierung
+ * - Tabs für Produkte/Provisionen
  */
+
+const PERIOD_OPTIONS = [
+  { value: '7d', label: '7T' },
+  { value: '30d', label: '30T' },
+  { value: '90d', label: '90T' },
+  { value: '365d', label: '1J' }
+];
+
 function EarningsDashboard() {
+  // Period State
+  const [selectedPeriod, setSelectedPeriod] = useState('30d');
+  
   // Tab State
   const [activeTab, setActiveTab] = useState('products');
   
-  // API Data States
-  const [dashboard, setDashboard] = useState(null);
+  // Statistics Data
+  const [statistics, setStatistics] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  
+  // Other Data States
   const [level, setLevel] = useState(null);
   const [affiliateData, setAffiliateData] = useState(null);
-  const [topProducts, setTopProducts] = useState([]);
   const [affiliateSales, setAffiliateSales] = useState([]);
   const [payoutHistory, setPayoutHistory] = useState([]);
   const [stripeStatus, setStripeStatus] = useState(null);
@@ -35,49 +51,63 @@ function EarningsDashboard() {
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [payoutLoading, setPayoutLoading] = useState(false);
 
-  // Fetch all data on mount
+  // Fetch statistics when period changes
+  const fetchStatistics = useCallback(async () => {
+    try {
+      setStatsLoading(true);
+      const response = await earningsService.getStatistics(selectedPeriod);
+      if (response.success) {
+        setStatistics(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching statistics:', err);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [selectedPeriod]);
+
+  // Fetch all other data on mount
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [
+          levelRes, 
+          affiliateRes, 
+          affiliateSalesRes, 
+          payoutsRes,
+          stripeRes
+        ] = await Promise.all([
+          earningsService.getLevelInfo(),
+          payoutsService.getAffiliateBalance(),
+          earningsService.getAffiliateEarnings().catch(() => ({ success: true, data: [] })),
+          payoutsService.getHistory({ limit: 10 }),
+          stripeService.getConnectStatus().catch(() => ({ success: false }))
+        ]);
+
+        if (levelRes.success) setLevel(levelRes.data);
+        if (affiliateRes.success) setAffiliateData(affiliateRes.data);
+        if (affiliateSalesRes.success) setAffiliateSales(affiliateSalesRes.data || []);
+        if (payoutsRes.success) setPayoutHistory(payoutsRes.data || []);
+        if (stripeRes.success) setStripeStatus(stripeRes.data);
+
+      } catch (err) {
+        console.error('Error fetching earnings:', err);
+        setError('Daten konnten nicht geladen werden');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const [
-        dashboardRes, 
-        levelRes, 
-        affiliateRes, 
-        productsRes, 
-        affiliateSalesRes, 
-        payoutsRes,
-        stripeRes
-      ] = await Promise.all([
-        earningsService.getDashboard(),
-        earningsService.getLevelInfo(),
-        payoutsService.getAffiliateBalance(),
-        earningsService.getProductEarnings().catch(() => ({ success: true, data: [] })),
-        earningsService.getAffiliateEarnings().catch(() => ({ success: true, data: [] })),
-        payoutsService.getHistory({ limit: 10 }),
-        stripeService.getConnectStatus().catch(() => ({ success: false }))
-      ]);
-
-      if (dashboardRes.success) setDashboard(dashboardRes.data);
-      if (levelRes.success) setLevel(levelRes.data);
-      if (affiliateRes.success) setAffiliateData(affiliateRes.data);
-      if (productsRes.success) setTopProducts(productsRes.data || []);
-      if (affiliateSalesRes.success) setAffiliateSales(affiliateSalesRes.data || []);
-      if (payoutsRes.success) setPayoutHistory(payoutsRes.data || []);
-      if (stripeRes.success) setStripeStatus(stripeRes.data);
-
-    } catch (err) {
-      console.error('Error fetching earnings:', err);
-      setError('Daten konnten nicht geladen werden');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch statistics when period changes
+  useEffect(() => {
+    fetchStatistics();
+  }, [fetchStatistics]);
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -87,6 +117,14 @@ function EarningsDashboard() {
     }).format(amount || 0);
   };
 
+  // Format compact currency
+  const formatCompactCurrency = (amount) => {
+    if (amount >= 1000) {
+      return `€${(amount / 1000).toFixed(1)}k`;
+    }
+    return formatCurrency(amount);
+  };
+
   // Format date
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('de-DE', {
@@ -94,6 +132,22 @@ function EarningsDashboard() {
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  // Format relative time
+  const formatRelativeTime = (date) => {
+    const now = new Date();
+    const then = new Date(date);
+    const diffMs = now - then;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Gerade eben';
+    if (diffMins < 60) return `vor ${diffMins} Min.`;
+    if (diffHours < 24) return `vor ${diffHours} Std.`;
+    if (diffDays < 7) return `vor ${diffDays} Tag${diffDays > 1 ? 'en' : ''}`;
+    return formatDate(date);
   };
 
   // Calculate level progress
@@ -106,7 +160,13 @@ function EarningsDashboard() {
       const response = await payoutsService.requestPayout(amount);
       
       if (response.success) {
-        await fetchData();
+        // Refresh data
+        const [affiliateRes, payoutsRes] = await Promise.all([
+          payoutsService.getAffiliateBalance(),
+          payoutsService.getHistory({ limit: 10 })
+        ]);
+        if (affiliateRes.success) setAffiliateData(affiliateRes.data);
+        if (payoutsRes.success) setPayoutHistory(payoutsRes.data || []);
         return response;
       } else {
         throw new Error(response.message || 'Auszahlung fehlgeschlagen');
@@ -125,7 +185,12 @@ function EarningsDashboard() {
     try {
       const response = await payoutsService.cancelPayout(payoutId);
       if (response.success) {
-        await fetchData();
+        const [affiliateRes, payoutsRes] = await Promise.all([
+          payoutsService.getAffiliateBalance(),
+          payoutsService.getHistory({ limit: 10 })
+        ]);
+        if (affiliateRes.success) setAffiliateData(affiliateRes.data);
+        if (payoutsRes.success) setPayoutHistory(payoutsRes.data || []);
       }
     } catch (err) {
       console.error('Cancel payout error:', err);
@@ -172,6 +237,12 @@ function EarningsDashboard() {
     );
   }
 
+  // Extract data from statistics
+  const kpis = statistics?.kpis || {};
+  const chartData = statistics?.chart || [];
+  const topProducts = statistics?.topProducts || [];
+  const recentSales = statistics?.recentSales || [];
+  
   // Affiliate balance data
   const affiliateBalance = affiliateData?.availableBalance || 0;
   const affiliatePending = affiliateData?.pendingBalance || 0;
@@ -182,7 +253,7 @@ function EarningsDashboard() {
       {/* Header */}
       <div className="page-header">
         <h1 className="page-title">Fortschritt</h1>
-        <p className="page-subtitle">Deine Einnahmen und Level-Fortschritt</p>
+        <p className="page-subtitle">Deine Einnahmen und Statistiken</p>
       </div>
 
       {/* Level Card */}
@@ -234,6 +305,87 @@ function EarningsDashboard() {
         </div>
       )}
 
+      {/* Period Selector */}
+      <div className={styles.periodSelector}>
+        <span className={styles.periodLabel}>Zeitraum:</span>
+        <div className={styles.periodButtons}>
+          {PERIOD_OPTIONS.map(option => (
+            <button
+              key={option.value}
+              className={`${styles.periodButton} ${selectedPeriod === option.value ? styles.periodActive : ''}`}
+              onClick={() => setSelectedPeriod(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className={styles.kpiGrid}>
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiHeader}>
+            <span className={styles.kpiLabel}>Einnahmen</span>
+            <TrendBadge value={kpis.earnings?.change} />
+          </div>
+          <div className={styles.kpiValue}>
+            {statsLoading ? '...' : formatCurrency(kpis.earnings?.value || 0)}
+          </div>
+        </div>
+        
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiHeader}>
+            <span className={styles.kpiLabel}>Verkäufe</span>
+            <TrendBadge value={kpis.sales?.change} />
+          </div>
+          <div className={styles.kpiValue}>
+            {statsLoading ? '...' : (kpis.sales?.value || 0)}
+          </div>
+        </div>
+        
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiHeader}>
+            <span className={styles.kpiLabel}>Ø Bestellwert</span>
+            <TrendBadge value={kpis.avgOrderValue?.change} />
+          </div>
+          <div className={styles.kpiValue}>
+            {statsLoading ? '...' : formatCurrency(kpis.avgOrderValue?.value || 0)}
+          </div>
+        </div>
+        
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiHeader}>
+            <span className={styles.kpiLabel}>Conversion</span>
+          </div>
+          <div className={styles.kpiValue}>
+            {statsLoading ? '...' : `${kpis.conversionRate?.value || 0}%`}
+          </div>
+          <div className={styles.kpiSubtext}>
+            {kpis.conversionRate?.views || 0} Views
+          </div>
+        </div>
+      </div>
+
+      {/* Chart Section */}
+      <div className={styles.chartSection}>
+        <div className={styles.chartHeader}>
+          <h3 className={styles.sectionTitle}>Einnahmen-Verlauf</h3>
+        </div>
+        <div className={styles.chartWrapper}>
+          {statsLoading ? (
+            <div className={styles.chartLoading}>
+              <div className={styles.loadingSpinner} />
+            </div>
+          ) : (
+            <EarningsChart 
+              data={chartData} 
+              type="earnings"
+              height={200}
+            />
+          )}
+        </div>
+      </div>
+
       {/* Tab Navigation */}
       <div className={styles.tabs}>
         <button 
@@ -252,63 +404,38 @@ function EarningsDashboard() {
         </button>
       </div>
 
-      {/* ==================== PRODUKTE TAB ==================== */}
+      {/* Products Tab Content */}
       {activeTab === 'products' && (
         <>
-          {/* Stats Grid */}
-          <div className={styles.statsGrid}>
-            <div className={styles.statCard}>
-              <div className={`${styles.statIcon} ${styles.statIconSuccess}`}>
-                <Icon name="dollarSign" size="sm" />
+          {/* Stripe Info */}
+          {stripeStatus?.payoutsEnabled && (
+            <div className={styles.stripeInfoCard}>
+              <div className={styles.stripeInfoIcon}>
+                <Icon name="check" size="sm" />
               </div>
-              <div className={styles.statValue}>{formatCurrency(dashboard?.productEarnings)}</div>
-              <div className={styles.statLabel}>Gesamteinnahmen</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={`${styles.statIcon} ${styles.statIconPrimary}`}>
-                <Icon name="shoppingCart" size="sm" />
+              <div className={styles.stripeInfoContent}>
+                <h4>Automatische Auszahlung aktiv</h4>
+                <p>Deine Produktverkäufe werden automatisch via Stripe auf dein Konto ausgezahlt.</p>
               </div>
-              <div className={styles.statValue}>{dashboard?.totalSales || 0}</div>
-              <div className={styles.statLabel}>Verkäufe</div>
-            </div>
-          </div>
-
-          {/* Stripe Info Card mit Dashboard Link */}
-          <div className={styles.stripeInfoCard}>
-            <div className={styles.stripeInfoIcon}>
-              <Icon name="checkCircle" size="md" />
-            </div>
-            <div className={styles.stripeInfoContent}>
-              <h4>Automatische Auszahlung via Stripe</h4>
-              <p>
-                Deine Produkteinnahmen werden automatisch auf dein Bankkonto überwiesen. 
-                Du musst nichts weiter tun.
-              </p>
-            </div>
-            {stripeStatus?.payoutsEnabled ? (
               <button 
                 className={styles.stripeInfoButton}
                 onClick={handleOpenStripeDashboard}
               >
                 <Icon name="externalLink" size="sm" />
-                <span>Stripe Dashboard</span>
+                Stripe Dashboard
               </button>
-            ) : (
-              <a href="/settings?tab=stripe" className={styles.stripeInfoButton}>
-                <Icon name="settings" size="sm" />
-                <span>Einrichten</span>
-              </a>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Top Products */}
+          {/* Top Products with Visualization */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Top Produkte</h3>
             
             {topProducts.length > 0 ? (
               <div className={styles.topProductsList}>
-                {topProducts.map((product) => (
+                {topProducts.map((product, index) => (
                   <div key={product.id} className={styles.topProductItem}>
+                    <div className={styles.productRank}>#{index + 1}</div>
                     <div className={styles.productThumb}>
                       {product.thumbnail ? (
                         <img src={product.thumbnail} alt={product.title} />
@@ -318,31 +445,65 @@ function EarningsDashboard() {
                     </div>
                     <div className={styles.productInfo}>
                       <span className={styles.productName}>{product.title}</span>
-                      <span className={styles.productStats}>{product.sales} Verkäufe</span>
+                      <span className={styles.productStats}>
+                        {product.sales} Verkäufe · {product.conversionRate}% CR
+                      </span>
                     </div>
-                    <span className={styles.productRevenue}>{formatCurrency(product.revenue)}</span>
+                    <div className={styles.productRevenueWrapper}>
+                      <span className={styles.productRevenue}>{formatCompactCurrency(product.revenue)}</span>
+                      <div className={styles.productBarWrapper}>
+                        <div 
+                          className={styles.productBar}
+                          style={{ width: `${product.percentage}%` }}
+                        />
+                      </div>
+                      <span className={styles.productPercentage}>{product.percentage}%</span>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className={styles.emptyState}>
-                <Icon name="package" size="xl" />
+                <Icon name="shoppingBag" size="xl" />
                 <p>Noch keine Verkäufe</p>
                 <span>Erstelle dein erstes Produkt!</span>
               </div>
             )}
           </div>
+
+          {/* Recent Activity */}
+          {recentSales.length > 0 && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Letzte Aktivität</h3>
+              <div className={styles.activityList}>
+                {recentSales.slice(0, 5).map(sale => (
+                  <div key={sale.id} className={styles.activityItem}>
+                    <div className={styles.activityIcon}>
+                      <Icon name="dollarSign" size="sm" />
+                    </div>
+                    <div className={styles.activityContent}>
+                      <span className={styles.activityText}>
+                        <strong>{sale.buyerName}</strong> kaufte "{sale.productTitle}"
+                      </span>
+                      <span className={styles.activityTime}>{formatRelativeTime(sale.date)}</span>
+                    </div>
+                    <span className={styles.activityAmount}>+{formatCurrency(sale.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
 
-      {/* ==================== PROVISIONEN TAB ==================== */}
+      {/* Affiliates Tab Content */}
       {activeTab === 'affiliates' && (
         <>
-          {/* Balance Card mit integriertem Hinweis und Button */}
+          {/* Balance Card */}
           <div className={styles.balanceCard}>
             <div className={styles.balanceMain}>
               <div className={styles.balanceInfo}>
-                <span className={styles.balanceLabel}>Verfügbares Guthaben</span>
+                <span className={styles.balanceLabel}>Verfügbar zur Auszahlung</span>
                 <span className={styles.balanceAmount}>{formatCurrency(affiliateBalance)}</span>
                 {affiliatePending > 0 && (
                   <span className={styles.balanceHint}>
@@ -355,14 +516,14 @@ function EarningsDashboard() {
                 onClick={() => setShowPayoutModal(true)}
                 disabled={!canPayout}
               >
-                <Icon name="wallet" size="sm" />
+                <Icon name="download" size="sm" />
                 Auszahlen
               </button>
             </div>
             <div className={styles.balanceStats}>
-              <Icon name="info" size="xs" />
+              <Icon name="info" size="sm" />
               <span>
-                Provisionen werden nach 7 Tagen freigegeben (Schutz vor Rückbuchungen).
+                Provisionen werden nach 7 Tagen freigegeben.
                 {!stripeStatus?.payoutsEnabled && affiliateBalance > 0 && (
                   <> <a href="/settings?tab=stripe">Stripe einrichten</a>, um auszuzahlen.</>
                 )}
@@ -383,7 +544,7 @@ function EarningsDashboard() {
               <div className={`${styles.statIcon} ${styles.statIconPrimary}`}>
                 <Icon name="users" size="sm" />
               </div>
-              <div className={styles.statValue}>{dashboard?.totalReferrals || 0}</div>
+              <div className={styles.statValue}>{statistics?.kpis?.sales?.value || 0}</div>
               <div className={styles.statLabel}>Referrals</div>
             </div>
           </div>
@@ -448,6 +609,24 @@ function EarningsDashboard() {
         loading={payoutLoading}
       />
     </div>
+  );
+}
+
+/**
+ * Trend Badge Component
+ */
+function TrendBadge({ value }) {
+  if (value === undefined || value === null || value === 0) {
+    return null;
+  }
+  
+  const isPositive = value > 0;
+  
+  return (
+    <span className={`${styles.trendBadge} ${isPositive ? styles.trendPositive : styles.trendNegative}`}>
+      <Icon name={isPositive ? 'trendingUp' : 'trendingDown'} size="xs" />
+      {Math.abs(value)}%
+    </span>
   );
 }
 

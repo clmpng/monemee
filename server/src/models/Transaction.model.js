@@ -43,7 +43,6 @@ const TransactionModel = {
 
   /**
    * Find transaction by Stripe Session ID
-   * Used for webhook idempotency check
    */
   async findByStripeSessionId(stripeSessionId) {
     const query = `
@@ -207,7 +206,7 @@ const TransactionModel = {
   },
 
   /**
-   * Get earnings by time period
+   * Get earnings by time period (daily breakdown)
    */
   async getEarningsByPeriod(userId, startDate, endDate) {
     const query = `
@@ -229,21 +228,157 @@ const TransactionModel = {
   },
 
   /**
-   * Get top products by revenue
+   * Get detailed statistics for a period
+   * Returns daily data with all metrics for charts
+   */
+  async getDetailedStatistics(userId, startDate, endDate) {
+    const query = `
+      SELECT 
+        DATE(created_at) as date,
+        COALESCE(SUM(seller_amount), 0) as earnings,
+        COALESCE(SUM(amount), 0) as revenue,
+        COUNT(*) as sales,
+        COALESCE(AVG(amount), 0) as avg_order_value
+      FROM transactions
+      WHERE seller_id = $1 
+        AND status = 'completed'
+        AND created_at >= $2 
+        AND created_at <= $3
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `;
+    
+    const result = await db.query(query, [userId, startDate, endDate]);
+    return result.rows;
+  },
+
+  /**
+   * Get period comparison (current vs previous)
+   */
+  async getPeriodComparison(userId, currentStart, currentEnd, previousStart, previousEnd) {
+    const query = `
+      WITH current_period AS (
+        SELECT 
+          COALESCE(SUM(seller_amount), 0) as earnings,
+          COALESCE(SUM(amount), 0) as revenue,
+          COUNT(*) as sales,
+          COALESCE(AVG(amount), 0) as avg_order_value
+        FROM transactions
+        WHERE seller_id = $1 
+          AND status = 'completed'
+          AND created_at >= $2 
+          AND created_at <= $3
+      ),
+      previous_period AS (
+        SELECT 
+          COALESCE(SUM(seller_amount), 0) as earnings,
+          COALESCE(SUM(amount), 0) as revenue,
+          COUNT(*) as sales,
+          COALESCE(AVG(amount), 0) as avg_order_value
+        FROM transactions
+        WHERE seller_id = $1 
+          AND status = 'completed'
+          AND created_at >= $4 
+          AND created_at <= $5
+      )
+      SELECT 
+        c.earnings as current_earnings,
+        c.revenue as current_revenue,
+        c.sales as current_sales,
+        c.avg_order_value as current_avg,
+        p.earnings as previous_earnings,
+        p.revenue as previous_revenue,
+        p.sales as previous_sales,
+        p.avg_order_value as previous_avg
+      FROM current_period c, previous_period p
+    `;
+    
+    const result = await db.query(query, [
+      userId, 
+      currentStart, 
+      currentEnd, 
+      previousStart, 
+      previousEnd
+    ]);
+    return result.rows[0];
+  },
+
+  /**
+   * Get total views for user's products in a period
+   */
+  async getViewsInPeriod(userId, startDate, endDate) {
+    // Note: This requires a product_views table or tracking
+    // For now, we'll return product views from the products table
+    const query = `
+      SELECT COALESCE(SUM(views), 0) as total_views
+      FROM products
+      WHERE user_id = $1
+    `;
+    
+    const result = await db.query(query, [userId]);
+    return parseInt(result.rows[0]?.total_views || 0);
+  },
+
+  /**
+   * Get top products by revenue with percentage
    */
   async getTopProductsByRevenue(userId, limit = 5) {
     const query = `
+      WITH product_stats AS (
+        SELECT 
+          p.id,
+          p.title,
+          p.thumbnail_url,
+          p.views,
+          COUNT(t.id) as sales,
+          COALESCE(SUM(t.seller_amount), 0) as revenue
+        FROM products p
+        LEFT JOIN transactions t ON t.product_id = p.id 
+          AND t.seller_id = $1 
+          AND t.status = 'completed'
+        WHERE p.user_id = $1
+        GROUP BY p.id, p.title, p.thumbnail_url, p.views
+      ),
+      total_revenue AS (
+        SELECT COALESCE(SUM(revenue), 0) as total FROM product_stats
+      )
       SELECT 
-        p.id,
-        p.title,
-        p.thumbnail_url,
-        COUNT(t.id) as sales,
-        SUM(t.seller_amount) as revenue
+        ps.*,
+        CASE 
+          WHEN tr.total > 0 THEN ROUND((ps.revenue / tr.total * 100)::numeric, 1)
+          ELSE 0 
+        END as percentage,
+        CASE 
+          WHEN ps.views > 0 THEN ROUND((ps.sales::numeric / ps.views * 100)::numeric, 2)
+          ELSE 0 
+        END as conversion_rate
+      FROM product_stats ps, total_revenue tr
+      ORDER BY ps.revenue DESC
+      LIMIT $2
+    `;
+    
+    const result = await db.query(query, [userId, limit]);
+    return result.rows;
+  },
+
+  /**
+   * Get recent sales activity
+   */
+  async getRecentSales(userId, limit = 10) {
+    const query = `
+      SELECT 
+        t.id,
+        t.amount,
+        t.seller_amount,
+        t.created_at,
+        p.title as product_title,
+        p.thumbnail_url as product_thumbnail,
+        buyer.name as buyer_name
       FROM transactions t
       JOIN products p ON t.product_id = p.id
+      JOIN users buyer ON t.buyer_id = buyer.id
       WHERE t.seller_id = $1 AND t.status = 'completed'
-      GROUP BY p.id, p.title, p.thumbnail_url
-      ORDER BY revenue DESC
+      ORDER BY t.created_at DESC
       LIMIT $2
     `;
     
