@@ -3,6 +3,7 @@ const UserModel = require('../models/User.model');
 const TransactionModel = require('../models/Transaction.model');
 const AffiliateModel = require('../models/Affiliate.model');
 const stripeService = require('../services/stripe.service');
+const { getPlatformFee } = require('../config/levels.config');
 
 /**
  * Payments Controller
@@ -104,6 +105,12 @@ const paymentsController = {
         }
       }
 
+      // Platform Fee aus Single Source of Truth (levels.config)
+      const platformFeePercent = getPlatformFee(seller.level);
+      
+      // Affiliate Commission vom Produkt
+      const affiliateCommission = product.affiliate_commission || 0;
+
       // Stripe Checkout Session erstellen
       const baseUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
       
@@ -113,6 +120,8 @@ const paymentsController = {
         seller,
         promoterId,
         promoterCode,
+        platformFeePercent,
+        affiliateCommission,
         successUrl: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${baseUrl}/p/${productId}?checkout=cancelled`
       });
@@ -320,8 +329,8 @@ const paymentsController = {
         });
       }
       
-      // Platform Fee basierend auf Seller-Level
-      const platformFeePercent = UserModel.getPlatformFee(seller.level);
+      // Platform Fee aus Single Source of Truth (levels.config)
+      const platformFeePercent = getPlatformFee(seller.level);
       const platformFee = Math.round(amount * (platformFeePercent / 100) * 100) / 100;
       
       // Affiliate Commission berechnen

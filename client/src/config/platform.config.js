@@ -1,76 +1,10 @@
 /**
  * Platform Configuration
- * Zentrale Konfiguration für Level, Payouts und Stripe Status
  * 
- * Diese Datei spiegelt die Backend-Konfiguration wider
- * und wird für UI-Darstellungen verwendet
+ * WICHTIG: Level-Daten werden jetzt vom Backend geladen!
+ * Siehe: GET /api/v1/earnings/levels
+ * Backend Source of Truth: server/src/config/levels.config.js
  */
-
-// ============================================
-// LEVEL KONFIGURATION
-// ============================================
-
-export const LEVELS = [
-  {
-    level: 1,
-    name: 'Starter',
-    minEarnings: 0,
-    platformFee: 15,
-    color: '#64748B',
-    icon: '🌱'
-  },
-  {
-    level: 2,
-    name: 'Rising',
-    minEarnings: 100,
-    platformFee: 12,
-    color: '#3B82F6',
-    icon: '⭐'
-  },
-  {
-    level: 3,
-    name: 'Pro',
-    minEarnings: 500,
-    platformFee: 10,
-    color: '#8B5CF6',
-    icon: '💎'
-  },
-  {
-    level: 4,
-    name: 'Expert',
-    minEarnings: 2000,
-    platformFee: 8,
-    color: '#F59E0B',
-    icon: '🏆'
-  },
-  {
-    level: 5,
-    name: 'Legend',
-    minEarnings: 5000,
-    platformFee: 5,
-    color: '#EF4444',
-    icon: '👑'
-  }
-];
-
-export function getLevelByNumber(levelNumber) {
-  return LEVELS.find(l => l.level === levelNumber) || LEVELS[0];
-}
-
-export function getLevelByEarnings(totalEarnings) {
-  for (let i = LEVELS.length - 1; i >= 0; i--) {
-    if (totalEarnings >= LEVELS[i].minEarnings) {
-      return LEVELS[i];
-    }
-  }
-  return LEVELS[0];
-}
-
-export function getNextLevel(currentLevel) {
-  const currentIndex = LEVELS.findIndex(l => l.level === currentLevel);
-  const nextIndex = currentIndex + 1;
-  return nextIndex < LEVELS.length ? LEVELS[nextIndex] : null;
-}
 
 // ============================================
 // PAYOUT KONFIGURATION

@@ -2,137 +2,161 @@
    Level Info Modal Styles
    ======================================== */
 
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.intro {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  line-height: 1.6;
-}
-
-/* Levels List */
-.levelsList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.levelItem {
-  background: var(--color-bg-tertiary);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
-  border: 1px solid transparent;
-  transition: all var(--transition-fast);
-}
-
-.levelItem.active {
-  background: var(--color-bg-secondary);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-.levelItem.unlocked {
-  opacity: 1;
-}
-
-.levelItem:not(.unlocked) {
-  opacity: 0.6;
-}
-
-.levelHeader {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
-.levelBadge {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: var(--font-size-base);
-  flex-shrink: 0;
-}
-
-.levelInfo {
-  flex: 1;
-  min-width: 0;
-}
-
-.levelName {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.currentBadge {
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  color: var(--color-primary);
-  background: rgba(99, 102, 241, 0.1);
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-}
-
-.levelThreshold {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-tertiary);
-  margin-top: 2px;
-}
-
-.levelFee {
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.feeValue {
-  display: block;
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--color-success);
-}
-
-.feeLabel {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-}
-
-.levelDescription {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin-top: var(--spacing-sm);
-  padding-left: calc(40px + var(--spacing-md));
-}
-
-/* Info Box */
-.infoBox {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  background: var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-}
-
-.infoBox svg {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.infoBox p {
-  margin: 0;
-  line-height: 1.5;
-}
+   .content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+  
+  .intro {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+  }
+  
+  /* Loading State */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    gap: var(--spacing-md);
+    color: var(--color-text-secondary);
+  }
+  
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Levels List */
+  .levelsList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .levelItem {
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    border: 1px solid transparent;
+    transition: all var(--transition-fast);
+  }
+  
+  .levelItem.active {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+  
+  .levelItem.unlocked {
+    opacity: 1;
+  }
+  
+  .levelItem:not(.unlocked) {
+    opacity: 0.6;
+  }
+  
+  .levelHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+  }
+  
+  .levelBadge {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: var(--font-size-base);
+    flex-shrink: 0;
+  }
+  
+  .levelInfo {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .levelName {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+  
+  .currentBadge {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.1);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+  }
+  
+  .levelThreshold {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+  }
+  
+  .levelFee {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  
+  .feeValue {
+    display: block;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-success);
+  }
+  
+  .feeLabel {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+  }
+  
+  .levelDescription {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-sm);
+    padding-left: calc(40px + var(--spacing-md));
+  }
+  
+  /* Info Box */
+  .infoBox {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+  
+  .infoBox svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  
+  .infoBox p {
+    margin: 0;
+    line-height: 1.5;
+  }
