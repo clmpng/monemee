@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Button, Card, Icon } from '../../components/common';
-import { paymentsService } from '../../services';
+import { paymentsService, invoiceService} from '../../services';
 import styles from '../../styles/pages/CheckoutSuccess.module.css';
 
 /**
@@ -18,6 +18,7 @@ function CheckoutSuccess() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [paymentData, setPaymentData] = useState(null);
+  const [invoiceUrl, setInvoiceUrl] = useState(null);
 
   useEffect(() => {
     if (!sessionId) {
@@ -51,6 +52,21 @@ function CheckoutSuccess() {
 
     verifyPayment();
   }, [sessionId]);
+
+  // Check for invoice (nur bei gewerblichen Verkäufern)
+  useEffect(() => {
+    if (paymentData?.transactionId) {
+      invoiceService.getInvoiceByTransaction(paymentData.transactionId)
+        .then(res => {
+          if (res.success && res.data.hasInvoice) {
+            setInvoiceUrl(res.data.publicUrl);
+          }
+        })
+        .catch(err => {
+          console.error('Invoice check error:', err);
+        });
+    }
+  }, [paymentData]);
 
   // Preis formatieren
   const formatPrice = (price) => {
@@ -155,6 +171,18 @@ function CheckoutSuccess() {
             >
               Zu meinen Käufen
             </Button>
+            
+            {invoiceUrl && (
+              <a 
+                href={invoiceUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className={styles.invoiceLink}
+              >
+                <Icon name="fileText" size="sm" />
+                Rechnung anzeigen
+              </a>
+            )}
             
             <Button 
               variant="secondary"

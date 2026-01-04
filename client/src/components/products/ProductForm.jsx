@@ -2,7 +2,11 @@ import React, { useState, useCallback } from 'react';
 import { Icon } from '../common';
 import ModuleCard from './ModuleCard';
 import ModuleSheet from './ModuleSheet';
+import PricingInfoModal from './PricingInfoModal';
 import styles from '../../styles/components/ProductForm.module.css';
+
+// Mindestpreis für kostenpflichtige Produkte (wegen Stripe-Gebühren)
+const MIN_PRICE = 2.99;
 
 /**
  * Product Form Component
@@ -27,6 +31,9 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
   const [showModuleSheet, setShowModuleSheet] = useState(false);
   const [editingModule, setEditingModule] = useState(null);
   const [errors, setErrors] = useState({});
+  
+  // Pricing Info Modal State
+  const [showPricingInfo, setShowPricingInfo] = useState(false);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -72,6 +79,10 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
       isFree: !prev.isFree,
       price: !prev.isFree ? 0 : prev.price
     }));
+    // Clear price error when toggling
+    if (errors.price) {
+      setErrors(prev => ({ ...prev, price: null }));
+    }
   };
 
   // Module handlers
@@ -116,8 +127,13 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
       newErrors.title = 'Titel ist erforderlich';
     }
     
-    if (!formData.isFree && (!formData.price || parseFloat(formData.price) <= 0)) {
-      newErrors.price = 'Bitte gib einen Preis ein';
+    if (!formData.isFree) {
+      const price = parseFloat(formData.price);
+      if (!formData.price || price <= 0) {
+        newErrors.price = 'Bitte gib einen Preis ein';
+      } else if (price < MIN_PRICE) {
+        newErrors.price = `Mindestpreis: ${MIN_PRICE.toFixed(2).replace('.', ',')} €`;
+      }
     }
 
     // Mindestens ein Modul bei neuen Produkten
@@ -279,88 +295,107 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
           )}
         </section>
 
-      {/* Pricing Section */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.sectionIcon}>💰</span>
-          <h2 className={styles.sectionTitle}>Preis & Provision</h2>
-        </div>
-
-        <div className={styles.field}>
-          <label className={styles.label}>Preis</label>
-          <div className={styles.priceRow}>
-            <div className={styles.priceInputWrapper}>
-              <span className={styles.priceCurrency}>€</span>
-              <input
-                type="number"
-                name="price"
-                placeholder="0.00"
-                value={formData.isFree ? '' : formData.price}
-                onChange={handleChange}
-                disabled={formData.isFree}
-                min="0"
-                step="0.01"
-                className={`${styles.priceInput} ${errors.price ? styles.inputError : ''}`}
-              />
-            </div>
+        {/* Pricing Section */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionIcon}>💰</span>
+            <h2 className={styles.sectionTitle}>Preis & Provision</h2>
             <button
               type="button"
-              className={`${styles.freeToggle} ${formData.isFree ? styles.freeToggleActive : ''}`}
-              onClick={toggleFree}
+              className={styles.infoButton}
+              onClick={() => setShowPricingInfo(true)}
+              aria-label="Tipps zur Preisgestaltung"
             >
-              <Icon name={formData.isFree ? 'check' : 'gift'} size="sm" />
-              <span>Kostenlos</span>
+              <Icon name="info" size="sm" />
             </button>
           </div>
-          {errors.price && <p className={styles.errorText}>{errors.price}</p>}
-        </div>
 
-        {/* Affiliate Toggle */}
-        <div className={styles.field}>
-          <button
-            type="button"
-            className={styles.affiliateToggle}
-            onClick={() => setFormData(prev => ({ 
-              ...prev, 
-              affiliateEnabled: !prev.affiliateEnabled 
-            }))}
-          >
-            <div className={`${styles.checkbox} ${formData.affiliateEnabled ? styles.checkboxActive : ''}`}>
-              {formData.affiliateEnabled && <Icon name="check" size="xs" />}
-            </div>
-            <div className={styles.affiliateToggleContent}>
-              <span className={styles.affiliateToggleLabel}>Affiliate-Programm aktivieren</span>
-              <span className={styles.affiliateToggleHint}>Lass andere dein Produkt bewerben</span>
-            </div>
-          </button>
-        </div>
-
-        {/* Affiliate Commission Slider - nur wenn aktiviert */}
-        {formData.affiliateEnabled && (
           <div className={styles.field}>
-            <label className={styles.label}>
-              Affiliate-Provision
-              <span className={styles.labelHint}>{formData.affiliateCommission}%</span>
-            </label>
-            <input
-              type="range"
-              name="affiliateCommission"
-              min="5"
-              max="50"
-              value={formData.affiliateCommission}
-              onChange={handleChange}
-              className={styles.slider}
-            />
-            <div className={styles.sliderLabels}>
-              <span>5%</span>
-              <span>50%</span>
+            <label className={styles.label}>Preis</label>
+            <div className={styles.priceRow}>
+              <div className={styles.priceInputWrapper}>
+                <span className={styles.priceCurrency}>€</span>
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="0.00"
+                  value={formData.isFree ? '' : formData.price}
+                  onChange={handleChange}
+                  disabled={formData.isFree}
+                  min={MIN_PRICE}
+                  step="0.01"
+                  className={`${styles.priceInput} ${errors.price ? styles.inputError : ''}`}
+                />
+              </div>
+              <button
+                type="button"
+                className={`${styles.freeToggle} ${formData.isFree ? styles.freeToggleActive : ''}`}
+                onClick={toggleFree}
+              >
+                <Icon name={formData.isFree ? 'check' : 'gift'} size="sm" />
+                <span>Kostenlos</span>
+              </button>
             </div>
-            <p className={styles.fieldHint}>
-              So viel verdienen Promoter pro Verkauf
-            </p>
+            {errors.price && <p className={styles.errorText}>{errors.price}</p>}
+            {!formData.isFree && (
+              <p className={styles.fieldHint}>
+                Mindestpreis: {MIN_PRICE.toFixed(2).replace('.', ',')} € · <button 
+                  type="button" 
+                  className={styles.hintLink}
+                  onClick={() => setShowPricingInfo(true)}
+                >
+                  Tipps zur Preisgestaltung
+                </button>
+              </p>
+            )}
           </div>
-        )}
-      </section>
+
+          {/* Affiliate Toggle */}
+          <div className={styles.field}>
+            <button
+              type="button"
+              className={styles.affiliateToggle}
+              onClick={() => setFormData(prev => ({ 
+                ...prev, 
+                affiliateEnabled: !prev.affiliateEnabled 
+              }))}
+            >
+              <div className={`${styles.checkbox} ${formData.affiliateEnabled ? styles.checkboxActive : ''}`}>
+                {formData.affiliateEnabled && <Icon name="check" size="xs" />}
+              </div>
+              <div className={styles.affiliateToggleContent}>
+                <span className={styles.affiliateToggleLabel}>Affiliate-Programm aktivieren</span>
+                <span className={styles.affiliateToggleHint}>Lass andere dein Produkt bewerben</span>
+              </div>
+            </button>
+          </div>
+
+          {/* Affiliate Commission Slider - nur wenn aktiviert */}
+          {formData.affiliateEnabled && (
+            <div className={styles.field}>
+              <label className={styles.label}>
+                Affiliate-Provision
+                <span className={styles.labelHint}>{formData.affiliateCommission}%</span>
+              </label>
+              <input
+                type="range"
+                name="affiliateCommission"
+                min="5"
+                max="50"
+                value={formData.affiliateCommission}
+                onChange={handleChange}
+                className={styles.slider}
+              />
+              <div className={styles.sliderLabels}>
+                <span>5%</span>
+                <span>50%</span>
+              </div>
+              <p className={styles.fieldHint}>
+                So viel verdienen Promoter pro Verkauf
+              </p>
+            </div>
+          )}
+        </section>
       </div>
 
       {/* Sticky CTA */}
@@ -406,6 +441,12 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading }) {
         }}
         onSave={handleAddModule}
         editData={editingModule !== null ? modules[editingModule] : null}
+      />
+
+      {/* Pricing Info Modal */}
+      <PricingInfoModal
+        isOpen={showPricingInfo}
+        onClose={() => setShowPricingInfo(false)}
       />
     </div>
   );

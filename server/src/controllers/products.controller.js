@@ -1,6 +1,9 @@
 const ProductModel = require('../models/Product.model');
 const ProductModuleModel = require('../models/ProductModule.model');
 
+// Mindestpreis für kostenpflichtige Produkte (wegen Stripe-Gebühren)
+const MIN_PRICE = 2.99;
+
 /**
  * Products Controller
  * Handles all product-related HTTP requests
@@ -85,6 +88,15 @@ const productsController = {
 
       const { modules, ...productData } = req.body;
       
+      // Mindestpreis-Validierung (nur für kostenpflichtige Produkte)
+      const price = parseFloat(productData.price);
+      if (price > 0 && price < MIN_PRICE) {
+        return res.status(400).json({
+          success: false,
+          message: `Mindestpreis für kostenpflichtige Produkte: ${MIN_PRICE.toFixed(2).replace('.', ',')} €`
+        });
+      }
+      
       // Erstelle Produkt
       const product = await ProductModel.create({
         ...productData,
@@ -132,6 +144,17 @@ const productsController = {
           success: false,
           message: 'Produkt nicht gefunden'
         });
+      }
+      
+      // Mindestpreis-Validierung (nur wenn Preis geändert wird)
+      if (updateData.price !== undefined) {
+        const price = parseFloat(updateData.price);
+        if (price > 0 && price < MIN_PRICE) {
+          return res.status(400).json({
+            success: false,
+            message: `Mindestpreis für kostenpflichtige Produkte: ${MIN_PRICE.toFixed(2).replace('.', ',')} €`
+          });
+        }
       }
       
       // Update Produkt

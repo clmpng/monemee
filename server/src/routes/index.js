@@ -10,6 +10,7 @@ const usersRoutes = require('./users.routes');
 const messagesRoutes = require('./messages.routes');
 const payoutsRoutes = require('./payouts.routes');
 const stripeRoutes = require('./stripe.routes');
+const invoicesRoutes = require('./invoices.routes');
 
 // ============================================
 // API Routes
@@ -32,6 +33,9 @@ router.use('/payouts', payoutsRoutes);
 
 // Stripe Connect & Webhooks
 router.use('/stripe', stripeRoutes);
+
+//Invoices
+router.use('/invoices', invoicesRoutes);
 
 // Users
 router.use('/users', usersRoutes);

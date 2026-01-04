@@ -135,6 +135,7 @@ const TransactionModel = {
       promoter_commission = 0,
       stripe_payment_id = null,
       stripe_session_id = null,
+      affiliate_available_at = null,
       status = 'completed'
     } = data;
 
@@ -142,22 +143,22 @@ const TransactionModel = {
       INSERT INTO transactions (
         product_id, buyer_id, seller_id, promoter_id,
         amount, platform_fee, seller_amount, promoter_commission,
-        stripe_payment_id, stripe_session_id, status
+        stripe_payment_id, stripe_session_id, affiliate_available_at, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `;
 
     const values = [
       product_id, buyer_id, seller_id, promoter_id,
       amount, platform_fee, seller_amount, promoter_commission,
-      stripe_payment_id, stripe_session_id, status
+      stripe_payment_id, stripe_session_id, affiliate_available_at, status
     ];
 
     const result = await db.query(query, values);
     return result.rows[0];
   },
-
+  
   /**
    * Update transaction status
    */

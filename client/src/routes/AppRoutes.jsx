@@ -19,6 +19,7 @@ import { EarningsDashboard } from '../pages/earnings';
 import { PromotionHub } from '../pages/promotion';
 import Messages from '../pages/Messages';
 import Settings from '../pages/settings/Settings';
+import InvoiceView from '../pages/billing/InvoiceView';
 
 // Public Pages
 import { PublicStore, PublicProduct } from '../pages/public';
@@ -183,6 +184,9 @@ function AppRoutes() {
         
         {/* Settings */}
         <Route path="/settings" element={<Settings />} />
+
+        {/* Invoices*/}
+        <Route path="/invoice/:token" element={<InvoiceView />} />
         
         {/* Purchases / My bought products */}
         {/* TODO: Implement Purchases page */}

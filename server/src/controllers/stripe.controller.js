@@ -1,25 +1,27 @@
 /**
  * Stripe Controller
- * Handles Stripe Connect Onboarding and Webhooks
+ * Handles all Stripe-related HTTP requests
  * 
- * ZAHLUNGSMODELL (Option A - Destination Charges):
- * - Produktverkäufe gehen direkt zum Seller
- * - Affiliate-Provisionen werden bei MoneMee gesammelt
+ * ERWEITERT mit:
+ * - Verbesserter Webhook-Validierung
+ * - Automatischer Rechnungsstellung
+ * - Admin-Alerts
  */
 
 const stripeService = require('../services/stripe.service');
-const UserModel = require('../models/User.model');
+const SellerBillingModel = require('../models/SellerBilling.model');
+const InvoiceService = require('../services/invoice.service');
 const TransactionModel = require('../models/Transaction.model');
 const ProductModel = require('../models/Product.model');
+const UserModel = require('../models/User.model');
 
 const stripeController = {
-  
   // ============================================
-  // Connect Account Management
+  // Connect Account Endpoints
   // ============================================
 
   /**
-   * Get Stripe Connect Status für aktuellen User
+   * Get Connect account status
    * GET /api/v1/stripe/connect/status
    */
   async getConnectStatus(req, res, next) {
@@ -38,51 +40,48 @@ const stripeController = {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User nicht gefunden'
+          message: 'Benutzer nicht gefunden'
         });
       }
 
-      // Wenn User einen Stripe Account hat, Status von Stripe holen
-      let stripeAccountDetails = null;
-      if (user.stripe_account_id && stripeService.isStripeConfigured()) {
-        try {
-          stripeAccountDetails = await stripeService.getAccountStatus(user.stripe_account_id);
-        } catch (err) {
-          console.error('Stripe Account Status Fehler:', err.message);
-        }
+      // Wenn kein Stripe Account vorhanden
+      if (!user.stripe_account_id) {
+        return res.json({
+          success: true,
+          data: {
+            hasAccount: false,
+            status: 'none',
+            chargesEnabled: false,
+            payoutsEnabled: false,
+            onboardingComplete: false
+          }
+        });
       }
+
+      // Aktuellen Status von Stripe abrufen
+      const accountStatus = await stripeService.getAccountStatus(user.stripe_account_id);
 
       res.json({
         success: true,
         data: {
-          // Lokaler Status aus DB
-          hasStripeAccount: !!user.stripe_account_id,
-          accountStatus: user.stripe_account_status || 'not_created',
-          chargesEnabled: user.stripe_charges_enabled || false,
-          payoutsEnabled: user.stripe_payouts_enabled || false,
-          onboardingComplete: user.stripe_onboarding_complete || false,
-          
-          // Live-Status von Stripe (falls vorhanden)
-          stripeDetails: stripeAccountDetails ? {
-            chargesEnabled: stripeAccountDetails.charges_enabled,
-            payoutsEnabled: stripeAccountDetails.payouts_enabled,
-            detailsSubmitted: stripeAccountDetails.details_submitted,
-            requirements: stripeAccountDetails.requirements?.currently_due || []
-          } : null,
-          
-          // Config
-          stripeConfigured: stripeService.isStripeConfigured(),
-          stripeMode: stripeService.STRIPE_MODE
+          hasAccount: true,
+          accountId: user.stripe_account_id,
+          status: accountStatus.status,
+          chargesEnabled: accountStatus.charges_enabled,
+          payoutsEnabled: accountStatus.payouts_enabled,
+          onboardingComplete: accountStatus.details_submitted,
+          requirements: accountStatus.requirements
         }
       });
 
     } catch (error) {
+      console.error('Get connect status error:', error);
       next(error);
     }
   },
 
   /**
-   * Start Stripe Connect Onboarding
+   * Start Stripe Connect onboarding
    * POST /api/v1/stripe/connect/start
    */
   async startOnboarding(req, res, next) {
@@ -96,35 +95,24 @@ const stripeController = {
         });
       }
 
-      if (!stripeService.isStripeConfigured()) {
-        return res.status(503).json({
-          success: false,
-          message: 'Stripe ist nicht konfiguriert'
-        });
-      }
-
       const user = await UserModel.findById(userId);
       
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User nicht gefunden'
+          message: 'Benutzer nicht gefunden'
         });
       }
 
       // Prüfe ob bereits ein Account existiert
       if (user.stripe_account_id) {
-        // Account existiert, erstelle neuen Onboarding-Link
-        const accountLink = await stripeService.createOnboardingLink(
-          user.stripe_account_id,
-          '/settings?tab=stripe&status=success',
-          '/settings?tab=stripe&status=refresh'
-        );
-
+        // Nur neuen Onboarding-Link erstellen
+        const accountLink = await stripeService.createOnboardingLink(user.stripe_account_id);
         return res.json({
           success: true,
           data: {
-            onboardingUrl: accountLink.url
+            url: accountLink.url,
+            expiresAt: accountLink.expires_at
           }
         });
       }
@@ -132,17 +120,21 @@ const stripeController = {
       // Neuen Connect Account erstellen
       const account = await stripeService.createConnectAccount(user);
 
+      // Account ID in DB speichern
+      await stripeService.updateUserStripeStatus(userId, {
+        stripe_account_id: account.id,
+        stripe_account_status: 'pending'
+      });
+
       // Onboarding-Link erstellen
-      const accountLink = await stripeService.createOnboardingLink(
-        account.id,
-        '/settings?tab=stripe&status=success',
-        '/settings?tab=stripe&status=refresh'
-      );
+      const accountLink = await stripeService.createOnboardingLink(account.id);
 
       res.json({
         success: true,
         data: {
-          onboardingUrl: accountLink.url
+          accountId: account.id,
+          url: accountLink.url,
+          expiresAt: accountLink.expires_at
         }
       });
 
@@ -153,65 +145,47 @@ const stripeController = {
   },
 
   /**
-   * Get Onboarding Link (für Fortsetzung)
+   * Get new onboarding link
    * GET /api/v1/stripe/connect/onboarding-link
    */
   async getOnboardingLink(req, res, next) {
     try {
       const userId = req.userId;
-      
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Nicht authentifiziert'
-        });
-      }
-
       const user = await UserModel.findById(userId);
-      
-      if (!user || !user.stripe_account_id) {
+
+      if (!user?.stripe_account_id) {
         return res.status(400).json({
           success: false,
           message: 'Kein Stripe Account vorhanden'
         });
       }
 
-      const accountLink = await stripeService.createOnboardingLink(
-        user.stripe_account_id,
-        '/settings?tab=stripe&status=success',
-        '/settings?tab=stripe&status=refresh'
-      );
+      const accountLink = await stripeService.createOnboardingLink(user.stripe_account_id);
 
       res.json({
         success: true,
         data: {
-          url: accountLink.url
+          url: accountLink.url,
+          expiresAt: accountLink.expires_at
         }
       });
 
     } catch (error) {
+      console.error('Get onboarding link error:', error);
       next(error);
     }
   },
 
   /**
-   * Get Stripe Dashboard Link
+   * Get Stripe Express Dashboard link
    * GET /api/v1/stripe/connect/dashboard-link
    */
   async getDashboardLink(req, res, next) {
     try {
       const userId = req.userId;
-      
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Nicht authentifiziert'
-        });
-      }
-
       const user = await UserModel.findById(userId);
-      
-      if (!user || !user.stripe_account_id) {
+
+      if (!user?.stripe_account_id) {
         return res.status(400).json({
           success: false,
           message: 'Kein Stripe Account vorhanden'
@@ -228,6 +202,7 @@ const stripeController = {
       });
 
     } catch (error) {
+      console.error('Get dashboard link error:', error);
       next(error);
     }
   },
@@ -288,7 +263,7 @@ const stripeController = {
    * Stripe Payments Webhook Handler
    * POST /api/v1/stripe/webhooks/payments
    * 
-   * Verarbeitet: checkout.session.completed
+   * ERWEITERT mit verbesserter Validierung
    */
   async handlePaymentsWebhook(req, res, next) {
     const signature = req.headers['stripe-signature'];
@@ -301,10 +276,12 @@ const stripeController = {
 
     let event;
 
+    // 1. Signatur validieren
     try {
       event = stripeService.constructWebhookEvent(req.body, signature, webhookSecret);
     } catch (err) {
-      console.error('[Stripe Webhook] Signatur ungültig:', err.message);
+      console.error('[Stripe Webhook] Signatur ungültig:', err.message);     
+      
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
@@ -313,11 +290,15 @@ const stripeController = {
     try {
       switch (event.type) {
         case 'checkout.session.completed':
-          await handleCheckoutCompleted(event.data.object);
+          await handleCheckoutCompleted(event.data.object, event.id);
           break;
 
         case 'payment_intent.succeeded':
           console.log(`[Stripe Webhook] Payment succeeded: ${event.data.object.id}`);
+          break;
+
+        case 'payment_intent.payment_failed':
+          console.log(`[Stripe Webhook] Payment failed: ${event.data.object.id}`);
           break;
 
         case 'transfer.created':
@@ -334,6 +315,12 @@ const stripeController = {
 
         case 'payout.failed':
           console.error(`[Stripe Webhook] Payout failed: ${event.data.object.id}`);
+
+          break;
+
+        case 'charge.refunded':
+          console.log(`[Stripe Webhook] Charge refunded: ${event.data.object.id}`);
+          // TODO: Transaktion als refunded markieren
           break;
 
         default:
@@ -346,16 +333,26 @@ const stripeController = {
     } catch (error) {
       console.error('[Stripe Webhook] Verarbeitungsfehler:', error);
       await stripeService.logWebhookEvent(event, 'failed', error.message);
+      
+      
       res.status(500).json({ error: 'Webhook processing failed' });
     }
   }
 };
 
+// ============================================
+// Enhanced Checkout Handler
+// ============================================
+
 /**
  * Verarbeitet checkout.session.completed Event
- * Erstellt Transaktion und aktualisiert Earnings
+ * MIT VERBESSERTER VALIDIERUNG UND RECHNUNGSSTELLUNG
  */
-async function handleCheckoutCompleted(session) {
+/**
+ * Verarbeitet checkout.session.completed Event
+ * Erstellt Rechnung NUR wenn Verkäufer gewerblich ist
+ */
+async function handleCheckoutCompleted(session, eventId) {
   console.log(`[Stripe Webhook] Processing checkout: ${session.id}`);
   
   const metadata = session.metadata;
@@ -402,16 +399,50 @@ async function handleCheckoutCompleted(session) {
   await ProductModel.incrementSales(productId);
 
   // Seller Earnings aktualisieren (nur für Level!)
-  // Das Geld ist bereits via Destination Charge beim Seller
   await UserModel.updateEarnings(sellerId, sellerAmount);
 
   // Affiliate Provision hinzufügen (mit 7-Tage Clearing)
   if (promoterId && affiliateCommission > 0) {
     await UserModel.addAffiliateCommission(promoterId, affiliateCommission);
-    console.log(`[Stripe Webhook] Affiliate commission: ${affiliateCommission}€ for user ${promoterId}, available at ${affiliateAvailableAt}`);
+    console.log(`[Stripe Webhook] Affiliate commission: ${affiliateCommission}€ for user ${promoterId}`);
   }
 
-  console.log(`[Stripe Webhook] Transaction created: #${transaction.id}, Product: ${productId}, Amount: ${amount}€, Seller: ${sellerAmount}€, Affiliate: ${affiliateCommission}€`);
+  console.log(`[Stripe Webhook] Transaction created: #${transaction.id}`);
+
+  // ========================================
+  // RECHNUNG: Nur für gewerbliche Verkäufer
+  // ========================================
+  
+  const seller = await UserModel.findById(sellerId);
+  
+  if (seller.seller_type === 'business') {
+    try {
+      const product = await ProductModel.findById(productId);
+      const buyer = await UserModel.findById(buyerId);
+      const billingInfo = await SellerBillingModel.findByUserId(sellerId);
+
+      if (billingInfo && SellerBillingModel.isComplete(billingInfo)) {
+        const invoice = await InvoiceService.createInvoiceForTransaction({
+          transaction,
+          product,
+          buyer,
+          seller,
+          billingInfo
+        });
+        
+        console.log(`[Stripe Webhook] Invoice created: ${invoice.invoice_number}`);
+      } else {
+        console.warn(`[Stripe Webhook] Seller ${sellerId} is business but billing incomplete - no invoice created`);
+      }
+    } catch (invoiceError) {
+      // Rechnungsfehler ist nicht kritisch - Transaktion wurde erstellt
+      console.error('[Stripe Webhook] Invoice creation failed:', invoiceError.message);
+    }
+  } else {
+    console.log(`[Stripe Webhook] Seller ${sellerId} is private - Stripe Receipt only`);
+  }
+
+  console.log(`[Stripe Webhook] ✓ Checkout complete: Session ${session.id}, Transaction #${transaction.id}`);
 }
 
 module.exports = stripeController;

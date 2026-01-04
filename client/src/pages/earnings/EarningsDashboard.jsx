@@ -1,9 +1,11 @@
 // client/src/pages/earnings/EarningsDashboard.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext'; 
 import { Icon } from '../../components/common';
 import { LevelInfoModal, PayoutModal, PayoutHistory, EarningsChart } from '../../components/earnings';
 import { earningsService, payoutsService, stripeService } from '../../services';
 import { PAYOUT_CONFIG } from '../../config/platform.config';
+import { InvoiceList } from '../../components/billing';
 import styles from '../../styles/pages/Earnings.module.css';
 
 /**
@@ -25,6 +27,7 @@ const PERIOD_OPTIONS = [
 ];
 
 function EarningsDashboard() {
+  const { user } = useAuth();
   // Period State
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
   
@@ -402,6 +405,15 @@ function EarningsDashboard() {
           <Icon name="link" size="sm" />
           <span>Provisionen</span>
         </button>
+        {user?.seller_type === 'business' && (
+          <button 
+            className={`${styles.tab} ${activeTab === 'invoices' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('invoices')}
+          >
+            <Icon name="fileText" size="sm" />
+            <span>Rechnungen</span>
+          </button>
+        )}
       </div>
 
       {/* Products Tab Content */}
@@ -594,8 +606,15 @@ function EarningsDashboard() {
         </>
       )}
 
+      {/* Invoices Tab Content */}
+      {activeTab === 'invoices' && user?.seller_type === 'business' && (
+        <div className={styles.section}>
+          <InvoiceList />
+        </div>
+      )}
+
       {/* Modals */}
-      <LevelInfoModal 
+      <LevelInfoModal
         isOpen={showLevelInfo}
         onClose={() => setShowLevelInfo(false)}
         currentLevel={level?.current || 1}

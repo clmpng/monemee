@@ -39,23 +39,6 @@ const paymentsService = {
    * Get user purchases (as buyer)
    */
   getPurchases: () => api.get('/payments/purchases'),
-
-  // ============================================
-  // DEVELOPMENT ONLY
-  // ============================================
-  
-  /**
-   * DEVELOPMENT: Simulierter Kauf für Testing
-   * Nur im Development-Modus verfügbar
-   * 
-   * @param {number} productId - ID des Produkts
-   * @param {string|null} affiliateCode - Optional: Affiliate-Code
-   */
-  simulatePurchase: (productId, affiliateCode = null) => 
-    api.post('/payments/simulate-purchase', { 
-      productId, 
-      affiliateCode 
-    })
 };
 
 export default paymentsService;

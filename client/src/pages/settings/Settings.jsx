@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { usersService, stripeService } from '../../services';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../config/firebase';
+import { SellerTypeModal, BillingSettingsForm } from '../../components/billing';
+import { billingService } from '../../services';
 import styles from '../../styles/pages/Settings.module.css';
 
 /**
@@ -46,12 +48,28 @@ function Settings() {
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeError, setStripeError] = useState(null);
 
+  // Seller Type & Billing states
+  const [showSellerTypeModal, setShowSellerTypeModal] = useState(false);
+  const [showBillingForm, setShowBillingForm] = useState(false);
+  const [sellerTypeLoading, setSellerTypeLoading] = useState(false);
+
   // Check for Stripe return status
   useEffect(() => {
     const status = searchParams.get('status');
     if (status === 'success' && activeTab === 'stripe') {
       setSuccess('Kontoeinrichtung erfolgreich! Dein Status wird aktualisiert.');
       fetchStripeStatus();
+      
+      // Prüfen ob seller_type Abfrage nötig ist
+      billingService.getBillingInfo().then(res => {
+        if (res.success && res.data.sellerType === 'private' && !res.data.billingInfo) {
+          // User wurde noch nie gefragt - Modal anzeigen
+          setShowSellerTypeModal(true);
+        }
+      }).catch(err => {
+        console.error('Billing info check error:', err);
+      });
+      
     } else if (status === 'refresh' && activeTab === 'stripe') {
       setError('Die Einrichtung wurde unterbrochen. Bitte versuche es erneut.');
     }
@@ -176,6 +194,43 @@ function Settings() {
       console.error('Stripe dashboard error:', err);
     } finally {
       setStripeLoading(false);
+    }
+  };
+
+  // Handle seller type selection (after Stripe onboarding)
+  const handleSellerTypeSelect = async (type) => {
+    setSellerTypeLoading(true);
+    try {
+      await billingService.setSellerType(type);
+      setShowSellerTypeModal(false);
+      
+      if (type === 'business') {
+        setShowBillingForm(true);
+      } else {
+        setSuccess('Einrichtung abgeschlossen!');
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err) {
+      console.error('Set seller type error:', err);
+      setError('Fehler beim Speichern');
+    } finally {
+      setSellerTypeLoading(false);
+    }
+  };
+
+  // Handle billing info save
+  const handleBillingSave = async (data) => {
+    setSellerTypeLoading(true);
+    try {
+      await billingService.updateBillingInfo(data);
+      setShowBillingForm(false);
+      setSuccess('Rechnungsdaten gespeichert!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Save billing error:', err);
+      setError(err.message || 'Fehler beim Speichern');
+    } finally {
+      setSellerTypeLoading(false);
     }
   };
 
@@ -726,8 +781,34 @@ function Settings() {
           </div>
         )}
       </form>
-    </div>
-  );
+
+      {/* Seller Type Modal (nach Stripe Onboarding) */}
+      <SellerTypeModal
+        isOpen={showSellerTypeModal}
+        onClose={() => setShowSellerTypeModal(false)}
+        onSelect={handleSellerTypeSelect}
+        loading={sellerTypeLoading}
+      />
+
+      {/* Billing Form Modal (für gewerbliche Verkäufer) */}
+      {showBillingForm && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h2>Rechnungsangaben</h2>
+              <p>Diese Daten erscheinen auf deinen Rechnungen.</p>
+            </div>
+            <BillingSettingsForm
+              onSave={handleBillingSave}
+              onCancel={() => setShowBillingForm(false)}
+              loading={sellerTypeLoading}
+              submitLabel="Speichern & Fertig"
+            />
+          </div>
+        </div>
+      )}
+      </div>
+      );
 }
 
 export default Settings;

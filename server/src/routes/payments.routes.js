@@ -34,12 +34,4 @@ router.get('/transactions', authenticate, paymentsController.getTransactions);
  */
 router.get('/purchases', authenticate, paymentsController.getPurchases);
 
-/**
- * DUMMY: Simulierter Kauf für Testing
- * POST /api/v1/payments/simulate-purchase
- * 
- * NUR in development verfügbar!
- */
-router.post('/simulate-purchase', authenticate, paymentsController.simulatePurchase);
-
 module.exports = router;

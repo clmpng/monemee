@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const usersController = require('../controllers/users.controller');
+const sellerBillingController = require('../controllers/sellerBilling.controller');
 const { authenticate, optionalAuth } = require('../middleware/auth');
 
 // ============================================
@@ -28,5 +29,11 @@ router.get('/check-username/:username', optionalAuth, usersController.checkUsern
 
 // GET /api/v1/users/:username/store - Get public store by username
 router.get('/:username/store', optionalAuth, usersController.getPublicStore);
+
+// Billing Info
+router.get('/billing', authenticate, sellerBillingController.getBillingInfo);
+router.put('/billing', authenticate, sellerBillingController.updateBillingInfo);
+router.put('/seller-type', authenticate, sellerBillingController.setSellerType);
+router.get('/can-sell', authenticate, sellerBillingController.checkCanSell);
 
 module.exports = router;
