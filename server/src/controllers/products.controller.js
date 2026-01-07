@@ -46,22 +46,60 @@ const productsController = {
   /**
    * Get single product by ID
    * GET /api/v1/products/:id
+   *
+   * SECURITY: User kann nur eigene Produkte vollständig abrufen.
+   * Fremde Produkte nur wenn status === 'active'
    */
   async getProduct(req, res, next) {
     try {
       const { id } = req.params;
+      const userId = req.userId;
+
       const product = await ProductModel.findById(id);
-      
+
       if (!product) {
         return res.status(404).json({
           success: false,
           message: 'Produkt nicht gefunden'
         });
       }
-      
+
+      // SECURITY: Prüfe ob User Zugriff hat
+      const isOwner = product.user_id === userId;
+
+      // Fremde Produkte nur wenn aktiv (öffentlich)
+      if (!isOwner && product.status !== 'active') {
+        return res.status(404).json({
+          success: false,
+          message: 'Produkt nicht gefunden'
+        });
+      }
+
       // Lade Module
       const modules = await ProductModuleModel.findByProductId(id);
-      
+
+      // Bei fremden Produkten: Keine sensitiven Daten zurückgeben
+      if (!isOwner) {
+        return res.json({
+          success: true,
+          data: {
+            id: product.id,
+            title: product.title,
+            description: product.description,
+            price: product.price,
+            thumbnail_url: product.thumbnail_url,
+            type: product.type,
+            status: product.status,
+            views: product.views,
+            sales: product.sales,
+            affiliate_commission: product.affiliate_commission,
+            creator_username: product.creator_username,
+            creator_name: product.creator_name,
+            modules: modules
+          }
+        });
+      }
+
       res.json({
         success: true,
         data: { ...product, modules }
