@@ -17,6 +17,9 @@ router.get('/me', authenticate, usersController.getMe);
 // PUT /api/v1/users/me - Update current user profile
 router.put('/me', authenticate, usersController.updateMe);
 
+// DELETE /api/v1/users/me - Delete current user account
+router.delete('/me', authenticate, usersController.deleteAccount);
+
 // PUT /api/v1/users/me/role - Update user role
 router.put('/me/role', authenticate, usersController.updateRole);
 

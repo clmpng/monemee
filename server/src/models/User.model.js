@@ -330,12 +330,63 @@ const UserModel = {
    */
   async isUsernameAvailable(username) {
     const query = `
-      SELECT id FROM users 
+      SELECT id FROM users
       WHERE username = $1
     `;
-    
+
     const result = await db.query(query, [username]);
     return result.rows.length === 0;
+  },
+
+  /**
+   * Delete user account and related data
+   * Uses transaction to ensure data consistency
+   */
+  async delete(id) {
+    const client = await db.getClient();
+
+    try {
+      await client.query('BEGIN');
+
+      // Delete affiliate links where user is promoter
+      await client.query('DELETE FROM affiliate_links WHERE promoter_id = $1', [id]);
+
+      // Delete affiliate links for user's products
+      await client.query(`
+        DELETE FROM affiliate_links
+        WHERE product_id IN (SELECT id FROM products WHERE user_id = $1)
+      `, [id]);
+
+      // Delete transactions related to user's products
+      await client.query(`
+        DELETE FROM transactions
+        WHERE product_id IN (SELECT id FROM products WHERE user_id = $1)
+      `, [id]);
+
+      // Delete transactions where user is buyer
+      await client.query('DELETE FROM transactions WHERE buyer_id = $1', [id]);
+
+      // Delete user's products
+      await client.query('DELETE FROM products WHERE user_id = $1', [id]);
+
+      // Delete messages
+      await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [id]);
+
+      // Delete payouts
+      await client.query('DELETE FROM payouts WHERE user_id = $1', [id]);
+
+      // Delete user
+      const result = await client.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
+
+      await client.query('COMMIT');
+
+      return result.rows[0] || null;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 };
 

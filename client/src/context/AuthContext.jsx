@@ -1,11 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { 
-  onAuthStateChanged, 
+import {
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
+  EmailAuthProvider,
   signOut,
+  updatePassword,
+  reauthenticateWithCredential,
+  deleteUser,
   updateProfile as firebaseUpdateProfile
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -84,6 +90,23 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, [fetchUserProfile]);
 
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          // Redirect login war erfolgreich - User wird durch onAuthStateChanged behandelt
+          console.log('Redirect login successful');
+        }
+      } catch (err) {
+        console.error('Redirect result error:', err);
+        setError(getErrorMessage(err.code));
+      }
+    };
+    
+    checkRedirectResult();
+  }, []);
+
   // Login with email/password
   const login = async (email, password) => {
     try {
@@ -139,9 +162,18 @@ export function AuthProvider({ children }) {
         prompt: 'select_account'
       });
       
-      const result = await signInWithPopup(auth, provider);
+      // Mobile Detection - Redirect statt Popup verwenden
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
-      // User will be created in backend automatically if new
+      if (isMobile) {
+        // Redirect-Flow für Mobile (zuverlässiger)
+        await signInWithRedirect(auth, provider);
+        // Diese Funktion kehrt nie zurück - Browser wird redirected
+        return { success: true, redirect: true };
+      }
+      
+      // Desktop: Popup verwenden
+      const result = await signInWithPopup(auth, provider);
       return { success: true, user: result.user };
     } catch (err) {
       const message = getErrorMessage(err.code);
@@ -207,8 +239,8 @@ export function AuthProvider({ children }) {
     try {
       const profile = await fetchUserProfile();
       if (profile) {
-        setUser(prev => ({ 
-          ...prev, 
+        setUser(prev => ({
+          ...prev,
           ...profile,
           firebaseUid: prev?.firebaseUid
         }));
@@ -221,12 +253,86 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Check if user logged in with email/password (not OAuth)
+  const isPasswordUser = () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return false;
+    return firebaseUser.providerData.some(
+      provider => provider.providerId === 'password'
+    );
+  };
+
+  // Change password (requires current password for re-authentication)
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      setError(null);
+      const firebaseUser = auth.currentUser;
+
+      if (!firebaseUser) {
+        return { success: false, error: 'Nicht angemeldet' };
+      }
+
+      if (!isPasswordUser()) {
+        return { success: false, error: 'Passwort kann nur für E-Mail-Accounts geändert werden' };
+      }
+
+      // Re-authenticate user first
+      const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
+      await reauthenticateWithCredential(firebaseUser, credential);
+
+      // Update password
+      await updatePassword(firebaseUser, newPassword);
+
+      return { success: true };
+    } catch (err) {
+      const message = getErrorMessage(err.code);
+      return { success: false, error: message };
+    }
+  };
+
+  // Delete account (requires password for re-authentication)
+  const deleteAccount = async (password) => {
+    try {
+      setError(null);
+      const firebaseUser = auth.currentUser;
+
+      if (!firebaseUser) {
+        return { success: false, error: 'Nicht angemeldet' };
+      }
+
+      // Re-authenticate user first (required for sensitive operations)
+      if (isPasswordUser() && password) {
+        const credential = EmailAuthProvider.credential(firebaseUser.email, password);
+        await reauthenticateWithCredential(firebaseUser, credential);
+      }
+
+      // Delete user data from backend first
+      try {
+        await usersService.deleteAccount();
+      } catch (backendErr) {
+        console.error('Backend delete error:', backendErr);
+        // Continue with Firebase deletion even if backend fails
+      }
+
+      // Delete Firebase account
+      await deleteUser(firebaseUser);
+
+      setUser(null);
+      return { success: true };
+    } catch (err) {
+      console.error('Delete account error:', err);
+      const message = getErrorMessage(err.code);
+      return { success: false, error: message };
+    }
+  };
+
   const value = {
     user,
     loading,
     error,
     isAuthenticated: !!user && !!user.id,
     isNewUser: user?.isNewUser || false,
+    isPasswordUser,
     login,
     register,
     loginWithGoogle,
@@ -234,6 +340,8 @@ export function AuthProvider({ children }) {
     updateProfile,
     updateRole,
     refreshUser,
+    changePassword,
+    deleteAccount,
     clearError: () => setError(null)
   };
 

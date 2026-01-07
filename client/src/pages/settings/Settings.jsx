@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Icon, ToastContainer } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
 import { usersService, stripeService, billingService } from '../../services';
@@ -25,15 +25,16 @@ import styles from '../../styles/pages/Settings.module.css';
  */
 function Settings() {
   const navigate = useNavigate();
-  const { user, updateProfile, logout, refreshUser } = useAuth();
+  const { user, updateProfile, logout, refreshUser, isPasswordUser, changePassword, deleteAccount } = useAuth();
   const fileInputRef = useRef(null);
   
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'payout') return 'stripe';
-    const validTabs = ['profile', 'store', 'stripe', 'account'];
-    return validTabs.includes(tabParam) ? tabParam : 'profile';
+    if (tabParam === 'profile') return 'account'; // Legacy redirect
+    const validTabs = ['account', 'store', 'stripe', 'purchases'];
+    return validTabs.includes(tabParam) ? tabParam : 'account';
   });
   
   // Form states
@@ -85,6 +86,22 @@ function Settings() {
   // Toast notifications state
   const [toasts, setToasts] = useState([]);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Password change states
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState(null);
+
+  // Delete account states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   // Add toast
   const addToast = (message, variant = 'success', duration = 4000) => {
@@ -455,6 +472,63 @@ function Settings() {
     }
   };
 
+  // Handle password change
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError(null);
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('Die Passwörter stimmen nicht überein');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError('Das neue Passwort muss mindestens 6 Zeichen haben');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const result = await changePassword(passwordData.currentPassword, passwordData.newPassword);
+      if (result.success) {
+        addToast('Passwort erfolgreich geändert', 'success');
+        setShowPasswordForm(false);
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        setPasswordError(result.error || 'Passwort konnte nicht geändert werden');
+      }
+    } catch (err) {
+      setPasswordError(err.message || 'Ein Fehler ist aufgetreten');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  // Handle account deletion
+  const handleDeleteAccount = async () => {
+    setDeleteError(null);
+
+    // For password users, require password confirmation
+    if (isPasswordUser() && !deletePassword) {
+      setDeleteError('Bitte gib dein Passwort zur Bestätigung ein');
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      const result = await deleteAccount(deletePassword);
+      if (result.success) {
+        navigate('/login');
+      } else {
+        setDeleteError(result.error || 'Account konnte nicht gelöscht werden');
+      }
+    } catch (err) {
+      setDeleteError(err.message || 'Ein Fehler ist aufgetreten');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   // Translate Stripe requirements
   const translateRequirement = (req) => {
     const translations = {
@@ -497,10 +571,10 @@ function Settings() {
 
   // Tab configuration
   const tabs = [
-    { id: 'profile', label: 'Profil', icon: 'user' },
+    { id: 'account', label: 'Account', icon: 'user' },
     { id: 'store', label: 'Store', icon: 'store' },
     { id: 'stripe', label: 'Stripe', icon: 'creditCard' },
-    { id: 'account', label: 'Account', icon: 'lock' },
+    { id: 'purchases', label: 'Käufe', icon: 'shoppingBag' },
   ];
 
   const sellerTypeInfo = getSellerTypeInfo();
@@ -548,108 +622,310 @@ function Settings() {
       {/* Content */}
       <form onSubmit={handleSubmit} className={styles.content}>
         
-        {/* ========== Profile Tab ========== */}
-        {activeTab === 'profile' && (
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Profil-Informationen</h2>
-            <p className={styles.sectionDescription}>
-              Diese Informationen werden öffentlich angezeigt.
-            </p>
+        {/* ========== Account Tab ========== */}
+        {activeTab === 'account' && (
+          <>
+            {/* Public Profile Section */}
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Öffentliches Profil</h2>
+              <p className={styles.sectionDescription}>
+                Diese Informationen werden öffentlich angezeigt.
+              </p>
 
-            {/* Avatar */}
-            <div className={styles.avatarSection}>
-              <div 
-                className={styles.avatarPreview}
-                onClick={handleAvatarClick}
-              >
-                {uploadingAvatar ? (
-                  <div className={styles.avatarLoading}>
-                    <Icon name="loader" size="lg" className={styles.spinner} />
+              {/* Avatar */}
+              <div className={styles.avatarSection}>
+                <div
+                  className={styles.avatarPreview}
+                  onClick={handleAvatarClick}
+                >
+                  {uploadingAvatar ? (
+                    <div className={styles.avatarLoading}>
+                      <Icon name="loader" size="lg" className={styles.spinner} />
+                    </div>
+                  ) : formData.avatar && !avatarError ? (
+                    <img
+                      src={formData.avatar}
+                      alt="Avatar"
+                      onError={() => setAvatarError(true)}
+                    />
+                  ) : (
+                    <span className={styles.avatarInitials}>
+                      {(formData.name || user?.email || '?').charAt(0)}
+                    </span>
+                  )}
+                  <div className={styles.avatarOverlay}>
+                    <Icon name="camera" size="sm" />
                   </div>
-                ) : formData.avatar && !avatarError ? (
-                  <img
-                    src={formData.avatar}
-                    alt="Avatar"
-                    onError={() => setAvatarError(true)}
-                  />
-                ) : (
-                  <span className={styles.avatarInitials}>
-                    {(formData.name || user?.email || '?').charAt(0)}
-                  </span>
-                )}
-                <div className={styles.avatarOverlay}>
-                  <Icon name="camera" size="sm" />
                 </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className={styles.hiddenInput}
+                />
+                <p className={styles.avatarHint}>Klicke zum Ändern (max. 5MB)</p>
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className={styles.hiddenInput}
-              />
-              <p className={styles.avatarHint}>Klicke zum Ändern (max. 5MB)</p>
-            </div>
 
-            {/* Name */}
-            <div className={styles.field}>
-              <label className={styles.label}>Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Dein Name"
-                className={styles.input}
-              />
-            </div>
-
-            {/* Username */}
-            <div className={styles.field}>
-              <label className={styles.label}>
-                Username
-                {usernameStatus === 'checking' && (
-                  <span className={styles.usernameChecking}>
-                    <Icon name="loader" size="xs" className={styles.spinner} /> Prüfe...
-                  </span>
-                )}
-                {usernameStatus === 'available' && (
-                  <span className={styles.usernameAvailable}>
-                    <Icon name="check" size="xs" /> Verfügbar
-                  </span>
-                )}
-                {usernameStatus === 'taken' && (
-                  <span className={styles.usernameTaken}>
-                    <Icon name="x" size="xs" /> Vergeben
-                  </span>
-                )}
-              </label>
-              <div className={styles.inputWithPrefix}>
-                <span className={styles.inputPrefix}>@</span>
+              {/* Name */}
+              <div className={styles.field}>
+                <label className={styles.label}>Name</label>
                 <input
                   type="text"
-                  value={formData.username}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
-                  }))}
-                  placeholder="username"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Dein Name"
                   className={styles.input}
+                />
+              </div>
+
+              {/* Username */}
+              <div className={styles.field}>
+                <label className={styles.label}>
+                  Username
+                  {usernameStatus === 'checking' && (
+                    <span className={styles.usernameChecking}>
+                      <Icon name="loader" size="xs" className={styles.spinner} /> Prüfe...
+                    </span>
+                  )}
+                  {usernameStatus === 'available' && (
+                    <span className={styles.usernameAvailable}>
+                      <Icon name="check" size="xs" /> Verfügbar
+                    </span>
+                  )}
+                  {usernameStatus === 'taken' && (
+                    <span className={styles.usernameTaken}>
+                      <Icon name="x" size="xs" /> Vergeben
+                    </span>
+                  )}
+                </label>
+                <div className={styles.inputWithPrefix}>
+                  <span className={styles.inputPrefix}>@</span>
+                  <input
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+                    }))}
+                    placeholder="username"
+                    className={styles.input}
+                  />
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div className={styles.field}>
+                <label className={styles.label}>Bio</label>
+                <textarea
+                  value={formData.bio}
+                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                  placeholder="Erzähle etwas über dich..."
+                  className={styles.textarea}
+                  rows={3}
                 />
               </div>
             </div>
 
-            {/* Bio */}
-            <div className={styles.field}>
-              <label className={styles.label}>Bio</label>
-              <textarea
-                value={formData.bio}
-                onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                placeholder="Erzähle etwas über dich..."
-                className={styles.textarea}
-                rows={3}
-              />
+            {/* Account Details Section */}
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Account-Details</h2>
+              <p className={styles.sectionDescription}>
+                Deine persönlichen Kontoinformationen.
+              </p>
+
+              {/* Email */}
+              <div className={styles.field}>
+                <label className={styles.label}>E-Mail</label>
+                <div className={styles.readOnlyField}>
+                  <Icon name="mail" size="sm" />
+                  <span>{user?.email}</span>
+                </div>
+                <p className={styles.fieldHint}>
+                  Die E-Mail kann derzeit nicht geändert werden.
+                </p>
+              </div>
+
+              {/* Level */}
+              <div className={styles.field}>
+                <label className={styles.label}>Level</label>
+                <div className={styles.levelBadge}>
+                  <Icon name="star" size="sm" />
+                  <span>Level {user?.level || 1}</span>
+                </div>
+                <p className={styles.fieldHint}>
+                  Dein Level basiert auf deinen Gesamteinnahmen.
+                </p>
+              </div>
+
+              {/* Password Change (only for email/password users) */}
+              {isPasswordUser() && (
+                <div className={styles.field}>
+                  <label className={styles.label}>Passwort</label>
+                  {!showPasswordForm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordForm(true)}
+                      className={styles.changePasswordButton}
+                    >
+                      <Icon name="lock" size="sm" />
+                      Passwort ändern
+                    </button>
+                  ) : (
+                    <div className={styles.passwordForm}>
+                      {passwordError && (
+                        <div className={styles.passwordError}>
+                          <Icon name="alertCircle" size="sm" />
+                          {passwordError}
+                        </div>
+                      )}
+                      <input
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                        placeholder="Aktuelles Passwort"
+                        className={styles.input}
+                      />
+                      <input
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                        placeholder="Neues Passwort"
+                        className={styles.input}
+                      />
+                      <input
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        placeholder="Neues Passwort bestätigen"
+                        className={styles.input}
+                      />
+                      <div className={styles.passwordActions}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowPasswordForm(false);
+                            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                            setPasswordError(null);
+                          }}
+                          className={styles.cancelButton}
+                        >
+                          Abbrechen
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handlePasswordChange}
+                          disabled={passwordLoading}
+                          className={styles.savePasswordButton}
+                        >
+                          {passwordLoading ? (
+                            <>
+                              <Icon name="loader" size="sm" className={styles.spinner} />
+                              Speichern...
+                            </>
+                          ) : (
+                            'Passwort speichern'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
+
+            {/* Danger Zone Section */}
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Gefahrenbereich</h2>
+              <p className={styles.sectionDescription}>
+                Aktionen, die nicht rückgängig gemacht werden können.
+              </p>
+
+              {/* Logout */}
+              <div className={styles.dangerItem}>
+                <div className={styles.dangerItemInfo}>
+                  <h3>Abmelden</h3>
+                  <p>Du wirst von deinem Account abgemeldet.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className={styles.logoutButton}
+                >
+                  <Icon name="logOut" size="sm" />
+                  Abmelden
+                </button>
+              </div>
+
+              {/* Delete Account */}
+              <div className={styles.dangerItem}>
+                <div className={styles.dangerItemInfo}>
+                  <h3>Account löschen</h3>
+                  <p>Dein Account und alle Daten werden unwiderruflich gelöscht.</p>
+                </div>
+                {!showDeleteConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className={styles.deleteButton}
+                  >
+                    <Icon name="trash2" size="sm" />
+                    Account löschen
+                  </button>
+                ) : (
+                  <div className={styles.deleteConfirmForm}>
+                    {deleteError && (
+                      <div className={styles.deleteError}>
+                        <Icon name="alertCircle" size="sm" />
+                        {deleteError}
+                      </div>
+                    )}
+                    <p className={styles.deleteWarning}>
+                      <Icon name="alertTriangle" size="sm" />
+                      Diese Aktion kann nicht rückgängig gemacht werden!
+                    </p>
+                    {isPasswordUser() && (
+                      <input
+                        type="password"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        placeholder="Passwort zur Bestätigung"
+                        className={styles.input}
+                      />
+                    )}
+                    <div className={styles.deleteActions}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowDeleteConfirm(false);
+                          setDeletePassword('');
+                          setDeleteError(null);
+                        }}
+                        className={styles.cancelButton}
+                      >
+                        Abbrechen
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDeleteAccount}
+                        disabled={deleteLoading}
+                        className={styles.confirmDeleteButton}
+                      >
+                        {deleteLoading ? (
+                          <>
+                            <Icon name="loader" size="sm" className={styles.spinner} />
+                            Löschen...
+                          </>
+                        ) : (
+                          'Endgültig löschen'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
         )}
 
         {/* ========== Store Tab ========== */}
@@ -1289,58 +1565,32 @@ function Settings() {
           </div>
         )}
 
-        {/* ========== Account Tab ========== */}
-        {activeTab === 'account' && (
+        {/* ========== Purchases Tab ========== */}
+        {activeTab === 'purchases' && (
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Account</h2>
+            <h2 className={styles.sectionTitle}>Meine Käufe</h2>
             <p className={styles.sectionDescription}>
-              Verwalte deinen Account und deine Sicherheitseinstellungen.
+              Produkte, die du gekauft hast.
             </p>
 
-            {/* Email */}
-            <div className={styles.field}>
-              <label className={styles.label}>E-Mail</label>
-              <div className={styles.readOnlyField}>
-                <Icon name="mail" size="sm" />
-                <span>{user?.email}</span>
+            <div className={styles.purchasesLink}>
+              <div className={styles.purchasesLinkIcon}>
+                <Icon name="shoppingBag" size="xl" />
               </div>
-              <p className={styles.fieldHint}>
-                Die E-Mail kann derzeit nicht geändert werden.
-              </p>
-            </div>
-
-            {/* Level */}
-            <div className={styles.field}>
-              <label className={styles.label}>Level</label>
-              <div className={styles.levelBadge}>
-                <Icon name="star" size="sm" />
-                <span>Level {user?.level || 1}</span>
+              <div className={styles.purchasesLinkInfo}>
+                <h3>Gekaufte Produkte</h3>
+                <p>Alle deine Käufe und Downloads an einem Ort.</p>
               </div>
-              <p className={styles.fieldHint}>
-                Dein Level basiert auf deinen Gesamteinnahmen.
-              </p>
-            </div>
-
-            {/* Danger Zone */}
-            <div className={styles.dangerZone}>
-              <h3 className={styles.dangerTitle}>Abmelden</h3>
-              <p className={styles.dangerDescription}>
-                Du wirst von deinem Account abgemeldet.
-              </p>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className={styles.logoutButton}
-              >
-                <Icon name="logOut" size="sm" />
-                Abmelden
-              </button>
+              <Link to="/dashboard/purchases" className={styles.purchasesLinkButton}>
+                <span>Käufe anzeigen</span>
+                <Icon name="arrowRight" size="sm" />
+              </Link>
             </div>
           </div>
         )}
 
-        {/* Sticky Footer (für Profile/Store) */}
-        {(activeTab === 'profile' || activeTab === 'store') && (
+        {/* Sticky Footer (für Account/Store) */}
+        {(activeTab === 'account' || activeTab === 'store') && (
           <div className={styles.stickyFooter}>
             <div className={styles.footerContent}>
               {/* Preview Button (nur im Store Tab) */}

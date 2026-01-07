@@ -13,23 +13,27 @@ const usersController = {
   async getMe(req, res, next) {
     try {
       const userId = req.userId;
-      
+
       if (!userId) {
         return res.status(401).json({
           success: false,
           message: 'Nicht authentifiziert'
         });
       }
-      
+
       const user = await UserModel.findById(userId);
-      
+
       if (!user) {
         return res.status(404).json({
           success: false,
           message: 'User nicht gefunden'
         });
       }
-      
+
+      // Produktanzahl für Buyer-Check
+      const products = await ProductModel.findByUserId(userId);
+      const productCount = products?.length || 0;
+
       res.json({
         success: true,
         data: {
@@ -44,6 +48,8 @@ const usersController = {
           totalEarnings: parseFloat(user.total_earnings || 0),
           seller_type: user.seller_type || 'private',
           storeSettings: user.store_settings || { theme: 'classic', layout: { productGrid: 'two-column' } },
+          productCount,
+          isBuyerOnly: productCount === 0 && parseFloat(user.total_earnings || 0) === 0,
           createdAt: user.created_at,
           updatedAt: user.updated_at
         }
@@ -319,19 +325,19 @@ const usersController = {
   async getPublicStore(req, res, next) {
     try {
       const { username } = req.params;
-      
+
       const user = await UserModel.findByUsername(username);
-      
+
       if (!user) {
         return res.status(404).json({
           success: false,
           message: 'Store nicht gefunden'
         });
       }
-      
+
       const products = await ProductModel.findByUserId(user.id);
       const activeProducts = products.filter(p => p.status === 'active');
-      
+
       res.json({
         success: true,
         data: {
@@ -357,6 +363,40 @@ const usersController = {
           })),
           productCount: activeProducts.length
         }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Delete current user account
+   * DELETE /api/v1/users/me
+   */
+  async deleteAccount(req, res, next) {
+    try {
+      const userId = req.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Nicht authentifiziert'
+        });
+      }
+
+      // Delete user and all related data
+      const result = await UserModel.delete(userId);
+
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          message: 'User nicht gefunden'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Account erfolgreich gelöscht'
       });
     } catch (error) {
       next(error);
