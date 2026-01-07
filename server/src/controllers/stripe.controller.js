@@ -49,7 +49,8 @@ const stripeController = {
         return res.json({
           success: true,
           data: {
-            hasAccount: false,
+            stripeConfigured: stripeService.isStripeConfigured(),
+            hasStripeAccount: false,
             status: 'none',
             chargesEnabled: false,
             payoutsEnabled: false,
@@ -64,13 +65,16 @@ const stripeController = {
       res.json({
         success: true,
         data: {
-          hasAccount: true,
+          stripeConfigured: stripeService.isStripeConfigured(),
+          hasStripeAccount: true,
           accountId: user.stripe_account_id,
           status: accountStatus.status,
           chargesEnabled: accountStatus.charges_enabled,
           payoutsEnabled: accountStatus.payouts_enabled,
           onboardingComplete: accountStatus.details_submitted,
-          requirements: accountStatus.requirements
+          stripeDetails: {
+            requirements: accountStatus.requirements?.currently_due || []
+          }
         }
       });
 
@@ -111,7 +115,7 @@ const stripeController = {
         return res.json({
           success: true,
           data: {
-            url: accountLink.url,
+            onboardingUrl: accountLink.url,
             expiresAt: accountLink.expires_at
           }
         });
@@ -132,8 +136,7 @@ const stripeController = {
       res.json({
         success: true,
         data: {
-          accountId: account.id,
-          url: accountLink.url,
+          onboardingUrl: accountLink.url,
           expiresAt: accountLink.expires_at
         }
       });
@@ -412,14 +415,29 @@ async function handleCheckoutCompleted(session, eventId) {
   // ========================================
   // RECHNUNG: Nur für gewerbliche Verkäufer
   // ========================================
-  
+
   const seller = await UserModel.findById(sellerId);
-  
+
+  console.log(`[Stripe Webhook] Seller type for user ${sellerId}: ${seller.seller_type}`);
+
   if (seller.seller_type === 'business') {
     try {
       const product = await ProductModel.findById(productId);
       const buyer = await UserModel.findById(buyerId);
       const billingInfo = await SellerBillingModel.findByUserId(sellerId);
+
+      console.log(`[Stripe Webhook] Billing info for seller ${sellerId}:`, {
+        hasBillingInfo: !!billingInfo,
+        isComplete: billingInfo ? SellerBillingModel.isComplete(billingInfo) : false,
+        billingData: billingInfo ? {
+          business_name: billingInfo.business_name,
+          street: billingInfo.street,
+          zip: billingInfo.zip,
+          city: billingInfo.city,
+          is_small_business: billingInfo.is_small_business,
+          has_tax_id: !!billingInfo.tax_id
+        } : null
+      });
 
       if (billingInfo && SellerBillingModel.isComplete(billingInfo)) {
         const invoice = await InvoiceService.createInvoiceForTransaction({
@@ -429,14 +447,20 @@ async function handleCheckoutCompleted(session, eventId) {
           seller,
           billingInfo
         });
-        
+
         console.log(`[Stripe Webhook] Invoice created: ${invoice.invoice_number}`);
       } else {
         console.warn(`[Stripe Webhook] Seller ${sellerId} is business but billing incomplete - no invoice created`);
+        if (!billingInfo) {
+          console.warn(`[Stripe Webhook] → No billing info found in database`);
+        } else {
+          console.warn(`[Stripe Webhook] → Billing info incomplete. Missing fields.`);
+        }
       }
     } catch (invoiceError) {
       // Rechnungsfehler ist nicht kritisch - Transaktion wurde erstellt
-      console.error('[Stripe Webhook] Invoice creation failed:', invoiceError.message);
+      console.error('[Stripe Webhook] Invoice creation failed:', invoiceError);
+      console.error('[Stripe Webhook] Invoice error stack:', invoiceError.stack);
     }
   } else {
     console.log(`[Stripe Webhook] Seller ${sellerId} is private - Stripe Receipt only`);

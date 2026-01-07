@@ -12,7 +12,7 @@ const invoiceService = {
     const response = await api.get('/invoices', {
       params: { limit, offset }
     });
-    return response.data;
+    return response; // api interceptor already returns response.data
   },
 
   /**
@@ -20,7 +20,7 @@ const invoiceService = {
    */
   async getInvoice(id) {
     const response = await api.get(`/invoices/${id}`);
-    return response.data;
+    return response; // api interceptor already returns response.data
   },
 
   /**
@@ -28,7 +28,7 @@ const invoiceService = {
    */
   async getPublicInvoice(token) {
     const response = await api.get(`/invoices/view/${token}`);
-    return response.data;
+    return response; // api interceptor already returns response.data
   },
 
   /**
@@ -36,7 +36,7 @@ const invoiceService = {
    */
   async getInvoiceByTransaction(transactionId) {
     const response = await api.get(`/invoices/transaction/${transactionId}`);
-    return response.data;
+    return response; // api interceptor already returns response.data
   }
 };
 

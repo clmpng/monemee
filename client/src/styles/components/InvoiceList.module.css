@@ -59,18 +59,17 @@
   
   .invoiceInfo {
     display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 4px;
   }
-  
+
   .invoiceNumber {
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
     font-family: var(--font-mono);
   }
-  
+
   .invoiceDate {
     font-size: var(--font-size-xs);
     color: var(--color-text-tertiary);

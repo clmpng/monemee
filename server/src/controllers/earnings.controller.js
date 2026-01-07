@@ -249,7 +249,12 @@ const earningsController = {
             productThumbnail: s.product_thumbnail,
             buyerName: s.buyer_name,
             amount: parseFloat(s.seller_amount || 0),
-            date: s.created_at
+            date: s.created_at,
+            // Affiliate info
+            isAffiliateSale: !!s.promoter_id,
+            affiliateCommission: parseFloat(s.promoter_commission || 0),
+            promoterName: s.promoter_name || null,
+            promoterUsername: s.promoter_username || null
           }))
         }
       });

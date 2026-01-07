@@ -10,7 +10,7 @@ const billingService = {
    */
   async getBillingInfo() {
     const response = await api.get('/users/billing');
-    return response.data;
+    return response; // api interceptor already returns response.data
   },
 
   /**
@@ -18,7 +18,7 @@ const billingService = {
    */
   async setSellerType(sellerType) {
     const response = await api.put('/users/seller-type', { sellerType });
-    return response.data;
+    return response; // api interceptor already returns response.data
   },
 
   /**
@@ -26,7 +26,7 @@ const billingService = {
    */
   async updateBillingInfo(data) {
     const response = await api.put('/users/billing', data);
-    return response.data;
+    return response; // api interceptor already returns response.data
   },
 
   /**
@@ -34,7 +34,7 @@ const billingService = {
    */
   async checkCanSell() {
     const response = await api.get('/users/can-sell');
-    return response.data;
+    return response; // api interceptor already returns response.data
   }
 };
 

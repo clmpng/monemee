@@ -7,7 +7,7 @@ import styles from '../../styles/components/SellerTypeModal.module.css';
  * Wird nach erfolgreichem Stripe-Onboarding angezeigt
  * Fragt ob der Nutzer privat oder gewerblich verkauft
  */
-function SellerTypeModal({ isOpen, onClose, onSelect, loading = false }) {
+function SellerTypeModal({ isOpen, onClose, onSelect, loading = false, error = null }) {
   const [selectedType, setSelectedType] = useState(null);
 
   if (!isOpen) return null;
@@ -18,13 +18,30 @@ function SellerTypeModal({ isOpen, onClose, onSelect, loading = false }) {
     }
   };
 
+  const handleClose = () => {
+    if (!loading && onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
+    <div className={styles.overlay} onClick={handleClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        {/* Close Button */}
+        <button
+          type="button"
+          className={styles.closeButton}
+          onClick={handleClose}
+          disabled={loading}
+          aria-label="Schließen"
+        >
+          <Icon name="x" size={20} />
+        </button>
+
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.iconWrapper}>
-            <Icon name="checkCircle" size="xl" />
+            <Icon name="checkCircle" size={32} />
           </div>
           <h2 className={styles.title}>Stripe eingerichtet!</h2>
           <p className={styles.subtitle}>
@@ -82,6 +99,14 @@ function SellerTypeModal({ isOpen, onClose, onSelect, loading = false }) {
             <Icon name="info" size="sm" />
             Du kannst das später in den Einstellungen ändern.
           </p>
+
+          {/* Error Message */}
+          {error && (
+            <div className={styles.errorMessage}>
+              <Icon name="alertCircle" size="sm" />
+              <span>{error}</span>
+            </div>
+          )}
         </div>
 
         {/* Actions */}

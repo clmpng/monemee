@@ -6,7 +6,7 @@ import { earningsService, messagesService } from '../services';
 import styles from '../styles/pages/Messages.module.css';
 
 /**
- * Messages Page - Real inbox + Smart Notifications
+ * Messages Page - Real inbox + Smart Notifications with Sales Updates
  */
 function Messages() {
   const { user } = useAuth();
@@ -26,6 +26,7 @@ function Messages() {
   // Notifications state
   const [earnings, setEarnings] = useState(null);
   const [level, setLevel] = useState(null);
+  const [recentSales, setRecentSales] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   // Fetch inbox messages
@@ -47,16 +48,20 @@ function Messages() {
     fetchMessages();
   }, []);
 
-  // Fetch notification data
+  // Fetch notification data including recent sales
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [dashboardRes, levelRes] = await Promise.all([
+        const [dashboardRes, levelRes, statsRes] = await Promise.all([
           earningsService.getDashboard(),
-          earningsService.getLevelInfo()
+          earningsService.getLevelInfo(),
+          earningsService.getStatistics('30d')
         ]);
         if (dashboardRes.success) setEarnings(dashboardRes.data);
         if (levelRes.success) setLevel(levelRes.data);
+        if (statsRes.success && statsRes.data.recentSales) {
+          setRecentSales(statsRes.data.recentSales);
+        }
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -140,15 +145,41 @@ function Messages() {
     }
   };
 
-  // Generate dynamic notifications
+  // Generate dynamic notifications including sales
   const notifications = useMemo(() => {
     const notifs = [];
     
+    // === VERKAUFS-BENACHRICHTIGUNGEN ===
+    // Die letzten 5 Verkäufe als Notifications anzeigen
+    recentSales.slice(0, 5).forEach((sale, index) => {
+      const isAffiliate = sale.isAffiliateSale;
+      
+      notifs.push({
+        id: `sale-${sale.id}`,
+        type: 'sale',
+        icon: isAffiliate ? 'link' : 'dollarSign',
+        message: isAffiliate 
+          ? `${sale.buyerName} kaufte "${sale.productTitle}" via ${sale.promoterName}`
+          : `${sale.buyerName} kaufte "${sale.productTitle}"`,
+        subMessage: isAffiliate 
+          ? `+${formatCurrency(sale.amount)} · ${formatCurrency(sale.affiliateCommission)} Provision`
+          : `+${formatCurrency(sale.amount)}`,
+        time: formatRelativeTime(sale.date),
+        priority: index, // Neueste zuerst
+        isSale: true,
+        isAffiliate
+      });
+    });
+
+    // === BESTEHENDE NOTIFICATIONS ===
     if (earnings?.thisMonth > 0) {
       notifs.push({
-        id: 'earnings', type: 'success', icon: 'wallet',
+        id: 'earnings', 
+        type: 'success', 
+        icon: 'wallet',
         message: `Du hast diesen Monat ${formatCurrency(earnings.thisMonth)} verdient!`,
-        time: 'Dieser Monat', priority: 1
+        time: 'Dieser Monat', 
+        priority: 10
       });
     }
 
@@ -156,9 +187,12 @@ function Messages() {
       const remaining = level.nextLevel - level.progress;
       if (remaining > 0 && remaining < 100) {
         notifs.push({
-          id: 'level-close', type: 'progress', icon: 'star',
+          id: 'level-close', 
+          type: 'progress', 
+          icon: 'star',
           message: `Noch ${formatCurrency(remaining)} bis Level ${level.current + 1}!`,
-          time: 'Level-Fortschritt', priority: 2
+          time: 'Level-Fortschritt', 
+          priority: 11
         });
       }
     }
@@ -166,59 +200,77 @@ function Messages() {
     const highViewProducts = products.filter(p => p.views >= 5 && p.views < 10);
     if (highViewProducts.length > 0) {
       notifs.push({
-        id: 'views', type: 'info', icon: 'eye',
+        id: 'views', 
+        type: 'info', 
+        icon: 'eye',
         message: `"${highViewProducts[0].title}" hat ${highViewProducts[0].views} Views!`,
-        time: 'Produkt-Update', priority: 3
+        time: 'Produkt-Update', 
+        priority: 12
       });
     }
 
     if (stats.totalSales === 1) {
       notifs.push({
-        id: 'first-sale', type: 'sale', icon: 'party',
+        id: 'first-sale', 
+        type: 'sale', 
+        icon: 'party',
         message: 'Glückwunsch zu deinem ersten Verkauf! 🎉',
-        time: 'Meilenstein', priority: 1
+        time: 'Meilenstein', 
+        priority: 0
       });
     }
 
     if (earnings?.change > 0) {
       notifs.push({
-        id: 'growth', type: 'success', icon: 'trendingUp',
+        id: 'growth', 
+        type: 'success', 
+        icon: 'trendingUp',
         message: `Deine Einnahmen sind um ${earnings.change}% gestiegen!`,
-        time: 'vs. letzter Monat', priority: 3
+        time: 'vs. letzter Monat', 
+        priority: 13
       });
     }
 
     if (products.length === 0) {
       notifs.push({
-        id: 'no-products', type: 'info', icon: 'package',
+        id: 'no-products', 
+        type: 'info', 
+        icon: 'package',
         message: 'Erstelle dein erstes Produkt und starte mit dem Verdienen!',
-        time: 'Tipp', priority: 1
+        time: 'Tipp', 
+        priority: 20
       });
     }
 
     const draftProducts = products.filter(p => p.status === 'draft');
     if (draftProducts.length > 0) {
       notifs.push({
-        id: 'drafts', type: 'info', icon: 'edit',
+        id: 'drafts', 
+        type: 'info', 
+        icon: 'edit',
         message: `Du hast ${draftProducts.length} Produkt${draftProducts.length > 1 ? 'e' : ''} im Entwurf.`,
-        time: 'Erinnerung', priority: 4
+        time: 'Erinnerung', 
+        priority: 14
       });
     }
 
     if (!earnings?.total && products.length === 0) {
       notifs.push({
-        id: 'welcome', type: 'info', icon: 'sparkles',
+        id: 'welcome', 
+        type: 'info', 
+        icon: 'sparkles',
         message: `Willkommen bei MoneMee, ${user?.name?.split(' ')[0] || 'Creator'}!`,
-        time: 'Willkommen', priority: 0
+        time: 'Willkommen', 
+        priority: 0
       });
     }
 
-    return notifs.sort((a, b) => a.priority - b.priority).slice(0, 8);
-  }, [earnings, level, products, stats, user, formatCurrency]);
+    return notifs.sort((a, b) => a.priority - b.priority).slice(0, 10);
+  }, [earnings, level, products, stats, user, recentSales, formatCurrency, formatRelativeTime]);
 
   const tabs = [
     { id: 'inbox', label: 'Posteingang', icon: 'inbox', count: unreadCount },
-    { id: 'notifications', label: 'Updates', icon: 'bell', count: 0 }
+    { id: 'notifications', label: 'Updates', icon: 'bell', count: recentSales.length > 0 ? recentSales.length : 0 }
   ];
 
   const loading = activeTab === 'inbox' ? loadingMessages : loadingNotifications;
@@ -320,14 +372,8 @@ function Messages() {
                     <p className={styles.statLabel}>Verkäufe</p>
                   </div>
                   <div className={styles.statItem}>
-                    <p className={styles.statValue}>{stats.totalViews}</p>
-                    <p className={styles.statLabel}>Views</p>
-                  </div>
-                  <div className={styles.statItem}>
-                    <p className={`${styles.statValue} ${styles.statValueSuccess}`}>
-                      {formatCurrency(earnings?.total || 0)}
-                    </p>
-                    <p className={styles.statLabel}>Verdient</p>
+                    <p className={styles.statValue}>{formatCurrency(earnings?.thisMonth || 0)}</p>
+                    <p className={styles.statLabel}>Diesen Monat</p>
                   </div>
                 </div>
               </div>
@@ -338,86 +384,13 @@ function Messages() {
 
       {/* Message Detail Modal */}
       {selectedMessage && (
-        <div className={styles.modalOverlay} onClick={() => setSelectedMessage(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <button 
-                className={styles.modalBack}
-                onClick={() => setSelectedMessage(null)}
-              >
-                <Icon name="chevronLeft" size="md" />
-              </button>
-              <h2>Nachricht</h2>
-              <div className={styles.modalActions}>
-                <button 
-                  className={styles.modalAction}
-                  onClick={() => handleArchive(selectedMessage.id)}
-                  title="Archivieren"
-                >
-                  <Icon name="archive" size="sm" />
-                </button>
-                <button 
-                  className={`${styles.modalAction} ${styles.modalActionDanger}`}
-                  onClick={() => handleDelete(selectedMessage.id)}
-                  title="Löschen"
-                >
-                  <Icon name="trash" size="sm" />
-                </button>
-              </div>
-            </div>
-            
-            <div className={styles.modalContent}>
-              {/* Sender Info */}
-              <div className={styles.senderInfo}>
-                <div className={styles.senderAvatar}>
-                  {selectedMessage.sender_avatar ? (
-                    <img src={selectedMessage.sender_avatar} alt={selectedMessage.sender_name} />
-                  ) : (
-                    <span>
-                      {selectedMessage.sender_name?.charAt(0).toUpperCase() || '?'}
-                    </span>
-                  )}
-                </div>
-                <div className={styles.senderDetails}>
-                  <h3>{selectedMessage.sender_name}</h3>
-                  <p>{selectedMessage.sender_email}</p>
-                </div>
-                <span className={styles.messageTime}>
-                  {formatRelativeTime(selectedMessage.created_at)}
-                </span>
-              </div>
-              
-              {/* Subject */}
-              {selectedMessage.subject && (
-                <div className={styles.messageSubject}>
-                  {selectedMessage.subject}
-                </div>
-              )}
-              
-              {/* Product Reference */}
-              {selectedMessage.product_title && (
-                <div className={styles.productRef}>
-                  <Icon name="package" size="sm" />
-                  <span>Bezug: {selectedMessage.product_title}</span>
-                </div>
-              )}
-              
-              {/* Message Body */}
-              <div className={styles.messageBody}>
-                {selectedMessage.message}
-              </div>
-              
-              {/* Reply Button */}
-              <a 
-                href={`mailto:${selectedMessage.sender_email}?subject=Re: Deine Nachricht auf MoneMee`}
-                className={styles.replyButton}
-              >
-                <Icon name="reply" size="sm" />
-                Per E-Mail antworten
-              </a>
-            </div>
-          </div>
-        </div>
+        <MessageDetail
+          message={selectedMessage}
+          onClose={() => setSelectedMessage(null)}
+          onArchive={() => handleArchive(selectedMessage.id)}
+          onDelete={() => handleDelete(selectedMessage.id)}
+          formatRelativeTime={formatRelativeTime}
+        />
       )}
     </div>
   );
@@ -428,7 +401,8 @@ function Messages() {
  */
 function MessageItem({ message, onClick, formatRelativeTime }) {
   const getInitial = (name) => {
-    return name?.charAt(0).toUpperCase() || '?';
+    if (!name) return '?';
+    return name.charAt(0).toUpperCase();
   };
 
   return (
@@ -462,7 +436,7 @@ function MessageItem({ message, onClick, formatRelativeTime }) {
 }
 
 /**
- * Notification Card Component
+ * Notification Card Component - Updated for Sales
  */
 function NotificationCard({ notification }) {
   const colors = {
@@ -480,19 +454,105 @@ function NotificationCard({ notification }) {
   };
 
   return (
-    <div className={styles.notificationCard}>
+    <div className={`${styles.notificationCard} ${notification.isSale ? styles.saleNotification : ''}`}>
       <div 
         className={styles.notificationIcon}
         style={{ 
-          background: bgColors[notification.type], 
-          color: colors[notification.type] 
+          background: notification.isAffiliate 
+            ? 'rgba(99, 102, 241, 0.15)' 
+            : bgColors[notification.type], 
+          color: notification.isAffiliate 
+            ? 'var(--color-primary)' 
+            : colors[notification.type] 
         }}
       >
         <Icon name={notification.icon} size="md" />
       </div>
       <div className={styles.notificationContent}>
         <p className={styles.notificationMessage}>{notification.message}</p>
+        {notification.subMessage && (
+          <p className={styles.notificationSubMessage}>{notification.subMessage}</p>
+        )}
         <p className={styles.notificationTime}>{notification.time}</p>
+      </div>
+      {notification.isSale && (
+        <div className={styles.notificationAmount}>
+          {notification.isAffiliate && (
+            <span className={styles.affiliateBadge}>
+              <Icon name="link" size="xs" />
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Message Detail Component
+ */
+function MessageDetail({ message, onClose, onArchive, onDelete, formatRelativeTime }) {
+  const getInitial = (name) => {
+    if (!name) return '?';
+    return name.charAt(0).toUpperCase();
+  };
+
+  return (
+    <div className={styles.messageDetailOverlay} onClick={onClose}>
+      <div className={styles.messageDetail} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.messageDetailHeader}>
+          <button className={styles.backButton} onClick={onClose}>
+            <Icon name="arrowLeft" size="md" />
+          </button>
+          <div className={styles.messageDetailActions}>
+            <button onClick={onArchive} title="Archivieren">
+              <Icon name="archive" size="sm" />
+            </button>
+            <button onClick={onDelete} title="Löschen">
+              <Icon name="trash" size="sm" />
+            </button>
+          </div>
+        </div>
+        
+        <div className={styles.messageDetailContent}>
+          <div className={styles.messageDetailSender}>
+            <div className={styles.messageAvatar}>
+              {message.sender_avatar ? (
+                <img src={message.sender_avatar} alt={message.sender_name} />
+              ) : (
+                <span>{getInitial(message.sender_name)}</span>
+              )}
+            </div>
+            <div>
+              <h3>{message.sender_name}</h3>
+              <p>{message.sender_email}</p>
+            </div>
+          </div>
+          
+          {message.subject && (
+            <h2 className={styles.messageDetailSubject}>{message.subject}</h2>
+          )}
+          
+          <p className={styles.messageDetailDate}>{formatRelativeTime(message.created_at)}</p>
+          
+          <div className={styles.messageDetailBody}>
+            {message.message}
+          </div>
+          
+          {message.product_title && (
+            <div className={styles.relatedProduct}>
+              <Icon name="package" size="sm" />
+              <span>Bezogen auf: {message.product_title}</span>
+            </div>
+          )}
+        </div>
+        
+        <div className={styles.messageDetailFooter}>
+          <a href={`mailto:${message.sender_email}`} className={styles.replyButton}>
+            <Icon name="mail" size="sm" />
+            Per E-Mail antworten
+          </a>
+        </div>
       </div>
     </div>
   );

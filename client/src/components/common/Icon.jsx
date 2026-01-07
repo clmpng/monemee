@@ -82,6 +82,7 @@ import {
   UserPlus,
   Heart,
   ThumbsUp,
+  Briefcase,
   
   // Security
   Shield,
@@ -203,6 +204,7 @@ const iconMap = {
   userPlus: UserPlus,
   heart: Heart,
   thumbsUp: ThumbsUp,
+  briefcase: Briefcase,
   
   // Security
   shield: Shield,

@@ -20,6 +20,7 @@ const UserModel = {
         bio, avatar_url, role, level, total_earnings,
         affiliate_balance, affiliate_pending_balance,
         COALESCE(affiliate_earnings_total, 0) as affiliate_earnings_total,
+        seller_type, 
         stripe_account_id, stripe_account_status,
         stripe_charges_enabled, stripe_payouts_enabled,
         stripe_onboarding_complete, stripe_account_updated_at,

@@ -483,24 +483,32 @@ function EarningsDashboard() {
             )}
           </div>
 
-          {/* Recent Activity */}
-          {recentSales.length > 0 && (
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Letzte Aktivität</h3>
-              <div className={styles.activityList}>
-                {recentSales.slice(0, 5).map(sale => (
-                  <div key={sale.id} className={styles.activityItem}>
-                    <div className={styles.activityIcon}>
-                      <Icon name="dollarSign" size="sm" />
-                    </div>
-                    <div className={styles.activityContent}>
-                      <span className={styles.activityText}>
-                        <strong>{sale.buyerName}</strong> kaufte "{sale.productTitle}"
-                      </span>
-                      <span className={styles.activityTime}>{formatRelativeTime(sale.date)}</span>
-                    </div>
-                    <span className={styles.activityAmount}>+{formatCurrency(sale.amount)}</span>
+        {/* Recent Activity */}
+        {recentSales.length > 0 && (
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Letzte Aktivität</h3>
+            <div className={styles.activityList}>
+              {recentSales.slice(0, 5).map(sale => (
+                <div key={sale.id} className={`${styles.activityItem} ${sale.isAffiliateSale ? styles.affiliateActivity : ''}`}>
+                  <div className={styles.activityIcon} style={sale.isAffiliateSale ? { background: 'rgba(99, 102, 241, 0.15)', color: 'var(--color-primary)' } : {}}>
+                    <Icon name={sale.isAffiliateSale ? 'link' : 'dollarSign'} size="sm" />
                   </div>
+                  <div className={styles.activityContent}>
+                    <span className={styles.activityText}>
+                      <strong>{sale.buyerName}</strong> kaufte "{sale.productTitle}"
+                      {sale.isAffiliateSale && (
+                        <span className={styles.affiliateTag}> via {sale.promoterName}</span>
+                      )}
+                    </span>
+                    <span className={styles.activityTime}>
+                      {formatRelativeTime(sale.date)}
+                      {sale.isAffiliateSale && sale.affiliateCommission > 0 && (
+                        <span className={styles.commissionInfo}> · {formatCurrency(sale.affiliateCommission)} Provision</span>
+                      )}
+                    </span>
+                  </div>
+                  <span className={styles.activityAmount}>+{formatCurrency(sale.amount)}</span>
+                </div>
                 ))}
               </div>
             </div>

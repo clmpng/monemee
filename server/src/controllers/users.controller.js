@@ -42,6 +42,7 @@ const usersController = {
           role: user.role,
           level: user.level,
           totalEarnings: parseFloat(user.total_earnings || 0),
+          seller_type: user.seller_type || 'private',
           createdAt: user.created_at,
           updatedAt: user.updated_at
         }
@@ -133,7 +134,8 @@ const usersController = {
           avatar: user.avatar_url,
           role: user.role,
           level: user.level,
-          totalEarnings: parseFloat(user.total_earnings || 0)
+          totalEarnings: parseFloat(user.total_earnings || 0),
+          seller_type: user.seller_type || 'private'
         },
         message: 'Profil aktualisiert'
       });

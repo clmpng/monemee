@@ -2,16 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
-import { usersService, stripeService } from '../../services';
+import { usersService, stripeService, billingService } from '../../services';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../config/firebase';
-import { SellerTypeModal, BillingSettingsForm } from '../../components/billing';
-import { billingService } from '../../services';
+import { SellerTypeModal, BillingFormModal } from '../../components/billing';
 import styles from '../../styles/pages/Settings.module.css';
 
 /**
  * Settings Page
- * Tab "Stripe" statt "Auszahlung"
+ * Mit Seller-Type & Billing Sektion
  */
 function Settings() {
   const navigate = useNavigate();
@@ -21,7 +20,6 @@ function Settings() {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
     const tabParam = searchParams.get('tab');
-    // Support both 'payout' (legacy) and 'stripe' (new)
     if (tabParam === 'payout') return 'stripe';
     const validTabs = ['profile', 'store', 'stripe', 'account'];
     return validTabs.includes(tabParam) ? tabParam : 'profile';
@@ -52,6 +50,31 @@ function Settings() {
   const [showSellerTypeModal, setShowSellerTypeModal] = useState(false);
   const [showBillingForm, setShowBillingForm] = useState(false);
   const [sellerTypeLoading, setSellerTypeLoading] = useState(false);
+  const [sellerTypeError, setSellerTypeError] = useState(null);
+  const [billingInfo, setBillingInfo] = useState(null);
+  const [billingLoading, setBillingLoading] = useState(false);
+
+  // Fetch billing info when stripe tab is active and stripe is connected
+  useEffect(() => {
+    if (activeTab === 'stripe' && stripeStatus?.payoutsEnabled) {
+      fetchBillingInfo();
+    }
+  }, [activeTab, stripeStatus?.payoutsEnabled]);
+
+  // Fetch billing info
+  const fetchBillingInfo = async () => {
+    setBillingLoading(true);
+    try {
+      const response = await billingService.getBillingInfo();
+      if (response.success) {
+        setBillingInfo(response.data);
+      }
+    } catch (err) {
+      console.error('Billing info error:', err);
+    } finally {
+      setBillingLoading(false);
+    }
+  };
 
   // Check for Stripe return status
   useEffect(() => {
@@ -62,9 +85,12 @@ function Settings() {
       
       // Prüfen ob seller_type Abfrage nötig ist
       billingService.getBillingInfo().then(res => {
-        if (res.success && res.data.sellerType === 'private' && !res.data.billingInfo) {
-          // User wurde noch nie gefragt - Modal anzeigen
-          setShowSellerTypeModal(true);
+        if (res.success) {
+          setBillingInfo(res.data);
+          // Nur Modal zeigen wenn noch nie gefragt (sellerType ist noch 'private' und keine billingInfo)
+          if (res.data.sellerType === 'private' && !res.data.billingInfo) {
+            setShowSellerTypeModal(true);
+          }
         }
       }).catch(err => {
         console.error('Billing info check error:', err);
@@ -197,41 +223,74 @@ function Settings() {
     }
   };
 
-  // Handle seller type selection (after Stripe onboarding)
+  // Handle seller type selection
   const handleSellerTypeSelect = async (type) => {
     setSellerTypeLoading(true);
+    setSellerTypeError(null); // Clear any previous errors
+
     try {
-      await billingService.setSellerType(type);
-      setShowSellerTypeModal(false);
-      
-      if (type === 'business') {
-        setShowBillingForm(true);
-      } else {
-        setSuccess('Einrichtung abgeschlossen!');
+      console.log('Setting seller type to:', type);
+      const response = await billingService.setSellerType(type);
+      console.log('Seller type response:', response);
+
+      if (response.success) {
+        // Close modal immediately
+        setShowSellerTypeModal(false);
+        setSellerTypeError(null);
+
+        // Show success message
+        setSuccess('Verkäufertyp gespeichert!');
         setTimeout(() => setSuccess(null), 3000);
+
+        // Refresh data in background
+        fetchBillingInfo().catch(err => console.error('Fetch billing info error:', err));
+        refreshUser().catch(err => console.error('Refresh user error:', err));
+
+        // Open billing form if business (with delay for smooth transition)
+        if (type === 'business') {
+          setTimeout(() => setShowBillingForm(true), 300);
+        }
+      } else {
+        console.error('API returned success=false:', response);
+        setSellerTypeError(response.message || 'Fehler beim Speichern');
       }
     } catch (err) {
       console.error('Set seller type error:', err);
-      setError('Fehler beim Speichern');
+      const errorMsg = err.response?.data?.message || err.message || 'Fehler beim Speichern';
+      setSellerTypeError(errorMsg);
     } finally {
       setSellerTypeLoading(false);
     }
   };
 
-  // Handle billing info save
+  // Handle billing form save
   const handleBillingSave = async (data) => {
     setSellerTypeLoading(true);
     try {
-      await billingService.updateBillingInfo(data);
-      setShowBillingForm(false);
-      setSuccess('Rechnungsdaten gespeichert!');
-      setTimeout(() => setSuccess(null), 3000);
+      const response = await billingService.updateBillingInfo(data);
+      if (response.success) {
+        setShowBillingForm(false);
+        setSuccess('Rechnungsangaben gespeichert!');
+        setTimeout(() => setSuccess(null), 3000);
+        await fetchBillingInfo();
+        await refreshUser();
+      }
     } catch (err) {
-      console.error('Save billing error:', err);
-      setError(err.message || 'Fehler beim Speichern');
+      console.error('Billing save error:', err);
+      setError(err.response?.data?.message || err.message || 'Speichern fehlgeschlagen');
     } finally {
       setSellerTypeLoading(false);
     }
+  };
+
+  // Handle change seller type button
+  const handleChangeSellerType = () => {
+    setShowSellerTypeModal(true);
+  };
+
+  // Handle edit billing info
+  const handleEditBillingInfo = () => {
+    setShowBillingForm(true);
   };
 
   // Handle avatar click
@@ -340,6 +399,28 @@ function Settings() {
     return translations[req] || req;
   };
 
+  // Get seller type display info
+  const getSellerTypeInfo = () => {
+    const sellerType = billingInfo?.sellerType || 'private';
+    
+    if (sellerType === 'business') {
+      const isSmallBusiness = billingInfo?.billingInfo?.isSmallBusiness;
+      return {
+        type: 'business',
+        label: isSmallBusiness ? 'Gewerblich (Kleinunternehmer)' : 'Gewerblich',
+        icon: 'briefcase',
+        color: 'var(--color-primary)'
+      };
+    }
+    
+    return {
+      type: 'private',
+      label: 'Privatverkäufer',
+      icon: 'user',
+      color: 'var(--color-text-secondary)'
+    };
+  };
+
   // Tab configuration
   const tabs = [
     { id: 'profile', label: 'Profil', icon: 'user' },
@@ -347,6 +428,8 @@ function Settings() {
     { id: 'stripe', label: 'Stripe', icon: 'creditCard' },
     { id: 'account', label: 'Account', icon: 'lock' },
   ];
+
+  const sellerTypeInfo = getSellerTypeInfo();
 
   return (
     <div className={`page ${styles.settingsPage}`}>
@@ -372,6 +455,21 @@ function Settings() {
           </button>
         ))}
       </div>
+
+      {/* Global Success/Error Messages */}
+      {success && (
+        <div className={styles.successBanner}>
+          <Icon name="checkCircle" size="sm" />
+          {success}
+        </div>
+      )}
+      {error && (
+        <div className={styles.errorBanner}>
+          <Icon name="alertCircle" size="sm" />
+          {error}
+          <button onClick={() => setError(null)} className={styles.dismissButton}>×</button>
+        </div>
+      )}
 
       {/* Content */}
       <form onSubmit={handleSubmit} className={styles.content}>
@@ -521,7 +619,7 @@ function Settings() {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Stripe-Konto</h2>
             <p className={styles.sectionDescription}>
-              Verbinde dein Stripe-Konto, um Zahlungen zu empfangen. Produktverkäufe werden automatisch ausgezahlt, Affiliate-Provisionen kannst du unter "Fortschritt" manuell auszahlen.
+              Verbinde dein Stripe-Konto, um Zahlungen zu empfangen.
             </p>
 
             {/* Loading State */}
@@ -556,33 +654,138 @@ function Settings() {
               </div>
             )}
 
-            {/* Stripe Enabled */}
+            {/* Stripe Enabled - Stripe Connected Successfully */}
             {!stripeLoading && stripeStatus?.stripeConfigured && stripeStatus?.payoutsEnabled && (
-              <div className={styles.stripeEnabled}>
-                <div className={styles.stripeStatusCard}>
-                  <div className={styles.stripeStatusIconSuccess}>
-                    <Icon name="checkCircle" size="xl" />
+              <>
+                {/* Stripe Status Card */}
+                <div className={styles.stripeEnabled}>
+                  <div className={styles.stripeStatusCard}>
+                    <div className={styles.stripeStatusIconSuccess}>
+                      <Icon name="checkCircle" size="xl" />
+                    </div>
+                    <div className={styles.stripeStatusInfo}>
+                      <h3>Stripe verbunden</h3>
+                      <p>Dein Konto ist vollständig eingerichtet. Zahlungen werden automatisch überwiesen.</p>
+                    </div>
                   </div>
-                  <div className={styles.stripeStatusInfo}>
-                    <h3>Stripe verbunden</h3>
-                    <p>Dein Konto ist vollständig eingerichtet. Zahlungen werden automatisch überwiesen.</p>
-                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={handleOpenDashboard}
+                    disabled={stripeLoading}
+                    className={styles.stripeSecondaryButton}
+                  >
+                    <Icon name="externalLink" size="sm" />
+                    Stripe Dashboard öffnen
+                  </button>
                 </div>
-                
-                <button
-                  type="button"
-                  onClick={handleOpenDashboard}
-                  disabled={stripeLoading}
-                  className={styles.stripeSecondaryButton}
-                >
-                  <Icon name="externalLink" size="sm" />
-                  Stripe Dashboard öffnen
-                </button>
-                
-                <p className={styles.fieldHint}>
-                  Im Stripe Dashboard kannst du deine Bankverbindung verwalten und alle Transaktionen einsehen.
-                </p>
-              </div>
+
+                {/* ========== SELLER TYPE & BILLING SECTION ========== */}
+                <div className={styles.sellerTypeSection}>
+                  <h3 className={styles.subsectionTitle}>Verkäufertyp & Rechnungen</h3>
+                  
+                  {billingLoading ? (
+                    <div className={styles.billingLoading}>
+                      <Icon name="loader" size="sm" className={styles.spinner} />
+                      <span>Wird geladen...</span>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Seller Type Card */}
+                      <div className={styles.sellerTypeCard}>
+                        <div 
+                          className={styles.sellerTypeIcon} 
+                          style={{ backgroundColor: sellerTypeInfo.color }}
+                        >
+                          <Icon name={sellerTypeInfo.icon} size="md" />
+                        </div>
+                        <div className={styles.sellerTypeInfo}>
+                          <span className={styles.sellerTypeLabel}>Aktueller Status</span>
+                          <span className={styles.sellerTypeValue}>{sellerTypeInfo.label}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleChangeSellerType}
+                          className={styles.changeTypeButton}
+                        >
+                          <Icon name="edit2" size="sm" />
+                          Ändern
+                        </button>
+                      </div>
+
+                      {/* Info based on type */}
+                      {sellerTypeInfo.type === 'private' ? (
+                        <div className={styles.sellerTypeHint}>
+                          <Icon name="info" size="sm" />
+                          <p>
+                            Als Privatverkäufer erhält dein Käufer automatisch einen <strong>Stripe-Beleg</strong>. 
+                            Eine eigene Rechnung wird nicht erstellt.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className={styles.sellerTypeHint}>
+                            <Icon name="fileText" size="sm" />
+                            <p>
+                              Als gewerblicher Verkäufer werden automatisch <strong>Rechnungen</strong> für deine Käufer erstellt.
+                              Du findest alle Rechnungen unter <strong>Fortschritt → Rechnungen</strong>.
+                            </p>
+                          </div>
+
+                          {/* Billing Info Display */}
+                          {billingInfo?.billingInfo ? (
+                            <div className={styles.billingInfoCard}>
+                              <div className={styles.billingInfoHeader}>
+                                <h4>Rechnungsangaben</h4>
+                                <button
+                                  type="button"
+                                  onClick={handleEditBillingInfo}
+                                  className={styles.editBillingButton}
+                                >
+                                  <Icon name="edit2" size="sm" />
+                                  Bearbeiten
+                                </button>
+                              </div>
+                              <div className={styles.billingInfoContent}>
+                                <p><strong>{billingInfo.billingInfo.businessName}</strong></p>
+                                <p>{billingInfo.billingInfo.street}</p>
+                                <p>{billingInfo.billingInfo.zip} {billingInfo.billingInfo.city}</p>
+                                {billingInfo.billingInfo.taxId && (
+                                  <p className={styles.taxId}>
+                                    {billingInfo.billingInfo.taxId.startsWith('DE') ? 'USt-IdNr.' : 'Steuernr.'}: {billingInfo.billingInfo.taxId}
+                                  </p>
+                                )}
+                                {billingInfo.billingInfo.isSmallBusiness && (
+                                  <p className={styles.smallBusinessBadge}>
+                                    <Icon name="check" size="xs" />
+                                    Kleinunternehmer §19 UStG
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            /* Missing Billing Info Warning */
+                            <div className={styles.billingWarning}>
+                              <Icon name="alertTriangle" size="sm" />
+                              <div>
+                                <p><strong>Rechnungsangaben fehlen!</strong></p>
+                                <p>Bitte hinterlege deine Geschäftsdaten, damit Rechnungen erstellt werden können.</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleEditBillingInfo}
+                                className={styles.addBillingButton}
+                              >
+                                Jetzt hinzufügen
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              </>
             )}
 
             {/* Stripe Incomplete */}
@@ -748,18 +951,6 @@ function Settings() {
         {(activeTab === 'profile' || activeTab === 'store') && hasChanges && (
           <div className={styles.stickyFooter}>
             <div className={styles.footerContent}>
-              {error && (
-                <div className={styles.errorMessage}>
-                  <Icon name="alertCircle" size="sm" />
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className={styles.successMessage}>
-                  <Icon name="checkCircle" size="sm" />
-                  {success}
-                </div>
-              )}
               <button
                 type="submit"
                 disabled={loading || usernameStatus === 'taken'}
@@ -782,33 +973,28 @@ function Settings() {
         )}
       </form>
 
-      {/* Seller Type Modal (nach Stripe Onboarding) */}
+      {/* Seller Type Modal */}
       <SellerTypeModal
         isOpen={showSellerTypeModal}
-        onClose={() => setShowSellerTypeModal(false)}
+        onClose={() => {
+          setShowSellerTypeModal(false);
+          setSellerTypeError(null);
+        }}
         onSelect={handleSellerTypeSelect}
         loading={sellerTypeLoading}
+        error={sellerTypeError}
       />
 
-      {/* Billing Form Modal (für gewerbliche Verkäufer) */}
-      {showBillingForm && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h2>Rechnungsangaben</h2>
-              <p>Diese Daten erscheinen auf deinen Rechnungen.</p>
-            </div>
-            <BillingSettingsForm
-              onSave={handleBillingSave}
-              onCancel={() => setShowBillingForm(false)}
-              loading={sellerTypeLoading}
-              submitLabel="Speichern & Fertig"
-            />
-          </div>
-        </div>
-      )}
-      </div>
-      );
+      {/* Billing Form Modal */}
+      <BillingFormModal
+        isOpen={showBillingForm}
+        onClose={() => setShowBillingForm(false)}
+        onSave={handleBillingSave}
+        initialData={billingInfo?.billingInfo}
+        loading={sellerTypeLoading}
+      />
+    </div>
+  );
 }
 
 export default Settings;

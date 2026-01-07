@@ -927,4 +927,22 @@
       padding: var(--spacing-lg) var(--spacing-xl);
     }
   }
+
+  .affiliateActivity {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, transparent 100%);
+    border-left: 3px solid var(--color-primary);
+    margin-left: -3px;
+    padding-left: calc(12px + 3px);
+  }
+  
+  .affiliateTag {
+    color: var(--color-primary);
+    font-weight: 500;
+    font-size: 13px;
+  }
+  
+  .commissionInfo {
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+  }
   

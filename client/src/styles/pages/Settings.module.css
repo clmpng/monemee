@@ -1,23 +1,23 @@
 /* ========================================
    Settings Page Styles
    Modern, professional design with sticky CTA
-   Consistent with other pages (MyStore, etc.)
+   ======================================== */
+
+/* ========================================
+   Page Layout
    ======================================== */
 
    .settingsPage {
-    padding-bottom: 120px; /* Space for sticky footer + bottom nav */
+    padding-bottom: 120px;
   }
   
-  /* Header */
+  /* ========================================
+     Header
+     ======================================== */
+  
   .header {
     padding: var(--spacing-lg) 0;
     margin-bottom: var(--spacing-lg);
-  }
-  
-  @media (min-width: 768px) {
-    .header {
-      padding: var(--spacing-xl) 0;
-    }
   }
   
   .title {
@@ -27,24 +27,29 @@
     margin-bottom: var(--spacing-xs);
   }
   
-  @media (min-width: 768px) {
-    .title {
-      font-size: var(--font-size-2xl);
-    }
-  }
-  
   .subtitle {
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
   }
   
   @media (min-width: 768px) {
+    .header {
+      padding: var(--spacing-xl) 0;
+    }
+  
+    .title {
+      font-size: var(--font-size-2xl);
+    }
+  
     .subtitle {
       font-size: var(--font-size-md);
     }
   }
   
-  /* Tab Navigation */
+  /* ========================================
+     Tab Navigation
+     ======================================== */
+  
   .tabNavigation {
     display: flex;
     gap: var(--spacing-xs);
@@ -90,25 +95,29 @@
     color: white;
   }
   
-  /* Content */
+  .statusDot {
+    width: 8px;
+    height: 8px;
+    background: var(--color-success);
+    border-radius: 50%;
+    margin-left: var(--spacing-xs);
+  }
+  
+  /* ========================================
+     Content & Sections
+     ======================================== */
+  
   .content {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xl);
   }
   
-  /* Section */
   .section {
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
     padding: var(--spacing-lg);
-  }
-  
-  @media (min-width: 768px) {
-    .section {
-      padding: var(--spacing-xl);
-    }
   }
   
   .sectionTitle {
@@ -124,7 +133,16 @@
     margin-bottom: var(--spacing-xl);
   }
   
-  /* Avatar Section */
+  @media (min-width: 768px) {
+    .section {
+      padding: var(--spacing-xl);
+    }
+  }
+  
+  /* ========================================
+     Avatar Section
+     ======================================== */
+  
   .avatarSection {
     display: flex;
     align-items: center;
@@ -148,20 +166,12 @@
     justify-content: center;
   }
   
-  @media (min-width: 768px) {
-    .avatarPreview {
-      width: 96px;
-      height: 96px;
-    }
-  }
-  
   .avatarPreview img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
   
-  /* Avatar Initialen - zentriert und weiß */
   .avatarInitials {
     color: white;
     font-size: 28px;
@@ -169,12 +179,6 @@
     line-height: 1;
     text-transform: uppercase;
     text-align: center;
-  }
-  
-  @media (min-width: 768px) {
-    .avatarInitials {
-      font-size: 32px;
-    }
   }
   
   .avatarLoading {
@@ -203,32 +207,6 @@
     opacity: 1;
   }
   
-  .avatarInfo {
-    flex: 1;
-  }
-  
-  .avatarButton {
-    padding: var(--spacing-sm) var(--spacing-lg);
-    background: var(--color-bg-tertiary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    color: var(--color-text-primary);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .avatarButton:hover:not(:disabled) {
-    background: var(--color-bg-primary);
-    border-color: var(--color-primary);
-  }
-  
-  .avatarButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  
   .avatarHint {
     font-size: 12px;
     color: var(--color-text-tertiary);
@@ -239,7 +217,28 @@
     display: none;
   }
   
-  /* Form Fields */
+  @media (min-width: 768px) {
+    .avatarPreview {
+      width: 96px;
+      height: 96px;
+    }
+  
+    .avatarInitials {
+      font-size: 32px;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    .avatarSection {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+  
+  /* ========================================
+     Form Fields
+     ======================================== */
+  
   .field {
     margin-bottom: var(--spacing-xl);
   }
@@ -346,7 +345,10 @@
     margin-top: var(--spacing-sm);
   }
   
-  /* Username Status */
+  /* ========================================
+     Username Status
+     ======================================== */
+  
   .usernameChecking {
     color: var(--color-text-tertiary);
   }
@@ -367,7 +369,10 @@
     font-weight: 500;
   }
   
-  /* Copy Link Field */
+  /* ========================================
+     Copy Link Field
+     ======================================== */
+  
   .copyLinkField {
     display: flex;
     gap: var(--spacing-sm);
@@ -401,7 +406,10 @@
     cursor: not-allowed;
   }
   
-  /* Read Only Field */
+  /* ========================================
+     Read Only Field & Level Badge
+     ======================================== */
+  
   .readOnlyField {
     display: flex;
     align-items: center;
@@ -417,7 +425,6 @@
     color: var(--color-text-tertiary);
   }
   
-  /* Level Badge */
   .levelBadge {
     display: inline-flex;
     align-items: center;
@@ -431,118 +438,10 @@
     font-size: var(--font-size-sm);
   }
   
-  /* Store Preview Card */
-  .storePreviewCard {
-    background: var(--color-bg-tertiary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-xl);
-  }
+  /* ========================================
+     Danger Zone
+     ======================================== */
   
-  @media (min-width: 768px) {
-    .storePreviewCard {
-      padding: var(--spacing-xl);
-    }
-  }
-  
-  .storePreviewHeader {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
-  }
-  
-  .storePreviewAvatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-primary) 0%, #818cf8 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-  
-  @media (min-width: 768px) {
-    .storePreviewAvatar {
-      width: 64px;
-      height: 64px;
-    }
-  }
-  
-  .storePreviewAvatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .storePreviewAvatar span {
-    color: white;
-    font-size: 20px;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-  
-  @media (min-width: 768px) {
-    .storePreviewAvatar span {
-      font-size: 24px;
-    }
-  }
-  
-  .storePreviewInfo h3 {
-    font-size: var(--font-size-md);
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin-bottom: 2px;
-  }
-  
-  @media (min-width: 768px) {
-    .storePreviewInfo h3 {
-      font-size: var(--font-size-lg);
-    }
-  }
-  
-  .storePreviewInfo p {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-tertiary);
-  }
-  
-  .storePreviewBio {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    margin-bottom: var(--spacing-lg);
-    line-height: 1.5;
-  }
-  
-  .storePreviewActions {
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--color-border);
-  }
-  
-  .previewButton {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-lg);
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    color: var(--color-text-primary);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.2s ease;
-  }
-  
-  .previewButton:hover {
-    background: var(--color-bg-primary);
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-  }
-  
-  /* Danger Zone */
   .dangerZone {
     margin-top: var(--spacing-2xl);
     padding-top: var(--spacing-xl);
@@ -582,7 +481,10 @@
     color: white;
   }
   
-  /* Sticky Footer */
+  /* ========================================
+     Sticky Footer
+     ======================================== */
+  
   .stickyFooter {
     position: fixed;
     bottom: var(--bottom-nav-height, 64px);
@@ -595,14 +497,6 @@
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
   }
   
-  @media (min-width: 768px) {
-    .stickyFooter {
-      bottom: 0;
-      left: var(--sidebar-width, 260px);
-      padding: var(--spacing-md) var(--spacing-xl);
-    }
-  }
-  
   .footerContent {
     max-width: 800px;
     margin: 0 auto;
@@ -612,29 +506,6 @@
     gap: var(--spacing-lg);
   }
   
-  /* Messages */
-  .errorMessage,
-  .successMessage {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-lg);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-  }
-  
-  .errorMessage {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--color-danger);
-  }
-  
-  .successMessage {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--color-success);
-  }
-  
-  /* Save Button */
   .saveButton {
     display: inline-flex;
     align-items: center;
@@ -663,363 +534,666 @@
     transform: none;
   }
   
-  /* Spinner Animation */
-  .spinner {
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  
-  /* Mobile Adjustments */
-  @media (max-width: 640px) {
-    .avatarSection {
-      flex-direction: column;
-      text-align: center;
+  @media (min-width: 768px) {
+    .stickyFooter {
+      bottom: 0;
+      left: var(--sidebar-width, 260px);
+      padding: var(--spacing-md) var(--spacing-xl);
     }
-    
+  }
+  
+  @media (max-width: 640px) {
     .footerContent {
       flex-direction: column;
       gap: var(--spacing-md);
     }
-    
+  
     .saveButton {
       width: 100%;
     }
   }
   
   /* ========================================
-   Stripe Connect Styles
-   ======================================== */
-
-/* Status Dot in Tab */
-.statusDot {
-  width: 8px;
-  height: 8px;
-  background: var(--color-success);
-  border-radius: 50%;
-  margin-left: var(--spacing-xs);
-}
-
-/* Loading & Error States */
-.stripeLoading,
-.stripeError,
-.stripeNotConfigured {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-2xl) var(--spacing-lg);
-  text-align: center;
-  color: var(--color-text-secondary);
-}
-
-.stripeLoading p,
-.stripeError p,
-.stripeNotConfigured p {
-  margin-top: var(--spacing-md);
-  margin-bottom: 0;
-}
-
-.stripeNotConfigured h3,
-.stripeError h3 {
-  margin-top: var(--spacing-md);
-  margin-bottom: var(--spacing-xs);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-md);
-}
-
-.retryButton {
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.retryButton:hover {
-  background: var(--color-bg-primary);
-  border-color: var(--color-primary);
-}
-
-/* Stripe Setup (No Account) */
-.stripeSetup {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xl);
-}
-
-.stripeIntro {
-  text-align: center;
-  padding: var(--spacing-lg) 0;
-}
-
-.stripeIntroIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(129, 140, 248, 0.1) 100%);
-  color: var(--color-primary);
-  border-radius: 50%;
-  margin-bottom: var(--spacing-lg);
-}
-
-.stripeIntro h3 {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-sm);
-}
-
-.stripeIntro p {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  line-height: 1.5;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-/* Stripe Features */
-.stripeFeatures {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-@media (min-width: 768px) {
-  .stripeFeatures {
-    flex-direction: row;
+     Success & Error Banners
+     ======================================== */
+  
+  .successBanner,
+  .errorBanner {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-md);
   }
-}
-
-.stripeFeature {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg);
-  background: var(--color-bg-tertiary);
-  border-radius: var(--radius-lg);
-  flex: 1;
-}
-
-.stripeFeature svg {
-  color: var(--color-primary);
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.stripeFeature strong {
-  display: block;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 4px;
-}
-
-.stripeFeature p {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  margin: 0;
-  line-height: 1.4;
-}
-
-/* Stripe Buttons */
-.stripePrimaryButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  width: 100%;
-  padding: var(--spacing-md) var(--spacing-xl);
-  background: linear-gradient(135deg, var(--color-primary) 0%, #818cf8 100%);
-  border: none;
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.stripePrimaryButton:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-}
-
-.stripePrimaryButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.stripeSecondaryButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  width: 100%;
-  padding: var(--spacing-md) var(--spacing-xl);
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-md);
-  font-weight: 500;
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.stripeSecondaryButton:hover:not(:disabled) {
-  background: var(--color-bg-primary);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.stripeSecondaryButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.stripeDisclaimer {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-  text-align: center;
-  margin: 0;
-}
-
-/* Stripe Status Card */
-.stripeStatusCard {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  background: var(--color-bg-tertiary);
-  border-radius: var(--radius-xl);
-  margin-bottom: var(--spacing-xl);
-}
-
-@media (max-width: 640px) {
-  .stripeStatusCard {
+  
+  .successBanner {
+    background: var(--color-success-bg, rgba(16, 185, 129, 0.1));
+    color: var(--color-success);
+  }
+  
+  .errorBanner {
+    background: var(--color-danger-bg, rgba(239, 68, 68, 0.1));
+    color: var(--color-danger);
+  }
+  
+  .dismissButton {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: inherit;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  
+  /* ========================================
+     Stripe Connect Styles
+     ======================================== */
+  
+  .stripeLoading,
+  .stripeError,
+  .stripeNotConfigured {
+    display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    padding: var(--spacing-2xl) var(--spacing-lg);
     text-align: center;
+    color: var(--color-text-secondary);
   }
-}
-
-.stripeStatusIconSuccess {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--color-success);
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.stripeStatusIconWarning {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--color-warning, #F59E0B);
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.stripeStatusInfo h3 {
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-xs);
-}
-
-.stripeStatusInfo p {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* Requirements List */
-.requirementsList {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-md);
-  background: rgba(245, 158, 11, 0.1);
-  border-radius: var(--radius-md);
-}
-
-.requirementsList strong {
-  font-size: 12px;
-  color: var(--color-warning, #F59E0B);
-  font-weight: 600;
-}
-
-.requirementsList ul {
-  margin: var(--spacing-sm) 0 0;
-  padding-left: var(--spacing-lg);
-}
-
-.requirementsList li {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  margin-bottom: 4px;
-}
-
-/* Stripe Enabled & Incomplete States */
-.stripeEnabled,
-.stripeIncomplete {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-/* Billing Modal Overlay */
-.modalOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-md);
-  z-index: 1000;
-}
-
-.modalContent {
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-xl);
-  width: 100%;
-  max-width: 480px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: var(--spacing-xl);
-}
-
-.modalHeader {
-  margin-bottom: var(--spacing-lg);
-}
-
-.modalHeader h2 {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  margin: 0 0 var(--spacing-xs);
-}
-
-.modalHeader p {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
-}
+  
+  .stripeLoading p,
+  .stripeError p,
+  .stripeNotConfigured p {
+    margin-top: var(--spacing-md);
+    margin-bottom: 0;
+  }
+  
+  .stripeNotConfigured h3,
+  .stripeError h3 {
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-md);
+  }
+  
+  .retryButton {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .retryButton:hover {
+    background: var(--color-bg-primary);
+    border-color: var(--color-primary);
+  }
+  
+  /* Stripe Setup (No Account) */
+  .stripeSetup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+  }
+  
+  .stripeIntro {
+    text-align: center;
+    padding: var(--spacing-lg) 0;
+  }
+  
+  .stripeIntroIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(129, 140, 248, 0.1) 100%);
+    color: var(--color-primary);
+    border-radius: 50%;
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .stripeIntro h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .stripeIntro p {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  /* Stripe Features */
+  .stripeFeatures {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .stripeFeature {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+    flex: 1;
+  }
+  
+  .stripeFeature svg {
+    color: var(--color-primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  
+  .stripeFeature strong {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+  }
+  
+  .stripeFeature p {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.4;
+  }
+  
+  @media (min-width: 768px) {
+    .stripeFeatures {
+      flex-direction: row;
+    }
+  }
+  
+  /* Stripe Buttons */
+  .stripePrimaryButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-md) var(--spacing-xl);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #818cf8 100%);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .stripePrimaryButton:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+  
+  .stripePrimaryButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  .stripeSecondaryButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-md) var(--spacing-xl);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-md);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .stripeSecondaryButton:hover:not(:disabled) {
+    background: var(--color-bg-primary);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  
+  .stripeSecondaryButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .stripeDisclaimer {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    text-align: center;
+    margin: 0;
+  }
+  
+  /* Stripe Status Card */
+  .stripeStatusCard {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .stripeStatusIconSuccess {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--color-success);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  
+  .stripeStatusIconWarning {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--color-warning, #F59E0B);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  
+  .stripeStatusInfo h3 {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  .stripeStatusInfo p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+  
+  @media (max-width: 640px) {
+    .stripeStatusCard {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+  }
+  
+  /* Requirements List */
+  .requirementsList {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: var(--radius-md);
+  }
+  
+  .requirementsList strong {
+    font-size: 12px;
+    color: var(--color-warning, #F59E0B);
+    font-weight: 600;
+  }
+  
+  .requirementsList ul {
+    margin: var(--spacing-sm) 0 0;
+    padding-left: var(--spacing-lg);
+  }
+  
+  .requirementsList li {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-bottom: 4px;
+  }
+  
+  /* Stripe Enabled & Incomplete States */
+  .stripeEnabled,
+  .stripeIncomplete {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  /* ========================================
+     Seller Type Section
+     ======================================== */
+  
+  .sellerTypeSection {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-xl);
+    border-top: 1px solid var(--color-border);
+  }
+  
+  .subsectionTitle {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--spacing-md);
+  }
+  
+  .billingLoading {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+  
+  /* Seller Type Card */
+  .sellerTypeCard {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .sellerTypeIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+  }
+  
+  .sellerTypeInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .sellerTypeLabel {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+  }
+  
+  .sellerTypeValue {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  .changeTypeButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .changeTypeButton:hover {
+    background: var(--color-bg-primary);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  
+  @media (max-width: 600px) {
+    .sellerTypeCard {
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+  
+    .changeTypeButton {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  
+  /* Seller Type Hint */
+  .sellerTypeHint {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .sellerTypeHint svg {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+  }
+  
+  .sellerTypeHint p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+  
+  .sellerTypeHint strong {
+    color: var(--color-text-primary);
+  }
+  
+  /* ========================================
+     Billing Info Card
+     ======================================== */
+  
+  .billingInfoCard {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  
+  .billingInfoHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .billingInfoHeader h4 {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  
+  .editBillingButton {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: transparent;
+    border: none;
+    font-size: var(--font-size-xs);
+    color: var(--color-primary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background 0.2s ease;
+  }
+  
+  .editBillingButton:hover {
+    background: var(--color-primary-bg, rgba(99, 102, 241, 0.1));
+  }
+  
+  .billingInfoContent {
+    padding: var(--spacing-md);
+  }
+  
+  .billingInfoContent p {
+    margin: 0 0 4px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+  }
+  
+  .billingInfoContent p strong {
+    color: var(--color-text-primary);
+  }
+  
+  .taxId {
+    margin-top: var(--spacing-sm) !important;
+    font-family: var(--font-mono, monospace);
+    font-size: var(--font-size-xs) !important;
+  }
+  
+  .smallBusinessBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: var(--spacing-sm) !important;
+    padding: 4px 8px;
+    background: var(--color-success-bg, rgba(16, 185, 129, 0.1));
+    color: var(--color-success);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs) !important;
+    font-weight: 500;
+  }
+  
+  /* Billing Warning */
+  .billingWarning {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--color-warning-bg, rgba(245, 158, 11, 0.1));
+    border: 1px solid var(--color-warning, #f59e0b);
+    border-radius: var(--radius-lg);
+  }
+  
+  .billingWarning > svg {
+    flex-shrink: 0;
+    color: var(--color-warning, #f59e0b);
+  }
+  
+  .billingWarning > div {
+    flex: 1;
+  }
+  
+  .billingWarning p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+  }
+  
+  .billingWarning p:last-child {
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+  }
+  
+  .addBillingButton {
+    flex-shrink: 0;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-warning, #f59e0b);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+  
+  .addBillingButton:hover {
+    opacity: 0.9;
+  }
+  
+  @media (max-width: 600px) {
+    .billingWarning {
+      flex-direction: column;
+    }
+  
+    .addBillingButton {
+      width: 100%;
+    }
+  }
+  
+  /* ========================================
+     Modal
+     ======================================== */
+  
+  .modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+    z-index: 1000;
+  }
+  
+  .modalContent {
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: var(--spacing-xl);
+  }
+  
+  .modalHeader {
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .modalHeader h2 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin: 0 0 var(--spacing-xs);
+  }
+  
+  .modalHeader p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+  
+  /* ========================================
+     Spinner Animation
+     ======================================== */
+  
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }

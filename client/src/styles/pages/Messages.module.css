@@ -608,3 +608,36 @@
     color: white;
   }
   
+ /* ========================================
+   Sale Notifications (NEU)
+   ======================================== */
+
+.saleNotification {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.notificationSubMessage {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-success);
+  margin: 4px 0 0 0;
+}
+
+.notificationAmount {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.affiliateBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--color-primary);
+  border-radius: 50%;
+} 

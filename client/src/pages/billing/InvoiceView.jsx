@@ -112,13 +112,15 @@ function InvoiceView() {
           {/* Header */}
           <header className={styles.invoiceHeader}>
             <div className={styles.invoiceTitle}>RECHNUNG</div>
+            <div className={styles.invoiceNumber}>
+              {invoice.invoiceNumber}
+            </div>
           </header>
 
           {/* Seller Info */}
           <div className={styles.sellerSection}>
             <div className={styles.sellerAddress}>
-              {invoice.seller.name}
-              <br />
+              <strong>{invoice.seller.name}</strong>
               {invoice.seller.address.split('\n').map((line, i) => (
                 <React.Fragment key={i}>
                   {line}
@@ -127,8 +129,7 @@ function InvoiceView() {
               ))}
               {invoice.seller.taxId && (
                 <>
-                  <br />
-                  {invoice.seller.taxId.startsWith('DE') 
+                  {invoice.seller.taxId.startsWith('DE')
                     ? `USt-IdNr.: ${invoice.seller.taxId}`
                     : `Steuernummer: ${invoice.seller.taxId}`
                   }

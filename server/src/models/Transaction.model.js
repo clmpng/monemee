@@ -367,22 +367,27 @@ const TransactionModel = {
    */
   async getRecentSales(userId, limit = 10) {
     const query = `
-      SELECT 
+      SELECT
         t.id,
         t.amount,
         t.seller_amount,
+        t.promoter_commission,
+        t.promoter_id,
         t.created_at,
         p.title as product_title,
         p.thumbnail_url as product_thumbnail,
-        buyer.name as buyer_name
+        buyer.name as buyer_name,
+        promoter.name as promoter_name,
+        promoter.username as promoter_username
       FROM transactions t
       JOIN products p ON t.product_id = p.id
       JOIN users buyer ON t.buyer_id = buyer.id
+      LEFT JOIN users promoter ON t.promoter_id = promoter.id
       WHERE t.seller_id = $1 AND t.status = 'completed'
       ORDER BY t.created_at DESC
       LIMIT $2
     `;
-    
+
     const result = await db.query(query, [userId, limit]);
     return result.rows;
   },

@@ -210,7 +210,6 @@ function LoadingScreen() {
   return (
     <div 
       style={{ 
-        minHeight: '100vh',
         minHeight: '100dvh',
         display: 'flex', 
         flexDirection: 'column',
@@ -254,8 +253,7 @@ function LoadingScreen() {
 function NotFound() {
   return (
     <div 
-      style={{ 
-        minHeight: '100vh',
+      style={{
         minHeight: '100dvh',
         display: 'flex', 
         flexDirection: 'column',
