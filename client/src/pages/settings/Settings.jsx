@@ -1,11 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Icon } from '../../components/common';
+import { Icon, ToastContainer } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
 import { usersService, stripeService, billingService } from '../../services';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../config/firebase';
 import { SellerTypeModal, BillingFormModal } from '../../components/billing';
+import StorePreviewModal from '../../components/settings/StorePreviewModal';
+import {
+  getAllThemes,
+  getAllLayouts,
+  getAllAvatarStyles,
+  getAllButtonStyles,
+  getAllCardStyles,
+  getAllHeaderBackgrounds,
+  getAllFontFamilies,
+  getAllSpacingOptions
+} from '../../config/themes';
 import styles from '../../styles/pages/Settings.module.css';
 
 /**
@@ -30,12 +41,25 @@ function Settings() {
     name: '',
     username: '',
     bio: '',
-    avatar: ''
+    avatar: '',
+    storeSettings: {
+      theme: 'classic',
+      layout: {
+        productGrid: 'two-column'
+      },
+      avatarStyle: 'round',
+      buttonStyle: 'rounded',
+      cardStyle: 'elevated',
+      headerBackground: 'solid',
+      fontFamily: 'modern',
+      spacing: 'normal'
+    }
   });
-  
+
   // UI states
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -53,6 +77,25 @@ function Settings() {
   const [sellerTypeError, setSellerTypeError] = useState(null);
   const [billingInfo, setBillingInfo] = useState(null);
   const [billingLoading, setBillingLoading] = useState(false);
+
+  // Preview Modal state
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewTheme, setPreviewTheme] = useState('classic');
+
+  // Toast notifications state
+  const [toasts, setToasts] = useState([]);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Add toast
+  const addToast = (message, variant = 'success', duration = 4000) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, variant, duration }]);
+  };
+
+  // Remove toast
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
   // Fetch billing info when stripe tab is active and stripe is connected
   useEffect(() => {
@@ -104,11 +147,28 @@ function Settings() {
   // Initialize form with user data
   useEffect(() => {
     if (user) {
+      const defaultSettings = {
+        theme: 'classic',
+        layout: {
+          productGrid: 'two-column'
+        },
+        avatarStyle: 'round',
+        buttonStyle: 'rounded',
+        cardStyle: 'elevated',
+        headerBackground: 'solid',
+        fontFamily: 'modern',
+        spacing: 'normal'
+      };
+
       setFormData({
         name: user.name || '',
         username: user.username || '',
         bio: user.bio || '',
-        avatar: user.avatar || ''
+        avatar: user.avatar || '',
+        storeSettings: {
+          ...defaultSettings,
+          ...(user.storeSettings || {})
+        }
       });
     }
   }, [user]);
@@ -116,14 +176,21 @@ function Settings() {
   // Check for changes
   useEffect(() => {
     if (user) {
-      const changed = 
+      const userStoreSettings = user.storeSettings || { theme: 'classic', layout: { productGrid: 'two-column' } };
+      const changed =
         formData.name !== (user.name || '') ||
         formData.username !== (user.username || '') ||
         formData.bio !== (user.bio || '') ||
-        formData.avatar !== (user.avatar || '');
+        formData.avatar !== (user.avatar || '') ||
+        JSON.stringify(formData.storeSettings) !== JSON.stringify(userStoreSettings);
       setHasChanges(changed);
     }
   }, [formData, user]);
+
+  // Reset avatar error when avatar changes
+  useEffect(() => {
+    setAvatarError(false);
+  }, [formData.avatar]);
 
   // Debounced username check
   useEffect(() => {
@@ -338,11 +405,11 @@ function Settings() {
   // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!hasChanges) return;
 
     if (usernameStatus === 'taken') {
-      setError('Dieser Username ist bereits vergeben');
+      addToast('Dieser Username ist bereits vergeben', 'error');
       return;
     }
 
@@ -354,18 +421,25 @@ function Settings() {
         name: formData.name,
         username: formData.username.toLowerCase(),
         bio: formData.bio,
-        avatar_url: formData.avatar
+        avatar_url: formData.avatar,
+        store_settings: formData.storeSettings
       };
 
       await updateProfile(updateData);
       await refreshUser();
-      
-      setSuccess('Änderungen gespeichert');
+
+      // Success feedback
+      addToast('Einstellungen erfolgreich gespeichert', 'success');
+      setSaveSuccess(true);
       setHasChanges(false);
-      setTimeout(() => setSuccess(null), 2000);
+
+      // Reset success state after 2 seconds
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 2000);
     } catch (err) {
       console.error('Update error:', err);
-      setError(err.message || 'Speichern fehlgeschlagen');
+      addToast(err.message || 'Speichern fehlgeschlagen', 'error');
     } finally {
       setLoading(false);
     }
@@ -492,8 +566,12 @@ function Settings() {
                   <div className={styles.avatarLoading}>
                     <Icon name="loader" size="lg" className={styles.spinner} />
                   </div>
-                ) : formData.avatar ? (
-                  <img src={formData.avatar} alt="Avatar" />
+                ) : formData.avatar && !avatarError ? (
+                  <img
+                    src={formData.avatar}
+                    alt="Avatar"
+                    onError={() => setAvatarError(true)}
+                  />
                 ) : (
                   <span className={styles.avatarInitials}>
                     {(formData.name || user?.email || '?').charAt(0)}
@@ -610,6 +688,320 @@ function Settings() {
               <p className={styles.fieldHint}>
                 Teile diesen Link mit deinen Kunden und Followern.
               </p>
+            </div>
+
+            {/* Theme Selector */}
+            <div className={styles.field}>
+              <label className={styles.label}>Store-Design</label>
+              <p className={styles.fieldHint} style={{ marginBottom: '12px' }}>
+                Wähle ein Theme für deinen Store
+              </p>
+              <div className={styles.themeSelector}>
+                {getAllThemes().map((theme) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    className={`${styles.themeCard} ${formData.storeSettings.theme === theme.id ? styles.active : ''}`}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      storeSettings: {
+                        ...prev.storeSettings,
+                        theme: theme.id
+                      }
+                    }))}
+                  >
+                    <div
+                      className={styles.themePreview}
+                      style={{ backgroundColor: theme.background }}
+                    >
+                      {/* Mini Button */}
+                      <div
+                        className={styles.themePreviewButton}
+                        style={{ backgroundColor: theme.primary }}
+                      >
+                        <Icon name="check" size={10} />
+                      </div>
+                      {/* Mini Card */}
+                      <div
+                        className={styles.themePreviewCard}
+                        style={{ backgroundColor: theme.backgroundSecondary }}
+                      >
+                        <div
+                          className={styles.themePreviewCardTitle}
+                          style={{ backgroundColor: theme.textPrimary }}
+                        />
+                        <div
+                          className={styles.themePreviewCardText}
+                          style={{ backgroundColor: theme.textSecondary }}
+                        />
+                        <div
+                          className={styles.themePreviewCardText}
+                          style={{ backgroundColor: theme.textSecondary }}
+                        />
+                      </div>
+                    </div>
+                    <div className={styles.themeName}>{theme.name}</div>
+                    <div className={styles.themeDescription}>{theme.description}</div>
+                    {formData.storeSettings.theme === theme.id && (
+                      <div className={styles.themeActiveBadge}>
+                        <Icon name="check" size="sm" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Layout Selector */}
+            <div className={styles.field}>
+              <label className={styles.label}>Produkt-Layout</label>
+              <p className={styles.fieldHint} style={{ marginBottom: '12px' }}>
+                Anzahl der Spalten im Produkt-Grid
+              </p>
+              <div className={styles.layoutSelector}>
+                {getAllLayouts().map((layout) => (
+                  <button
+                    key={layout.id}
+                    type="button"
+                    className={`${styles.layoutOption} ${formData.storeSettings.layout.productGrid === layout.id ? styles.active : ''}`}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      storeSettings: {
+                        ...prev.storeSettings,
+                        layout: {
+                          productGrid: layout.id
+                        }
+                      }
+                    }))}
+                  >
+                    {/* Mini Grid Preview */}
+                    <div className={`${styles.layoutPreview} ${styles[`layoutPreview-${layout.columns}`]}`}>
+                      {Array.from({ length: Math.min(layout.columns, 3) }).map((_, i) => (
+                        <div key={i} className={styles.layoutPreviewCard} />
+                      ))}
+                    </div>
+                    <div className={styles.layoutName}>{layout.name}</div>
+                    <div className={styles.layoutDescription}>{layout.description}</div>
+                  </button>
+                ))}
+              </div>
+
+            </div>
+
+            {/* Avatar Style Selector */}
+            <div className={styles.field}>
+              <label className={styles.label}>Avatar-Form</label>
+              <p className={styles.fieldHint} style={{ marginBottom: '12px' }}>
+                Form deines Profilbilds
+              </p>
+              <div className={styles.avatarStyleSelector}>
+                {getAllAvatarStyles().map((avatarStyle) => (
+                  <button
+                    key={avatarStyle.id}
+                    type="button"
+                    className={`${styles.avatarStyleOption} ${formData.storeSettings.avatarStyle === avatarStyle.id ? styles.active : ''}`}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      storeSettings: {
+                        ...prev.storeSettings,
+                        avatarStyle: avatarStyle.id
+                      }
+                    }))}
+                  >
+                    <div
+                      className={styles.avatarStylePreview}
+                      style={{
+                        borderRadius: avatarStyle.borderRadius,
+                        clipPath: avatarStyle.clipPath || 'none'
+                      }}
+                    >
+                      {(formData.name || user?.name || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div className={styles.avatarStyleName}>{avatarStyle.name}</div>
+                    <div className={styles.avatarStyleDescription}>{avatarStyle.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Button Style Selector */}
+            <div className={styles.field}>
+              <label className={styles.label}>Button-Style</label>
+              <p className={styles.fieldHint} style={{ marginBottom: '12px' }}>
+                Form deiner Buttons
+              </p>
+              <div className={styles.buttonStyleSelector}>
+                {getAllButtonStyles().map((buttonStyle) => (
+                  <button
+                    key={buttonStyle.id}
+                    type="button"
+                    className={`${styles.buttonStyleOption} ${formData.storeSettings.buttonStyle === buttonStyle.id ? styles.active : ''}`}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      storeSettings: {
+                        ...prev.storeSettings,
+                        buttonStyle: buttonStyle.id
+                      }
+                    }))}
+                  >
+                    <div
+                      className={styles.buttonStylePreview}
+                      style={{ borderRadius: buttonStyle.borderRadius }}
+                    >
+                      <Icon name="shoppingBag" size={14} />
+                      Button
+                    </div>
+                    <div className={styles.buttonStyleName}>{buttonStyle.name}</div>
+                    <div className={styles.buttonStyleDescription}>{buttonStyle.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Card Style Selector */}
+            <div className={styles.field}>
+              <label className={styles.label}>Karten-Style</label>
+              <p className={styles.fieldHint} style={{ marginBottom: '12px' }}>
+                Stil deiner Produkt-Karten
+              </p>
+              <div className={styles.cardStyleSelector}>
+                {getAllCardStyles().map((cardStyle) => (
+                  <button
+                    key={cardStyle.id}
+                    type="button"
+                    className={`${styles.cardStyleOption} ${formData.storeSettings.cardStyle === cardStyle.id ? styles.active : ''}`}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      storeSettings: {
+                        ...prev.storeSettings,
+                        cardStyle: cardStyle.id
+                      }
+                    }))}
+                  >
+                    <div
+                      className={styles.cardStylePreview}
+                      style={{
+                        boxShadow: cardStyle.shadow,
+                        border: cardStyle.border
+                      }}
+                    >
+                      <div className={styles.cardPreviewLine} />
+                      <div className={styles.cardPreviewLine} />
+                    </div>
+                    <div className={styles.cardStyleName}>{cardStyle.name}</div>
+                    <div className={styles.cardStyleDescription}>{cardStyle.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Header Background Selector */}
+            <div className={styles.field}>
+              <label className={styles.label}>Header-Hintergrund</label>
+              <p className={styles.fieldHint} style={{ marginBottom: '12px' }}>
+                Stil des oberen Bereichs
+              </p>
+              <div className={styles.headerBackgroundSelector}>
+                {getAllHeaderBackgrounds().map((headerBg) => (
+                  <button
+                    key={headerBg.id}
+                    type="button"
+                    className={`${styles.headerBackgroundOption} ${formData.storeSettings.headerBackground === headerBg.id ? styles.active : ''}`}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      storeSettings: {
+                        ...prev.storeSettings,
+                        headerBackground: headerBg.id
+                      }
+                    }))}
+                  >
+                    <div className={styles.headerBackgroundPreview}>
+                      <div
+                        className={styles.headerPreviewBg}
+                        style={
+                          headerBg.type === 'gradient'
+                            ? { background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)' }
+                            : headerBg.type === 'pattern'
+                            ? {
+                                background: 'var(--color-primary)',
+                                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px)',
+                                backgroundSize: '12px 12px'
+                              }
+                            : { background: 'var(--color-primary)' }
+                        }
+                      />
+                      <div className={styles.headerPreviewWave} />
+                    </div>
+                    <div className={styles.headerBackgroundName}>{headerBg.name}</div>
+                    <div className={styles.headerBackgroundDescription}>{headerBg.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Font Family Selector */}
+            <div className={styles.field}>
+              <label className={styles.label}>Schriftart</label>
+              <p className={styles.fieldHint} style={{ marginBottom: '12px' }}>
+                Schrift für deinen Store
+              </p>
+              <div className={styles.fontFamilySelector}>
+                {getAllFontFamilies().map((font) => (
+                  <button
+                    key={font.id}
+                    type="button"
+                    className={`${styles.fontFamilyOption} ${formData.storeSettings.fontFamily === font.id ? styles.active : ''}`}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      storeSettings: {
+                        ...prev.storeSettings,
+                        fontFamily: font.id
+                      }
+                    }))}
+                  >
+                    <div
+                      className={styles.fontFamilyPreview}
+                      style={{ fontFamily: font.fontFamily }}
+                    >
+                      Aa
+                    </div>
+                    <div className={styles.fontFamilyName}>{font.name}</div>
+                    <div className={styles.fontFamilyDescription}>{font.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Spacing Selector */}
+            <div className={styles.field}>
+              <label className={styles.label}>Abstände</label>
+              <p className={styles.fieldHint} style={{ marginBottom: '12px' }}>
+                Dichte des Layouts
+              </p>
+              <div className={styles.spacingSelector}>
+                {getAllSpacingOptions().map((spacing) => (
+                  <button
+                    key={spacing.id}
+                    type="button"
+                    className={`${styles.spacingOption} ${formData.storeSettings.spacing === spacing.id ? styles.active : ''}`}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      storeSettings: {
+                        ...prev.storeSettings,
+                        spacing: spacing.id
+                      }
+                    }))}
+                  >
+                    <div className={styles.spacingStylePreview}>
+                      <div className={styles.spacingPreviewBox} style={{ marginBottom: `${spacing.multiplier * 8}px` }} />
+                      <div className={styles.spacingPreviewBox} style={{ marginBottom: `${spacing.multiplier * 8}px` }} />
+                      <div className={styles.spacingPreviewBox} />
+                    </div>
+                    <div className={styles.spacingName}>{spacing.name}</div>
+                    <div className={styles.spacingDescription}>{spacing.description}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -947,27 +1339,50 @@ function Settings() {
           </div>
         )}
 
-        {/* Sticky Save Button (nur für Profile/Store) */}
-        {(activeTab === 'profile' || activeTab === 'store') && hasChanges && (
+        {/* Sticky Footer (für Profile/Store) */}
+        {(activeTab === 'profile' || activeTab === 'store') && (
           <div className={styles.stickyFooter}>
             <div className={styles.footerContent}>
-              <button
-                type="submit"
-                disabled={loading || usernameStatus === 'taken'}
-                className={styles.saveButton}
-              >
-                {loading ? (
-                  <>
-                    <Icon name="loader" size="sm" className={styles.spinner} />
-                    Speichern...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="check" size="sm" />
-                    Änderungen speichern
-                  </>
-                )}
-              </button>
+              {/* Preview Button (nur im Store Tab) */}
+              {activeTab === 'store' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewTheme(formData.storeSettings.theme);
+                    setShowPreviewModal(true);
+                  }}
+                  className={styles.previewButton}
+                >
+                  <Icon name="eye" size="sm" />
+                  Store-Vorschau
+                </button>
+              )}
+
+              {/* Save Button (nur wenn Änderungen vorhanden oder gerade gespeichert) */}
+              {(hasChanges || saveSuccess) && (
+                <button
+                  type="submit"
+                  disabled={loading || usernameStatus === 'taken' || saveSuccess}
+                  className={`${styles.saveButton} ${saveSuccess ? styles.saveButtonSuccess : ''}`}
+                >
+                  {loading ? (
+                    <>
+                      <Icon name="loader" size="sm" className={styles.spinner} />
+                      Speichern...
+                    </>
+                  ) : saveSuccess ? (
+                    <>
+                      <Icon name="check" size="sm" />
+                      Gespeichert!
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="check" size="sm" />
+                      Änderungen speichern
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -993,6 +1408,27 @@ function Settings() {
         initialData={billingInfo?.billingInfo}
         loading={sellerTypeLoading}
       />
+
+      {/* Store Preview Modal */}
+      <StorePreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        settings={formData.storeSettings}
+        onSettingsChange={(newSettings) => {
+          setFormData(prev => ({
+            ...prev,
+            storeSettings: {
+              ...prev.storeSettings,
+              ...newSettings
+            }
+          }));
+        }}
+        userName={formData.name}
+        userBio={formData.bio}
+      />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 }

@@ -15,17 +15,17 @@ const UserModel = {
    */
   async findById(id) {
     const query = `
-      SELECT 
+      SELECT
         id, firebase_uid, email, username, name,
         bio, avatar_url, role, level, total_earnings,
         affiliate_balance, affiliate_pending_balance,
         COALESCE(affiliate_earnings_total, 0) as affiliate_earnings_total,
-        seller_type, 
+        seller_type, store_settings,
         stripe_account_id, stripe_account_status,
         stripe_charges_enabled, stripe_payouts_enabled,
         stripe_onboarding_complete, stripe_account_updated_at,
         created_at, updated_at
-      FROM users 
+      FROM users
       WHERE id = $1
     `;
     
@@ -72,13 +72,13 @@ const UserModel = {
    */
   async findByUsername(username) {
     const query = `
-      SELECT 
-        id, username, name, bio, avatar_url, 
-        role, level, created_at
-      FROM users 
+      SELECT
+        id, username, name, bio, avatar_url,
+        role, level, store_settings, created_at
+      FROM users
       WHERE username = $1
     `;
-    
+
     const result = await db.query(query, [username]);
     return result.rows[0] || null;
   },
@@ -133,8 +133,8 @@ const UserModel = {
    */
   async update(id, data) {
     const allowedFields = [
-      'username', 'name', 'bio', 'avatar_url', 
-      'role', 'stripe_account_id'
+      'username', 'name', 'bio', 'avatar_url',
+      'role', 'stripe_account_id', 'store_settings'
     ];
 
     const updates = [];
@@ -143,8 +143,14 @@ const UserModel = {
 
     for (const [key, value] of Object.entries(data)) {
       if (allowedFields.includes(key)) {
-        updates.push(`${key} = $${paramCount}`);
-        values.push(value);
+        // Handle JSONB fields
+        if (key === 'store_settings') {
+          updates.push(`${key} = $${paramCount}::jsonb`);
+          values.push(JSON.stringify(value));
+        } else {
+          updates.push(`${key} = $${paramCount}`);
+          values.push(value);
+        }
         paramCount++;
       }
     }
@@ -155,7 +161,7 @@ const UserModel = {
 
     values.push(id);
     const query = `
-      UPDATE users 
+      UPDATE users
       SET ${updates.join(', ')}, updated_at = NOW()
       WHERE id = $${paramCount}
       RETURNING *

@@ -43,6 +43,7 @@ const usersController = {
           level: user.level,
           totalEarnings: parseFloat(user.total_earnings || 0),
           seller_type: user.seller_type || 'private',
+          storeSettings: user.store_settings || { theme: 'classic', layout: { productGrid: 'two-column' } },
           createdAt: user.created_at,
           updatedAt: user.updated_at
         }
@@ -59,15 +60,15 @@ const usersController = {
   async updateMe(req, res, next) {
     try {
       const userId = req.userId;
-      
+
       if (!userId) {
         return res.status(401).json({
           success: false,
           message: 'Nicht authentifiziert'
         });
       }
-      
-      const { username, name, bio, avatar_url } = req.body;
+
+      const { username, name, bio, avatar_url, store_settings } = req.body;
       
       // Validate username if provided
       if (username !== undefined && username !== null) {
@@ -107,12 +108,81 @@ const usersController = {
           message: 'Bio darf maximal 500 Zeichen haben'
         });
       }
-      
+
+      // Validate store_settings
+      if (store_settings !== undefined) {
+        const ALLOWED_THEMES = ['classic', 'sunset', 'nature', 'dark', 'minimal', 'pastel'];
+        const ALLOWED_GRIDS = ['single', 'two-column', 'three-column'];
+        const ALLOWED_AVATAR_STYLES = ['round', 'square', 'hexagon'];
+        const ALLOWED_BUTTON_STYLES = ['rounded', 'pill', 'sharp'];
+        const ALLOWED_CARD_STYLES = ['elevated', 'flat', 'bordered'];
+        const ALLOWED_HEADER_BACKGROUNDS = ['solid', 'gradient', 'pattern'];
+        const ALLOWED_FONTS = ['modern', 'elegant', 'playful'];
+        const ALLOWED_SPACING = ['compact', 'normal', 'spacious'];
+
+        if (store_settings.theme && !ALLOWED_THEMES.includes(store_settings.theme)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ungültiges Theme'
+          });
+        }
+
+        if (store_settings.layout?.productGrid && !ALLOWED_GRIDS.includes(store_settings.layout.productGrid)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ungültiges Grid-Layout'
+          });
+        }
+
+        if (store_settings.avatarStyle && !ALLOWED_AVATAR_STYLES.includes(store_settings.avatarStyle)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ungültiger Avatar-Style'
+          });
+        }
+
+        if (store_settings.buttonStyle && !ALLOWED_BUTTON_STYLES.includes(store_settings.buttonStyle)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ungültiger Button-Style'
+          });
+        }
+
+        if (store_settings.cardStyle && !ALLOWED_CARD_STYLES.includes(store_settings.cardStyle)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ungültiger Card-Style'
+          });
+        }
+
+        if (store_settings.headerBackground && !ALLOWED_HEADER_BACKGROUNDS.includes(store_settings.headerBackground)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ungültiger Header-Background'
+          });
+        }
+
+        if (store_settings.fontFamily && !ALLOWED_FONTS.includes(store_settings.fontFamily)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ungültige Schriftart'
+          });
+        }
+
+        if (store_settings.spacing && !ALLOWED_SPACING.includes(store_settings.spacing)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ungültige Spacing-Option'
+          });
+        }
+      }
+
       const updateData = {};
       if (username !== undefined) updateData.username = username.toLowerCase() || null;
       if (name !== undefined) updateData.name = name.trim();
       if (bio !== undefined) updateData.bio = bio;
       if (avatar_url !== undefined) updateData.avatar_url = avatar_url || null;
+      if (store_settings !== undefined) updateData.store_settings = store_settings;
       
       const user = await UserModel.update(userId, updateData);
       
@@ -271,6 +341,7 @@ const usersController = {
             bio: user.bio,
             avatar: user.avatar_url,
             level: user.level,
+            settings: user.store_settings || { theme: 'classic', layout: { productGrid: 'two-column' } },
             createdAt: user.created_at
           },
           products: activeProducts.map(p => ({

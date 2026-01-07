@@ -2,8 +2,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Button, Card, Badge, Icon} from '../../components/common';
-import { productsService, promotionService, paymentsService } from '../../services';
+import { productsService, promotionService, paymentsService, usersService } from '../../services';
 import { useAuth } from '../../context/AuthContext';
+import {
+  getTheme,
+  getAvatarStyle,
+  getButtonStyle,
+  getCardStyle,
+  getHeaderBackground,
+  getFontFamily,
+  getSpacingOption
+} from '../../config/themes';
 import styles from '../../styles/pages/PublicProduct.module.css';
 
 /**
@@ -27,13 +36,16 @@ function PublicProduct() {
   const [affiliateLink, setAffiliateLink] = useState(null);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  
+
   // Kauf-State
   const [purchasing, setPurchasing] = useState(false);
   const [purchaseError, setPurchaseError] = useState(null);
-  
+
   // Widerrufs-Checkbox State (§ 356 Abs. 5 BGB)
   const [acceptedWaiver, setAcceptedWaiver] = useState(false);
+
+  // Creator Store Settings für Design-Anpassung
+  const [creatorSettings, setCreatorSettings] = useState(null);
 
   // Affiliate-Code speichern & tracken
   useEffect(() => {
@@ -59,9 +71,9 @@ function PublicProduct() {
       try {
         setLoading(true);
         setError(null);
-        
+
         const response = await productsService.getPublicProduct(productId);
-        
+
         if (response.success) {
           setProduct(response.data);
         } else {
@@ -77,6 +89,25 @@ function PublicProduct() {
 
     fetchProduct();
   }, [productId]);
+
+  // Creator Store Settings laden für Design-Anpassung
+  useEffect(() => {
+    const fetchCreatorSettings = async () => {
+      if (!product?.creator_username) return;
+
+      try {
+        const response = await usersService.getPublicStore(product.creator_username);
+        if (response.success && response.data?.store?.settings) {
+          setCreatorSettings(response.data.store.settings);
+        }
+      } catch (err) {
+        console.error('Error fetching creator settings:', err);
+        // Fehler nicht anzeigen, verwende einfach Default-Einstellungen
+      }
+    };
+
+    fetchCreatorSettings();
+  }, [product?.creator_username]);
 
   // Preis formatieren
   const formatPrice = useCallback((price) => {
@@ -260,8 +291,37 @@ function PublicProduct() {
 
   const isOwnProduct = false // user?.id === product.user_id;
 
+  // Get theme configuration and styles (vom Creator Store)
+  const settings = creatorSettings || {};
+  const themeConfig = getTheme(settings.theme || 'classic');
+  const avatarStyle = getAvatarStyle(settings.avatarStyle || 'round');
+  const buttonStyle = getButtonStyle(settings.buttonStyle || 'rounded');
+  const cardStyle = getCardStyle(settings.cardStyle || 'elevated');
+  const fontFamily = getFontFamily(settings.fontFamily || 'modern');
+  const spacingOption = getSpacingOption(settings.spacing || 'normal');
+
   return (
-    <div className={styles.productPage}>
+    <div
+      className={styles.productPage}
+      style={{
+        '--color-primary': themeConfig.primary,
+        '--color-primary-light': themeConfig.primaryLight,
+        '--color-primary-dark': themeConfig.primaryDark,
+        '--color-bg-primary': themeConfig.background,
+        '--color-bg-secondary': themeConfig.backgroundSecondary,
+        '--color-bg-tertiary': themeConfig.backgroundTertiary,
+        '--color-text-primary': themeConfig.textPrimary,
+        '--color-text-secondary': themeConfig.textSecondary,
+        '--color-text-tertiary': themeConfig.textTertiary,
+        '--color-border': themeConfig.border,
+        '--avatar-radius': avatarStyle.borderRadius,
+        '--button-radius': buttonStyle.borderRadius,
+        '--card-shadow': cardStyle.shadow,
+        '--card-border': cardStyle.border,
+        '--spacing-multiplier': spacingOption.multiplier,
+        fontFamily: fontFamily.fontFamily
+      }}
+    >
       {/* Back Button */}
       <button className={styles.backButton} onClick={() => navigate(-1)}>
         <Icon name="chevronLeft" size="md" />
@@ -301,7 +361,13 @@ function PublicProduct() {
 
           {/* Creator */}
           <Link to={`/@${product.creator_username}`} className={styles.creator}>
-            <div className={styles.creatorAvatar}>
+            <div
+              className={styles.creatorAvatar}
+              style={{
+                borderRadius: avatarStyle.borderRadius,
+                clipPath: avatarStyle.clipPath || 'none'
+              }}
+            >
               {product.creator_avatar ? (
                 <img src={product.creator_avatar} alt={product.creator_name} />
               ) : (
@@ -472,7 +538,13 @@ function PublicProduct() {
             Über den Creator
           </h2>
           <div className={styles.creatorProfile}>
-            <div className={styles.creatorAvatarLarge}>
+            <div
+              className={styles.creatorAvatarLarge}
+              style={{
+                borderRadius: avatarStyle.borderRadius,
+                clipPath: avatarStyle.clipPath || 'none'
+              }}
+            >
               {product.creator_avatar ? (
                 <img src={product.creator_avatar} alt={product.creator_name} />
               ) : (

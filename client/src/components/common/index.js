@@ -6,3 +6,4 @@ export { default as Modal } from './Modal';
 export { default as Badge } from './Badge';
 export { default as Icon, ICON_CONFIG } from './Icon';
 export { default as LegalFooter } from './LegalFooter';
+export { Toast, ToastContainer } from './Toast';

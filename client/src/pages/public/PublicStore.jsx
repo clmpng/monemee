@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Icon } from '../../components/common';
 import { usersService, messagesService } from '../../services';
+import {
+  getTheme,
+  getAvatarStyle,
+  getButtonStyle,
+  getCardStyle,
+  getHeaderBackground,
+  getFontFamily,
+  getSpacingOption
+} from '../../config/themes';
 import styles from '../../styles/pages/PublicStore.module.css';
 import { LegalFooter } from '../../components/common';
 
@@ -15,7 +24,8 @@ function PublicStore() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+  const [avatarError, setAvatarError] = useState(false);
+
   // Contact form state
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactForm, setContactForm] = useState({
@@ -53,6 +63,11 @@ function PublicStore() {
       fetchStore();
     }
   }, [username]);
+
+  // Reset avatar error when store avatar changes
+  useEffect(() => {
+    setAvatarError(false);
+  }, [store?.avatar]);
 
   // Get initials from name
   const getInitials = (name) => {
@@ -150,23 +165,84 @@ function PublicStore() {
     );
   }
 
+  // Get theme configuration and styles
+  const settings = store?.settings || {};
+  const themeConfig = getTheme(settings.theme || 'classic');
+  const avatarStyle = getAvatarStyle(settings.avatarStyle || 'round');
+  const buttonStyle = getButtonStyle(settings.buttonStyle || 'rounded');
+  const cardStyle = getCardStyle(settings.cardStyle || 'elevated');
+  const headerBackground = getHeaderBackground(settings.headerBackground || 'solid');
+  const fontFamily = getFontFamily(settings.fontFamily || 'modern');
+  const spacingOption = getSpacingOption(settings.spacing || 'normal');
+  const gridLayout = settings.layout?.productGrid || 'two-column';
+
+  // Generate header background style
+  const getHeaderBackgroundStyle = () => {
+    switch (headerBackground.type) {
+      case 'gradient':
+        return {
+          background: `linear-gradient(135deg, ${themeConfig.primary} 0%, ${themeConfig.primaryLight} 100%)`
+        };
+      case 'pattern':
+        return {
+          background: themeConfig.primary,
+          backgroundImage: `radial-gradient(circle, ${themeConfig.primaryLight} 1px, transparent 1px)`,
+          backgroundSize: '20px 20px'
+        };
+      default:
+        return {
+          background: themeConfig.primary
+        };
+    }
+  };
+
   return (
-    <div className={styles.publicStore}>
+    <div
+      className={styles.publicStore}
+      style={{
+        '--color-primary': themeConfig.primary,
+        '--color-primary-light': themeConfig.primaryLight,
+        '--color-primary-dark': themeConfig.primaryDark,
+        '--color-bg-primary': themeConfig.background,
+        '--color-bg-secondary': themeConfig.backgroundSecondary,
+        '--color-bg-tertiary': themeConfig.backgroundTertiary,
+        '--color-text-primary': themeConfig.textPrimary,
+        '--color-text-secondary': themeConfig.textSecondary,
+        '--color-text-tertiary': themeConfig.textTertiary,
+        '--color-border': themeConfig.border,
+        '--avatar-radius': avatarStyle.borderRadius,
+        '--button-radius': buttonStyle.borderRadius,
+        '--card-shadow': cardStyle.shadow,
+        '--card-border': cardStyle.border,
+        '--spacing-multiplier': spacingOption.multiplier,
+        fontFamily: fontFamily.fontFamily
+      }}
+    >
       <Header />
       
       {/* Profile Section */}
       <section className={styles.profileSection}>
         {/* Background Decoration */}
-        <div className={styles.profileBg}>
+        <div className={styles.profileBg} style={getHeaderBackgroundStyle()}>
           <div className={styles.profileBgWave} />
         </div>
         
         <div className={styles.profileContent}>
           {/* Avatar */}
           <div className={styles.avatarWrapper}>
-            <div className={styles.avatar}>
-              {store.avatar ? (
-                <img src={store.avatar} alt={store.name} />
+            <div
+              className={styles.avatar}
+              style={{
+                borderRadius: avatarStyle.borderRadius,
+                clipPath: avatarStyle.clipPath || 'none'
+              }}
+            >
+              {store.avatar && !avatarError ? (
+                <img
+                  src={store.avatar}
+                  alt={store.name}
+                  onError={() => setAvatarError(true)}
+                />
               ) : (
                 <span>{getInitials(store.name)}</span>
               )}
@@ -243,11 +319,11 @@ function PublicStore() {
           </h2>
           
           {products.length > 0 ? (
-            <div className={styles.productsGrid}>
+            <div className={`${styles.productsGrid} ${styles['grid-' + gridLayout]}`}>
               {products.map((product) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
+                <ProductCard
+                  key={product.id}
+                  product={product}
                   formatPrice={formatPrice}
                 />
               ))}
@@ -275,8 +351,12 @@ function PublicStore() {
             
             <div className={styles.modalHeader}>
               <div className={styles.modalAvatar}>
-                {store.avatar ? (
-                  <img src={store.avatar} alt={store.name} />
+                {store.avatar && !avatarError ? (
+                  <img
+                    src={store.avatar}
+                    alt={store.name}
+                    onError={() => setAvatarError(true)}
+                  />
                 ) : (
                   <span>{getInitials(store.name)}</span>
                 )}
