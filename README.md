@@ -1,7 +1,7 @@
 # 📚 Monemee - Vollständige Dokumentation
 
-> **Version:** 1.0  
-> **Stand:** 01.01.2026  
+> **Version:** 1.1
+> **Stand:** 08.01.2026
 > **Typ:** Technische Dokumentation
 
 ---
@@ -39,6 +39,10 @@ Die Plattform kombiniert einen einfachen Shop-Builder mit einem Affiliate-System
 | **Gamification** | 5-stufiges Level-System mit sinkenden Gebühren |
 | **Stripe Connect** | Direkte Auszahlungen für Verkäufer, separate Affiliate-Auszahlungen |
 | **Mobile-First** | Optimiert für Smartphones, responsive Desktop-Version |
+| **Guest Checkout** | Käufe ohne Account, E-Mail-Erfassung via Stripe |
+| **Sichere Downloads** | Token-basierte Download-Links mit Ablauf und Klick-Limit |
+| **E-Mail-Auslieferung** | Automatische Kaufbestätigung mit Download-Links per E-Mail |
+| **Buyer Dashboard** | Käufer-Bereich zur Verwaltung gekaufter Produkte |
 
 ## 1.3 Tech Stack
 
@@ -102,13 +106,14 @@ monemee/
 │   └── src/
 │       ├── components/         # Wiederverwendbare UI-Komponenten
 │       │   ├── common/         # Basis-Komponenten (Button, Card, etc.)
-│       │   ├── layout/         # Layout-Komponenten (Header, Sidebar)
-│       │   ├── products/       # Produkt-spezifische Komponenten
+│       │   ├── layout/         # Layout-Komponenten (Header, Sidebar, BuyerLayout)
+│       │   ├── products/       # Produkt-spezifische Komponenten (inkl. ShareProductModal)
 │       │   └── earnings/       # Einnahmen-Komponenten
 │       ├── pages/              # Seitenkomponenten
 │       │   ├── auth/           # Login, Register, Onboarding
 │       │   ├── store/          # MyStore, AddProduct, EditProduct
-│       │   ├── public/         # Öffentliche Seiten
+│       │   ├── dashboard/      # Buyer Dashboard (Purchases)
+│       │   ├── public/         # Öffentliche Seiten (inkl. CheckoutSuccess)
 │       │   ├── earnings/       # Earnings Dashboard
 │       │   ├── promotion/      # Promotion Hub
 │       │   ├── settings/       # Einstellungen
@@ -129,10 +134,10 @@ monemee/
 │   └── src/
 │       ├── config/             # Konfiguration (DB, Firebase, Stripe)
 │       ├── middleware/         # Express Middleware
-│       ├── models/             # Datenbank-Models (Raw SQL)
-│       ├── controllers/        # Request Handler
-│       ├── services/           # Business Logic
-│       ├── routes/             # API Routes
+│       ├── models/             # Datenbank-Models (Raw SQL, inkl. DownloadToken)
+│       ├── controllers/        # Request Handler (inkl. Downloads)
+│       ├── services/           # Business Logic (inkl. EmailService)
+│       ├── routes/             # API Routes (inkl. Downloads)
 │       └── index.js            # Server Entry Point
 │
 ├── database/                   # Datenbank-Dateien
@@ -153,8 +158,9 @@ monemee/
 | `components/products/` | Alles rund um Produkterstellung und -anzeige |
 | `components/earnings/` | Charts, Modals, Listen für Einnahmen |
 | `pages/` | Eine Datei pro Route, orchestriert Komponenten |
+| `pages/dashboard/` | Buyer Dashboard (Käufe verwalten) |
 | `context/` | Globaler State (Auth, Products) |
-| `services/` | API-Calls, abstrahiert fetch/axios |
+| `services/` | API-Calls, abstrahiert fetch/axios (inkl. purchasesService) |
 | `hooks/` | Wiederverwendbare Logik |
 | `styles/base/` | CSS-Variablen, Reset, globale Styles |
 
@@ -164,10 +170,10 @@ monemee/
 |--------|-------|
 | `config/` | Externe Service-Konfiguration |
 | `middleware/` | Request-Verarbeitung vor Controller |
-| `models/` | Direkte Datenbank-Interaktion |
-| `controllers/` | HTTP Request/Response Handling |
-| `services/` | Komplexe Business-Logik |
-| `routes/` | URL → Controller Mapping |
+| `models/` | Direkte Datenbank-Interaktion (inkl. DownloadToken) |
+| `controllers/` | HTTP Request/Response Handling (inkl. Downloads) |
+| `services/` | Komplexe Business-Logik (inkl. EmailService) |
+| `routes/` | URL → Controller Mapping (inkl. Downloads) |
 
 ---
 
@@ -221,7 +227,8 @@ function App() {
 | `/login` | `Login` | Nein | Anmeldung |
 | `/register` | `Register` | Nein | Registrierung |
 | `/onboarding` | `Onboarding` | Ja | Ersteinrichtung |
-| `/dashboard` | `MyStore` | Ja | Hauptseite (Store) |
+| `/dashboard` | `MyStore` | Ja | Hauptseite (Store) - oder Redirect zu Purchases für Buyer-Only |
+| `/dashboard/purchases` | `Purchases` | Ja | Meine Käufe (Buyer Dashboard) |
 | `/products/new` | `AddProduct` | Ja | Produkt erstellen |
 | `/products/:id/edit` | `EditProduct` | Ja | Produkt bearbeiten |
 | `/earnings` | `EarningsDashboard` | Ja | Einnahmen-Übersicht |
@@ -230,11 +237,15 @@ function App() {
 | `/settings` | `Settings` | Ja | Einstellungen |
 | `/@:username` | `PublicStore` | Nein | Öffentlicher Shop |
 | `/p/:productId` | `PublicProduct` | Nein | Produktseite |
-| `/checkout/success` | `CheckoutSuccess` | Ja | Nach Kauf |
+| `/checkout/success` | `CheckoutSuccess` | Nein | Nach Kauf (auch für Gäste) |
 | `/impressum` | `Impressum` | Nein | Legal |
 | `/datenschutz` | `Datenschutz` | Nein | Legal |
 | `/agb` | `AGB` | Nein | Legal |
 | `/widerruf` | `Widerruf` | Nein | Legal |
+
+**Conditional Layout:**
+- **Buyer-Only User:** Minimales `BuyerLayout` mit nur Purchases-Zugang
+- **Creator/Promoter:** Volles `AppLayout` mit allen Features
 
 **Protected Route Pattern:**
 ```javascript
@@ -480,7 +491,7 @@ function ProtectedRoute({ children }) {
 
 #### `AppLayout.jsx`
 
-**Zweck:** Haupt-Layout für authentifizierte Bereiche.
+**Zweck:** Haupt-Layout für authentifizierte Bereiche (Creators & Promoter).
 
 **Struktur:**
 ```jsx
@@ -497,6 +508,30 @@ function ProtectedRoute({ children }) {
 **Responsives Verhalten:**
 - **Mobile (< 768px):** Header oben + BottomNav unten
 - **Desktop (≥ 768px):** Sidebar links
+
+#### `BuyerLayout.jsx`
+
+**Zweck:** Minimales Layout für Buyer-Only User (User ohne eigene Produkte).
+
+**Struktur:**
+```jsx
+<div className="buyerLayout">
+  <header className="buyerHeader">
+    <Logo />
+    <UserMenu />
+  </header>
+  <main className="buyerContent">
+    <Outlet />
+  </main>
+  <UpgradeHint />  {/* "Du möchtest selbst verkaufen?" */}
+</div>
+```
+
+**Features:**
+- Minimalistisches Header-Layout ohne Sidebar/BottomNav
+- Direkter Link zu "Meine Käufe"
+- Upgrade-Hinweis zum Creator werden
+- Logout-Funktion
 
 #### `Header.jsx`
 
@@ -607,6 +642,25 @@ function ProtectedRoute({ children }) {
 - Vorgefertigte Produkt-Strukturen
 - Mit vordefinierten Modulen
 - Beschleunigt Erstellung
+
+#### `ShareProductModal.jsx`
+
+**Zweck:** Modal nach erfolgreicher Produkt-Erstellung zum Teilen.
+
+**Features:**
+- Vorgefertigte Share-Texte für Social Media
+- Unterstützte Plattformen: Instagram, TikTok, WhatsApp
+- "Kopieren" Button für jeden Template (mit Erfolgs-Feedback)
+- "Nur Link kopieren" Button
+- Automatische Produkttitel-Kürzung (max. 50 Zeichen)
+- Celebration-Animation (Party-Popper Icon)
+
+**Props:**
+| Prop | Typ | Beschreibung |
+|------|-----|--------------|
+| `isOpen` | `boolean` | Modal-Sichtbarkeit |
+| `onClose` | `function` | Schließen-Handler |
+| `product` | `object` | Produkt mit `id`, `title` |
 
 ### 3.3.4 Earnings Components
 
@@ -768,11 +822,45 @@ function ProtectedRoute({ children }) {
 
 **Ablauf:**
 1. Session-ID aus URL
-2. Backend-Verifizierung
-3. Erfolgs-Anzeige
-4. Download-Links (wenn verfügbar)
+2. Backend-Verifizierung (via Stripe Session oder Token)
+3. Erfolgs-Anzeige mit Konfetti-Animation
+4. Download-Links direkt anzeigen
+5. Für Gäste: "Kostenlos registrieren" Button
 
-### 3.4.4 Earnings Page
+**Guest Checkout Support:**
+- Session-basierte Validierung für nicht-authentifizierte User
+- Zeigt Download-Links auch ohne Account
+- Auffordurung zur Account-Erstellung für zukünftigen Zugriff
+
+### 3.4.4 Dashboard Pages
+
+#### `Purchases.jsx`
+
+**Route:** `/dashboard/purchases`
+
+**Zweck:** Übersicht aller gekauften Produkte mit Download-Zugang.
+
+**Bereiche:**
+1. **Seiten-Header:** "Meine Käufe" Titel
+2. **Kauf-Liste:** Alle Transaktionen des Users
+3. **Expandable Cards:** Produkte mit ausklappbaren Modulen
+4. **Empty State:** Wenn keine Käufe vorhanden
+
+**Features pro Kauf:**
+- Produktthumbnail
+- Produkttitel und Verkäufername
+- Kaufdatum und -betrag
+- Ausklappbare Modulansicht
+- Download-Buttons für Dateien
+- Links für URL-Module
+- Text-Inhalte direkt anzeigen
+
+**Technische Details:**
+- Lädt Käufe via `purchasesService.getMyPurchases()`
+- Einzelne Kauf-Details via `purchasesService.getPurchaseContent()`
+- Formatiert Dateigrößen automatisch (B, KB, MB)
+
+### 3.4.6 Earnings Page
 
 #### `EarningsDashboard.jsx`
 
@@ -796,7 +884,7 @@ function ProtectedRoute({ children }) {
 
 5. **Auszahlung:** Modal zum Anfordern
 
-### 3.4.5 Promotion Page
+### 3.4.7 Promotion Page
 
 #### `PromotionHub.jsx`
 
@@ -808,7 +896,7 @@ function ProtectedRoute({ children }) {
 3. **Produkte entdecken:** Neue Produkte bewerben
 4. **Netzwerk:** Meine Promoter
 
-### 3.4.6 Settings Page
+### 3.4.8 Settings Page
 
 #### `Settings.jsx`
 
@@ -828,7 +916,7 @@ function ProtectedRoute({ children }) {
 - Onboarding starten/fortsetzen
 - Dashboard-Link
 
-### 3.4.7 Messages Page
+### 3.4.9 Messages Page
 
 #### `Messages.jsx`
 
@@ -840,7 +928,7 @@ function ProtectedRoute({ children }) {
 - Als gelesen markieren
 - Archivieren/Löschen
 
-### 3.4.8 Legal Pages
+### 3.4.10 Legal Pages
 
 | Seite | Route | Inhalt |
 |-------|-------|--------|
@@ -984,6 +1072,24 @@ api.interceptors.response.use(
   startOnboarding: () => api.post('/stripe/connect/start'),
   getOnboardingLink: () => api.get('/stripe/connect/onboarding-link'),
   getDashboardLink: () => api.get('/stripe/connect/dashboard-link')
+}
+```
+
+### `purchasesService.js`
+
+```javascript
+{
+  getMyPurchases: () => api.get('/downloads/purchases'),
+  getPurchaseContent: (transactionId) =>
+    api.get(`/downloads/purchase/${transactionId}`),
+  getPurchaseBySession: (sessionId) =>
+    api.get(`/downloads/session/${sessionId}`),
+  getTokenInfo: (token) =>
+    api.get(`/downloads/token/${token}/info`),
+  getDownloadUrl: (moduleId) =>
+    api.get(`/downloads/file/${moduleId}`),
+  getTokenDownloadUrl: (token) =>
+    api.get(`/downloads/token/${token}`)
 }
 ```
 
@@ -1476,6 +1582,28 @@ function errorHandler(err, req, res, next) {
 | `archive(id, userId)` | Archivieren |
 | `delete(id, userId)` | Löschen |
 
+### `DownloadToken.model.js`
+
+**Tabelle:** `download_tokens`
+
+**Methoden:**
+
+| Methode | Beschreibung |
+|---------|--------------|
+| `generateToken()` | Generiert kryptografisch sicheren 256-bit Token |
+| `createForTransaction(transactionId, buyerId, buyerEmail)` | Erstellt Token für alle Module einer Transaktion |
+| `findByToken(token)` | Token mit Modul- und Produktdaten laden |
+| `validateToken(token)` | Prüft Gültigkeit (Ablauf, Klick-Limit) |
+| `recordUsage(tokenId, ipAddress)` | Tracking: IP-Adresse, Zeitstempel, Klick-Count |
+| `deleteExpired()` | Cleanup für abgelaufene Tokens |
+| `getTokenStats(token)` | Statistiken für einen Token |
+
+**Token-Eigenschaften:**
+- 256-bit kryptografische Tokens (hex-encoded)
+- Ablaufdatum: 30 Tage (konfigurierbar)
+- Klick-Limit: max. 3 Downloads (konfigurierbar)
+- IP-Tracking für Missbrauchserkennung
+
 ---
 
 ## 4.5 Controllers
@@ -1585,6 +1713,23 @@ function errorHandler(err, req, res, next) {
 | `POST /stripe/webhooks/connect` | `handleConnectWebhook` | Account-Events |
 | `POST /stripe/webhooks/payments` | `handlePaymentsWebhook` | Payment-Events |
 
+### `downloads.controller.js`
+
+| Endpoint | Methode | Auth | Beschreibung |
+|----------|---------|------|--------------|
+| `GET /downloads/token/:token` | `downloadByToken` | Nein | Datei via E-Mail-Token herunterladen (max. 3x) |
+| `GET /downloads/token/:token/info` | `getTokenInfo` | Nein | Token-Informationen anzeigen |
+| `GET /downloads/session/:sessionId` | `getPurchaseBySession` | Nein | Kauf für Gäste (via Stripe Session) |
+| `GET /downloads/purchases` | `getMyPurchases` | Ja | Alle Käufe des eingeloggten Users |
+| `GET /downloads/purchase/:transactionId` | `getPurchaseContent` | Optional | Einzelner Kauf mit Modulen |
+| `GET /downloads/file/:moduleId` | `downloadFile` | Ja | Authentifizierter direkter Download |
+
+**downloadByToken Logik:**
+1. Token validieren (existiert, nicht abgelaufen, Klicks übrig)
+2. Modul-Daten laden
+3. Klick-Zähler erhöhen, IP tracken
+4. Redirect zur Datei-URL
+
 ---
 
 ## 4.6 Services
@@ -1621,6 +1766,30 @@ function errorHandler(err, req, res, next) {
 | `calculateCommission(amount, percent)` | Provision berechnen |
 | `getPromoterStats(promoterId)` | Promoter-Statistiken |
 
+### `email.service.js`
+
+**Zweck:** E-Mail-Versand für Kaufbestätigungen mit Download-Links.
+
+**Provider:**
+- **Resend** (Primär) - via `RESEND_API_KEY`
+- **SMTP/Nodemailer** (Fallback) - via `SMTP_*` Variablen
+
+**Funktionen:**
+
+| Funktion | Beschreibung |
+|----------|--------------|
+| `isConfigured()` | Prüft ob E-Mail-Provider verfügbar |
+| `sendEmail({ to, subject, html })` | Allgemeiner E-Mail-Versand |
+| `sendPurchaseConfirmation(params)` | Kaufbestätigungs-E-Mail |
+| `generatePurchaseConfirmationHtml(params)` | E-Mail-Template generieren |
+
+**Kaufbestätigungs-E-Mail enthält:**
+- Produkt-Thumbnail
+- Kaufbestätigung mit Produkttitel
+- Direkte Download-Links (Token-basiert)
+- Rechnung-Link (falls vorhanden)
+- Hinweis zur Account-Erstellung (für Gäste)
+
 ---
 
 ## 4.7 Routes
@@ -1638,6 +1807,7 @@ router.use('/promotion', promotionRoutes);
 router.use('/messages', messagesRoutes);
 router.use('/stripe', stripeRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/downloads', downloadsRoutes);  // NEU: Download-Token & Käufe
 ```
 
 ---
@@ -2260,6 +2430,128 @@ Webhook für Payment-Events (Stripe ruft auf).
 
 ---
 
+## 5.10 Downloads API
+
+### GET /downloads/token/:token
+Datei via E-Mail-Token herunterladen.
+
+**Auth:** None
+
+**Response:**
+- `302 Redirect` zur Datei-URL bei Erfolg
+- `400` wenn Token ungültig/abgelaufen
+- `410` wenn Klick-Limit erreicht
+
+### GET /downloads/token/:token/info
+Token-Informationen anzeigen.
+
+**Auth:** None
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "productTitle": "E-Book Guide",
+    "moduleTitle": "PDF Download",
+    "remainingClicks": 2,
+    "expiresAt": "2024-03-15T00:00:00Z"
+  }
+}
+```
+
+### GET /downloads/session/:sessionId
+Kauf-Details für Gäste via Stripe Session.
+
+**Auth:** None
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "transaction": {
+      "id": 123,
+      "amount": 29.99,
+      "productTitle": "E-Book Guide",
+      "productThumbnail": "https://...",
+      "createdAt": "2024-02-15T10:00:00Z"
+    },
+    "modules": [
+      {
+        "id": 1,
+        "type": "file",
+        "title": "PDF Download",
+        "downloadToken": "abc123..."
+      }
+    ]
+  }
+}
+```
+
+### GET /downloads/purchases
+Alle Käufe des eingeloggten Users.
+
+**Auth:** Required
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "transactionId": 123,
+      "productId": 1,
+      "productTitle": "E-Book Guide",
+      "productThumbnail": "https://...",
+      "sellerName": "John Doe",
+      "amount": 29.99,
+      "purchasedAt": "2024-02-15T10:00:00Z"
+    }
+  ]
+}
+```
+
+### GET /downloads/purchase/:transactionId
+Einzelner Kauf mit Modulen und Download-Zugang.
+
+**Auth:** Optional (Verifiziert via Transaction-ID oder Auth)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "transaction": {
+      "id": 123,
+      "productTitle": "E-Book Guide",
+      "amount": 29.99
+    },
+    "modules": [
+      {
+        "id": 1,
+        "type": "file",
+        "title": "PDF Download",
+        "fileName": "guide.pdf",
+        "fileSize": 2048000
+      }
+    ]
+  }
+}
+```
+
+### GET /downloads/file/:moduleId
+Authentifizierter direkter Download (für registrierte User).
+
+**Auth:** Required
+
+**Response:**
+- `302 Redirect` zur Datei-URL bei Erfolg
+- `403` wenn User keinen Zugriff auf dieses Modul hat
+
+---
+
 # 6. Datenbank-Dokumentation
 
 ## 6.1 Schema-Übersicht
@@ -2268,13 +2560,13 @@ Webhook für Payment-Events (Stripe ruft auf).
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │    users     │────<│   products   │────<│   modules    │
 └──────────────┘     └──────────────┘     └──────────────┘
-       │                    │
-       │                    │
-       ▼                    ▼
-┌──────────────┐     ┌──────────────┐
-│   payouts    │     │ transactions │
-└──────────────┘     └──────────────┘
-       │                    │
+       │                    │                     │
+       │                    │                     │
+       ▼                    ▼                     ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   payouts    │     │ transactions │────>│  download    │
+└──────────────┘     └──────────────┘     │   _tokens    │
+       │                    │             └──────────────┘
        │                    │
        ▼                    ▼
 ┌──────────────┐     ┌──────────────┐
@@ -2385,7 +2677,8 @@ CREATE TABLE product_modules (
 CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE SET NULL,
-    buyer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    buyer_id INTEGER REFERENCES users(id) ON DELETE SET NULL,  -- Nullable für Guest Checkout
+    buyer_email VARCHAR(255),  -- NEU: E-Mail für Gäste (von Stripe erfasst)
     seller_id INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
     promoter_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     amount DECIMAL(10, 2) NOT NULL,
@@ -2395,10 +2688,13 @@ CREATE TABLE transactions (
     stripe_payment_id VARCHAR(255),
     stripe_session_id VARCHAR(255),
     affiliate_available_at TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'pending' 
+    status VARCHAR(20) DEFAULT 'pending'
         CHECK (status IN ('pending', 'completed', 'refunded', 'failed')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Entweder buyer_id oder buyer_email muss gesetzt sein
+    CONSTRAINT chk_buyer_identity CHECK (buyer_id IS NOT NULL OR buyer_email IS NOT NULL)
 );
 ```
 
@@ -2409,6 +2705,7 @@ CREATE TABLE transactions (
 - `idx_transactions_created_at`
 - `idx_transactions_status`
 - `idx_transactions_stripe_session_id`
+- `idx_transactions_buyer_email` - NEU: Für Gast-Käufe
 
 ### affiliate_links
 
@@ -2491,6 +2788,38 @@ CREATE TABLE stripe_webhook_events (
 );
 ```
 
+### download_tokens
+
+```sql
+CREATE TABLE download_tokens (
+    id SERIAL PRIMARY KEY,
+    token VARCHAR(64) UNIQUE NOT NULL,           -- 256-bit hex Token
+    transaction_id INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+    buyer_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    buyer_email VARCHAR(255),                    -- Für Gäste
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    module_id INTEGER NOT NULL REFERENCES product_modules(id) ON DELETE CASCADE,
+    max_clicks INTEGER DEFAULT 3,                -- Klick-Limit
+    click_count INTEGER DEFAULT 0,               -- Aktuelle Nutzung
+    expires_at TIMESTAMP NOT NULL,               -- Ablaufdatum (30 Tage default)
+    last_ip VARCHAR(45),                         -- IPv4/IPv6 Tracking
+    last_used_at TIMESTAMP,                      -- Letzter Download
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Indexes:**
+- `idx_download_tokens_token` - Schnelles Token-Lookup
+- `idx_download_tokens_transaction_id` - Tokens pro Transaktion
+- `idx_download_tokens_expires_at` - Cleanup abgelaufener Tokens
+- `idx_download_tokens_buyer_email` - Tokens pro Gast
+
+**Sicherheitsfeatures:**
+- 256-bit kryptografische Tokens (crypto.randomBytes)
+- Ablaufdatum nach 30 Tagen
+- Maximal 3 Downloads pro Token
+- IP-Tracking zur Missbrauchserkennung
+
 ## 6.3 Migrations
 
 | # | Datei | Beschreibung |
@@ -2504,6 +2833,15 @@ CREATE TABLE stripe_webhook_events (
 | 007 | `stripe_connect.sql` | Stripe Connect Felder |
 | 008 | `stripe_session_id.sql` | Session-ID für Idempotenz |
 | 009 | `separate_affiliate_balance.sql` | Trennung Produkt/Affiliate Balance |
+| ... | ... | ... |
+| 015 | `guest_checkout_and_downloads.sql` | Guest Checkout & Download-Token-System |
+
+**Migration 015 Details:**
+- `transactions.buyer_id` wird nullable (für Gäste)
+- `transactions.buyer_email` Spalte hinzugefügt
+- CHECK-Constraint für buyer_id OR buyer_email
+- Neue `download_tokens` Tabelle
+- Indizes für schnelle Token-Lookups
 
 ---
 
@@ -2675,6 +3013,101 @@ function calculateLevel(totalEarnings) {
 }
 ```
 
+## 7.6 Guest Checkout Flow
+
+```
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│    Gast     │      │   Backend   │      │   Stripe    │      │   E-Mail    │
+└─────────────┘      └─────────────┘      └─────────────┘      └─────────────┘
+      │                     │                     │                     │
+      │  1. Produkt kaufen  │                     │                     │
+      │     (kein Account)  │                     │                     │
+      │────────────────────>│                     │                     │
+      │                     │                     │                     │
+      │                     │  2. Checkout Session│                     │
+      │                     │     (buyerId=null)  │                     │
+      │                     │────────────────────>│                     │
+      │                     │                     │                     │
+      │  3. Redirect zu Stripe                    │                     │
+      │<─────────────────────────────────────────>│                     │
+      │                     │                     │                     │
+      │  4. E-Mail eingeben │                     │                     │
+      │  + Zahlung          │                     │                     │
+      │─────────────────────────────────────────>│                     │
+      │                     │                     │                     │
+      │                     │  5. Webhook         │                     │
+      │                     │<────────────────────│                     │
+      │                     │                     │                     │
+      │                     │  6. Transaction erstellen                 │
+      │                     │     (buyer_email statt buyer_id)          │
+      │                     │                     │                     │
+      │                     │  7. Download-Tokens generieren            │
+      │                     │     (1 pro Modul)   │                     │
+      │                     │                     │                     │
+      │                     │  8. E-Mail versenden│                     │
+      │                     │───────────────────────────────────────────>│
+      │                     │                     │                     │
+      │  9. Success Page    │                     │                     │
+      │<────────────────────│                     │                     │
+      │     (mit Downloads) │                     │                     │
+      │                     │                     │  10. E-Mail empfangen│
+      │<──────────────────────────────────────────────────────────────── │
+      │     (Download-Links)│                     │                     │
+```
+
+**Wichtige Punkte:**
+- Stripe erfasst E-Mail des Käufers
+- Transaktion wird mit `buyer_email` statt `buyer_id` erstellt
+- Download-Tokens werden für alle Module generiert
+- E-Mail mit Download-Links wird automatisch versendet
+- Gast kann sich später registrieren und Käufe übernehmen
+
+## 7.7 Download-Token Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        Token-Lebenszyklus                               │
+└─────────────────────────────────────────────────────────────────────────┘
+
+1. ERSTELLUNG (bei Webhook)
+   ┌─────────────┐
+   │   Zahlung   │──> Token generiert (256-bit, hex)
+   │  erfolgreich│──> Ablauf: +30 Tage
+   └─────────────┘──> Max Clicks: 3
+                  ──> 1 Token pro Modul
+
+2. VERSAND (per E-Mail)
+   ┌─────────────┐
+   │   E-Mail    │──> Token in Download-URL eingebettet
+   │  Template   │──> Format: /downloads/token/{token}
+   └─────────────┘
+
+3. NUTZUNG (beim Download)
+   ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+   │   Klick     │────>│  Validierung │────>│   Download  │
+   │   auf Link  │     │  - Ablauf?   │     │   starten   │
+   └─────────────┘     │  - Clicks?   │     └─────────────┘
+                       └─────────────┘
+                              │
+                              ▼
+                       ┌─────────────┐
+                       │   Tracking  │
+                       │  - Clicks++ │
+                       │  - IP speich│
+                       │  - Timestamp│
+                       └─────────────┘
+
+4. ABLAUF / LIMIT
+   - Nach 30 Tagen: Token ungültig
+   - Nach 3 Klicks: Token erschöpft
+   - User muss sich registrieren für weitere Downloads
+```
+
+**Download-Zugriff nach Registrierung:**
+- Registrierte User können via `/dashboard/purchases` unbegrenzt downloaden
+- Keine Token-Limits für authentifizierte User
+- Download über `/downloads/file/:moduleId`
+
 ---
 
 # 8. Konfiguration & Setup
@@ -2714,6 +3147,20 @@ STRIPE_SECRET_KEY_TEST=sk_test_...
 STRIPE_SECRET_KEY_LIVE=sk_live_...
 STRIPE_WEBHOOK_SECRET_CONNECT=whsec_...
 STRIPE_WEBHOOK_SECRET_PAYMENTS=whsec_...
+
+# E-Mail Service (NEU)
+RESEND_API_KEY=re_...                     # Für Resend (bevorzugt)
+# ODER SMTP Fallback:
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=user@example.com
+SMTP_PASS=password
+EMAIL_FROM=Monemee <noreply@monemee.app>
+
+# Download-Tokens (NEU, optional)
+DOWNLOAD_TOKEN_EXPIRY_DAYS=30             # Default: 30
+DOWNLOAD_TOKEN_MAX_CLICKS=3               # Default: 3
 ```
 
 ## 8.2 Firebase Setup
@@ -2845,14 +3292,28 @@ cd server
 |---------|-----------|
 | Creator | User der Produkte verkauft |
 | Promoter | User der Affiliate-Links teilt |
+| Buyer | User der Produkte kauft (auch Gäste) |
+| Buyer-Only | User ohne eigene Produkte (nur Käufer) |
 | Affiliate | Provisions-System |
 | Clearing | 7-Tage Wartezeit für Provisionen |
 | Connect | Stripe Connect Express Account |
 | Module | Inhaltselement eines Produkts |
+| Guest Checkout | Kauf ohne Account-Registrierung |
+| Download-Token | Einmaliger Download-Link mit Ablauf und Klick-Limit |
 
 ---
 
 **Ende der Dokumentation**
 
-*Erstellt: 31. Dezember 2025*  
-*Monemee v1.0*
+*Erstellt: 31. Dezember 2025*
+*Aktualisiert: 8. Januar 2026*
+*Monemee v1.1*
+
+**Changelog v1.1:**
+- Guest Checkout ohne Account-Pflicht
+- Download-Token-System mit Ablauf und Klick-Limit
+- E-Mail-Kaufbestätigungen (Resend/SMTP)
+- Buyer-only Dashboard (BuyerLayout)
+- ShareProductModal nach Produkt-Erstellung
+- Purchases Page für Käufer
+- Downloads API mit Token- und Session-Support
