@@ -101,7 +101,8 @@ import {
   Camera,
   Mail,
   Lock,
-  Unlock
+  Unlock,
+  Palette
 } from 'lucide-react';
 
 // ============================================
@@ -224,7 +225,8 @@ const iconMap = {
   camera: Camera,
   mail: Mail,
   lock: Lock,
-  unlock: Unlock
+  unlock: Unlock,
+  palette: Palette
 };
 
 /**

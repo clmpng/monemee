@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ProductCard } from '../../components/products';
 import { Button, Icon } from '../../components/common';
@@ -15,6 +15,12 @@ function MyStore() {
   const { products, loading, error, stats, deleteProduct } = useProducts();
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+
+  // Reset avatar error when user avatar changes
+  useEffect(() => {
+    setAvatarError(false);
+  }, [user?.avatar]);
 
   // Handlers
   const handleAddProduct = () => {
@@ -107,8 +113,12 @@ function MyStore() {
         {/* Top Section: Avatar + Info */}
         <div className={styles.profileTop}>
           <div className={styles.profileAvatar}>
-            {user?.avatar ? (
-              <img src={user.avatar} alt={user?.name} />
+            {user?.avatar && !avatarError ? (
+              <img
+                src={user.avatar}
+                alt={user?.name}
+                onError={() => setAvatarError(true)}
+              />
             ) : (
               <span>{getInitials(user?.name)}</span>
             )}
@@ -160,30 +170,34 @@ function MyStore() {
           </div>
         </div>
 
-        {/* Bottom: Actions + More Link */}
-        <div className={styles.profileBottom}>
-          <div className={styles.profileActions}>
-            <Link to="/settings?tab=store" className={styles.profileActionBtn}>
-              <Icon name="edit" size={16} />
-              <span>Store bearbeiten</span>
+        {/* Stats Link */}
+        <div className={styles.statsLinkWrapper}>
+          <Link to="/earnings" className={styles.statsMoreLink}>
+            Alle Statistiken ansehen
+            <Icon name="chevronRight" size={16} />
+          </Link>
+        </div>
+
+        {/* Store Actions */}
+        <div className={styles.storeActions}>
+          <span className={styles.storeActionsLabel}>Store verwalten</span>
+          <div className={styles.storeActionsButtons}>
+            <Link to="/settings?tab=store" className={styles.storeActionBtn}>
+              <Icon name="palette" size={18} />
+              <span>Design ändern</span>
             </Link>
             {user?.username && (
-              <a 
+              <a
                 href={`/store/${user.username}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={styles.profileActionBtn}
+                className={styles.storeActionBtn}
               >
-                <Icon name="externalLink" size={16} />
-                <span>Vorschau</span>
+                <Icon name="eye" size={18} />
+                <span>Vorschau ansehen</span>
               </a>
             )}
           </div>
-          
-          <Link to="/earnings" className={styles.statsMoreLink}>
-            Statistiken
-            <Icon name="chevronRight" size={16} />
-          </Link>
         </div>
       </div>
 
