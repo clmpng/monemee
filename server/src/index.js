@@ -11,6 +11,7 @@ const routes = require('./routes');
 
 // Import middleware
 const { errorHandler } = require('./middleware/error');
+const { generalLimiter } = require('./middleware/rateLimit');
 
 // Create Express app
 const app = express();
@@ -50,6 +51,9 @@ app.use(cors({
 
 // Request logging
 app.use(morgan('dev'));
+
+// Rate Limiting (generell für alle API-Requests)
+app.use('/api', generalLimiter);
 
 // ============================================
 // WICHTIG: Stripe Webhooks brauchen Raw Body!

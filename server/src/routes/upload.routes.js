@@ -8,6 +8,7 @@ const admin = require('../config/firebase');
 
 // Auth Middleware importieren
 const { authenticate } = require('../middleware/auth');
+const { uploadLimiter } = require('../middleware/rateLimit');
 
 // ============================================
 // Erlaubte Dateitypen (Security)
@@ -95,9 +96,9 @@ const upload = multer({
  * Upload file to Firebase Storage
  * POST /api/v1/upload
  *
- * SECURITY: Erfordert Authentifizierung + Dateityp-Validierung
+ * SECURITY: Erfordert Authentifizierung + Dateityp-Validierung + Rate-Limited (50/Stunde)
  */
-router.post('/', authenticate, upload.single('file'), async (req, res, next) => {
+router.post('/', uploadLimiter, authenticate, upload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({

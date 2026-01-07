@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const stripeController = require('../controllers/stripe.controller');
 const { authenticate } = require('../middleware/auth');
+const { stripeLimiter } = require('../middleware/rateLimit');
 
 // ============================================
 // Connect Account Routes (authentifiziert)
@@ -22,8 +23,9 @@ router.get('/connect/status', authenticate, stripeController.getConnectStatus);
  * POST /api/v1/stripe/connect/start
  * Startet das Stripe Connect Onboarding
  * Erstellt Account falls nicht vorhanden und gibt Onboarding-URL zurück
+ * SECURITY: Rate-Limited (10/Stunde)
  */
-router.post('/connect/start', authenticate, stripeController.startOnboarding);
+router.post('/connect/start', stripeLimiter, authenticate, stripeController.startOnboarding);
 
 /**
  * GET /api/v1/stripe/connect/onboarding-link
