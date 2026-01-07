@@ -276,7 +276,7 @@
     font-size: 11px;
     color: var(--color-text-tertiary);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color var(--transition-normal);
   }
 
   .legalLink:hover {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Icon } from '../common';
+import { Icon, Button } from '../common';
 import styles from '../../styles/components/SellerTypeModal.module.css';
 
 /**
@@ -111,21 +111,15 @@ function SellerTypeModal({ isOpen, onClose, onSelect, loading = false, error = n
 
         {/* Actions */}
         <div className={styles.actions}>
-          <button
-            type="button"
-            className={styles.confirmButton}
+          <Button
+            variant="primary"
+            fullWidth
+            loading={loading}
+            disabled={!selectedType}
             onClick={handleConfirm}
-            disabled={!selectedType || loading}
           >
-            {loading ? (
-              <>
-                <Icon name="loader" size="sm" className={styles.spinner} />
-                Wird gespeichert...
-              </>
-            ) : (
-              'Weiter'
-            )}
-          </button>
+            {loading ? 'Wird gespeichert...' : 'Weiter'}
+          </Button>
         </div>
       </div>
     </div>

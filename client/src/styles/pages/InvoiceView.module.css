@@ -57,7 +57,7 @@
 }
 
 .printButton:hover {
-  background: #1e40af;
+  background: var(--color-primary-dark);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
 }
@@ -174,7 +174,7 @@
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: var(--gradient-subtle);
   border-radius: var(--radius-md);
   margin-bottom: 40px;
   border: 1px solid var(--color-border-light);
@@ -336,16 +336,16 @@
 /* Notes Section */
 .notesSection {
   padding: var(--spacing-lg);
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: linear-gradient(135deg, var(--color-warning-50) 0%, var(--color-warning-light) 100%);
   border-radius: var(--radius-md);
   margin-bottom: 40px;
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid var(--color-warning);
 }
 
 .notesSection p {
   margin: 0;
   font-size: 13px;
-  color: #78350f;
+  color: var(--color-warning-text);
   line-height: 1.6;
   font-style: italic;
 }
@@ -477,7 +477,7 @@
 
   /* Optimierte Farben für Druck */
   .totalGross {
-    background: #1e40af !important;
+    background: var(--color-primary-dark) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

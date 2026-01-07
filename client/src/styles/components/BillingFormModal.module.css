@@ -3,14 +3,14 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--overlay-dark);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--spacing-md);
   z-index: 1000;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn var(--transition-normal);
 }
 
 .modal {
@@ -21,7 +21,7 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-xl);
-  animation: slideUp 0.3s ease;
+  animation: slideUp var(--transition-slow);
   position: relative;
 }
 
@@ -30,8 +30,8 @@
   position: absolute;
   top: var(--spacing-md);
   right: var(--spacing-md);
-  width: 32px;
-  height: 32px;
+  width: var(--icon-button-sm);
+  height: var(--icon-button-sm);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -79,7 +79,7 @@
 .iconWrapper {
   width: 64px;
   height: 64px;
-  background: #eff6ff;
+  background: var(--color-primary-50);
   color: var(--color-primary);
   border-radius: 50%;
   display: flex;
@@ -111,7 +111,7 @@
   display: flex;
   gap: var(--spacing-sm);
   padding: var(--spacing-md);
-  background: #eff6ff;
+  background: var(--color-primary-50);
   border: 1px solid var(--color-primary-light);
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);

@@ -64,7 +64,7 @@
   }
   
   .danger:hover:not(:disabled) {
-    background: #dc2626;
+    background: var(--color-danger-dark);
   }
   
   .success {
@@ -73,7 +73,7 @@
   }
   
   .success:hover:not(:disabled) {
-    background: #059669;
+    background: var(--color-success-dark);
   }
   
   /* Sizes */
@@ -95,14 +95,14 @@
   /* Icon Only */
   .iconOnly {
     padding: 10px;
-    width: 40px;
-    height: 40px;
+    width: var(--icon-button-md);
+    height: var(--icon-button-md);
   }
-  
+
   .iconOnly.small {
     padding: 6px;
-    width: 32px;
-    height: 32px;
+    width: var(--icon-button-sm);
+    height: var(--icon-button-sm);
   }
   
   /* Loading State */

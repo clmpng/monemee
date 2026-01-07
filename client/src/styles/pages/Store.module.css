@@ -104,7 +104,7 @@
     right: -4px;
     width: 22px;
     height: 22px;
-    background: linear-gradient(135deg, var(--color-warning) 0%, #f59e0b 100%);
+    background: var(--gradient-warning);
     color: white;
     border-radius: 50%;
     display: flex;

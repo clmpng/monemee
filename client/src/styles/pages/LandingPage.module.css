@@ -327,15 +327,15 @@
   }
   
   .mockupDots span:first-child {
-    background: #ef4444;
+    background: var(--color-danger);
   }
-  
+
   .mockupDots span:nth-child(2) {
-    background: #f59e0b;
+    background: var(--color-warning);
   }
-  
+
   .mockupDots span:last-child {
-    background: #10b981;
+    background: var(--color-success);
   }
   
   .mockupUrl {
@@ -809,7 +809,7 @@
   }
   
   .reviewStars svg {
-    color: #fbbf24;
+    color: var(--color-warning-light);
   }
   
   .reviewText {

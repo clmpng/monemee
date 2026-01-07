@@ -33,7 +33,7 @@
     border-radius: var(--radius-md);
     color: var(--color-text-primary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-normal);
   }
   
   .backButton:hover {
@@ -130,7 +130,7 @@
   .link {
     color: var(--color-primary);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color var(--transition-normal);
   }
   
   .link:hover {
@@ -248,7 +248,7 @@
     font-size: var(--font-size-sm);
     color: var(--color-text-tertiary);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color var(--transition-normal);
   }
   
   .footerLink:hover {

@@ -203,7 +203,7 @@
     width: 120px;
     height: 120px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-primary) 0%, #818cf8 100%);
+    background: var(--gradient-primary);
     color: white;
     display: flex;
     align-items: center;
@@ -239,7 +239,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--color-warning) 0%, #f59e0b 100%);
+    background: var(--gradient-warning);
     color: white;
     border-radius: 50%;
     border: 3px solid var(--color-bg-primary);
@@ -290,7 +290,7 @@
     background: var(--color-primary);
     color: white;
     border: none;
-    border-radius: var(--radius-full);
+    border-radius: var(--button-radius, var(--radius-full));
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
@@ -439,18 +439,54 @@
     border-radius: var(--radius-full);
   }
   
-  /* Products Grid */
+  /* Products Grid - Base (wird überschrieben durch Layout-Klassen) */
   .productsGrid {
     display: flex;
     flex-direction: column;
     gap: 16px;
   }
-  
+
+  /* Single Column Layout */
+  .productsGrid.grid-single {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Two Column Layout (Standard) */
+  .productsGrid.grid-two-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
   @media (min-width: 768px) {
-    .productsGrid {
+    .productsGrid.grid-two-column {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 20px;
+    }
+  }
+
+  /* Three Column Layout */
+  .productsGrid.grid-three-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  @media (min-width: 768px) {
+    .productsGrid.grid-three-column {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .productsGrid.grid-three-column {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
     }
   }
   
@@ -460,7 +496,8 @@
     flex-direction: column;
     background: var(--color-bg-secondary);
     border-radius: var(--radius-xl);
-    border: 1px solid var(--color-border);
+    border: var(--card-border, 1px solid var(--color-border));
+    box-shadow: var(--card-shadow, var(--shadow-card));
     overflow: hidden;
     text-decoration: none;
     transition: all var(--transition-fast);
@@ -692,7 +729,7 @@
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-primary) 0%, #818cf8 100%);
+    background: var(--gradient-primary);
     color: white;
     display: flex;
     align-items: center;
