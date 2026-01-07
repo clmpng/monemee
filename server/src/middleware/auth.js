@@ -6,6 +6,35 @@
 const admin = require('../config/firebase');
 const UserModel = require('../models/User.model');
 
+// ============================================
+// Security Logging
+// ============================================
+
+/**
+ * Strukturiertes Security-Logging für Audit Trail
+ * @param {string} event - Event-Typ (AUTH_SUCCESS, AUTH_FAILURE, etc.)
+ * @param {Object} details - Event-Details
+ * @param {Object} req - Express Request Object
+ */
+const logSecurityEvent = (event, details, req) => {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    event,
+    ip: req.ip || req.connection?.remoteAddress || 'unknown',
+    userAgent: req.headers['user-agent'] || 'unknown',
+    path: req.originalUrl || req.path,
+    method: req.method,
+    ...details
+  };
+
+  // In Production: Hier könnte ein externer Logging-Service angebunden werden
+  if (event.includes('FAILURE') || event.includes('BLOCKED')) {
+    console.warn('[SECURITY]', JSON.stringify(logEntry));
+  } else {
+    console.log('[SECURITY]', JSON.stringify(logEntry));
+  }
+};
+
 /**
  * Helper: Generate username from email or name
  */
@@ -54,15 +83,19 @@ const authenticate = async (req, res, next) => {
     try {
       decodedToken = await admin.auth().verifyIdToken(token);
     } catch (verifyError) {
-      console.error('Token verification failed:', verifyError.code);
-      
+      // SECURITY: Log fehlgeschlagene Auth-Versuche
+      logSecurityEvent('AUTH_FAILURE', {
+        reason: verifyError.code || 'unknown',
+        tokenPrefix: token.substring(0, 20) + '...'
+      }, req);
+
       if (verifyError.code === 'auth/id-token-expired') {
         return res.status(401).json({
           success: false,
           message: 'Token abgelaufen'
         });
       }
-      
+
       return res.status(401).json({
         success: false,
         message: 'Ungültiger Token'
@@ -102,7 +135,12 @@ const authenticate = async (req, res, next) => {
           bio: ''
         });
         
-        console.log(`New user created: ${user.id} (${user.email})`);
+        // SECURITY: Log neue User-Erstellung
+        logSecurityEvent('USER_CREATED', {
+          userId: user.id,
+          email: user.email,
+          username: user.username
+        }, req);
       } catch (createError) {
         // Handle race condition - user might have been created by another request
         if (createError.code === '23505') { // Unique constraint violation
@@ -192,6 +230,13 @@ const requireRole = (roles) => {
       }
       
       if (!roles.includes(userRole)) {
+        // SECURITY: Log Zugriffsverweigerung
+        logSecurityEvent('ACCESS_DENIED', {
+          userId: req.user.id,
+          userRole,
+          requiredRoles: roles
+        }, req);
+
         return res.status(403).json({
           success: false,
           message: 'Keine Berechtigung für diese Aktion'

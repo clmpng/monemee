@@ -1,7 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const messagesController = require('../controllers/messages.controller');
 const { authenticate, optionalAuth } = require('../middleware/auth');
+
+// ============================================
+// Rate Limiting (Security)
+// ============================================
+
+// Strenges Limit für öffentlichen Message-Endpoint (Spam-Schutz)
+const messageSendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 Stunde
+  max: 10, // Max 10 Nachrichten pro Stunde pro IP
+  message: {
+    success: false,
+    message: 'Zu viele Nachrichten gesendet. Bitte versuche es in einer Stunde erneut.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // IP-basiertes Limiting
+  keyGenerator: (req) => req.ip
+});
 
 // ============================================
 // Messages Routes
@@ -11,8 +30,8 @@ const { authenticate, optionalAuth } = require('../middleware/auth');
 // -----------------------------------------
 
 // POST /api/v1/messages/send - Send message to store owner (public)
-// Uses optionalAuth to capture sender's user ID if logged in
-router.post('/send', optionalAuth, messagesController.sendMessage);
+// SECURITY: Rate-Limited (10/Stunde) + optionalAuth
+router.post('/send', messageSendLimiter, optionalAuth, messagesController.sendMessage);
 
 // Protected Routes (require authentication)
 // -----------------------------------------

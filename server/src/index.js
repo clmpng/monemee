@@ -22,10 +22,30 @@ const app = express();
 // Security headers
 app.use(helmet());
 
-// CORS
+// CORS - Sichere Konfiguration mit Whitelist
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:3000',
+  'http://localhost:3001'
+].filter(Boolean); // Entfernt undefined/null
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true
+  origin: (origin, callback) => {
+    // Erlaube Requests ohne Origin (z.B. mobile Apps, Postman)
+    if (!origin) return callback(null, true);
+
+    // Prüfe ob Origin in Whitelist
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // SECURITY: Log blockierte CORS-Requests
+    console.warn(`[SECURITY] CORS blocked origin: ${origin}`);
+    callback(new Error('CORS not allowed'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Request logging
