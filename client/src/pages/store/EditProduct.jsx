@@ -147,6 +147,7 @@ function EditProduct() {
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isLoading={isLoading}
+          showTypeSelection={false}
         />
       </main>
     </div>

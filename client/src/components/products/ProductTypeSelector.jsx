@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from '../common';
 import { PRODUCT_TYPES } from '../../data/productTemplates';
 import styles from '../../styles/components/ProductWizard.module.css';
 
@@ -31,7 +32,7 @@ function ProductTypeSelector({ selectedType, onSelect }) {
           >
             {/* Icon */}
             <div className={styles.typeIcon}>
-              <span>{type.icon}</span>
+              <Icon name={type.icon} size="lg" />
             </div>
 
             {/* Content */}
@@ -62,7 +63,8 @@ function ProductTypeSelector({ selectedType, onSelect }) {
 
       {/* Hint */}
       <p className={styles.typeHint}>
-        💡 Keine Sorge, du kannst später weitere Inhalte hinzufügen
+        <Icon name="info" size="sm" />
+        <span>Keine Sorge, du kannst später weitere Inhalte hinzufügen</span>
       </p>
     </div>
   );

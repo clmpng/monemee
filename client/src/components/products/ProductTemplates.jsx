@@ -17,7 +17,7 @@ function ProductTemplates({ productType, onSelectTemplate, onSkip }) {
       <div className={styles.templatesSection}>
         <div className={styles.stepIntro}>
           <div className={styles.typeHeaderIcon} style={{ background: typeInfo?.color }}>
-            <span>{typeInfo?.icon}</span>
+            <Icon name={typeInfo?.icon} size="lg" />
           </div>
           <h2 className={styles.stepTitle}>{typeInfo?.label}</h2>
           <p className={styles.stepDescription}>
@@ -45,7 +45,7 @@ function ProductTemplates({ productType, onSelectTemplate, onSkip }) {
     <div className={styles.templatesSection}>
       <div className={styles.stepIntro}>
         <div className={styles.typeHeaderIcon} style={{ background: typeInfo?.color }}>
-          <span>{typeInfo?.icon}</span>
+          <Icon name={typeInfo?.icon} size="lg" />
         </div>
         <h2 className={styles.stepTitle}>Starte mit einer Vorlage</h2>
         <p className={styles.stepDescription}>
@@ -109,11 +109,11 @@ function TemplateCard({ template, typeColor, onClick }) {
   return (
     <button className={styles.templateCard} onClick={onClick}>
       {/* Preview Header */}
-      <div 
+      <div
         className={styles.templatePreview}
         style={{ '--template-color': typeColor }}
       >
-        <span className={styles.templateEmoji}>{preview}</span>
+        <Icon name={preview} size="xl" />
       </div>
 
       {/* Content */}
