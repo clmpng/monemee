@@ -7,23 +7,25 @@ const db = require('../config/database');
 const TransactionModel = {
   /**
    * Find transaction by ID
+   * Unterstützt Gast-Käufe (buyer_id kann NULL sein)
    */
   async findById(id) {
     const query = `
-      SELECT 
+      SELECT
         t.*,
         p.title as product_title,
-        buyer.name as buyer_name,
+        COALESCE(buyer.name, t.buyer_email) as buyer_name,
+        COALESCE(buyer.email, t.buyer_email) as buyer_email_display,
         seller.name as seller_name,
         promoter.name as promoter_name
       FROM transactions t
       JOIN products p ON t.product_id = p.id
-      JOIN users buyer ON t.buyer_id = buyer.id
+      LEFT JOIN users buyer ON t.buyer_id = buyer.id
       JOIN users seller ON t.seller_id = seller.id
       LEFT JOIN users promoter ON t.promoter_id = promoter.id
       WHERE t.id = $1
     `;
-    
+
     const result = await db.query(query, [id]);
     return result.rows[0] || null;
   },
@@ -56,22 +58,23 @@ const TransactionModel = {
 
   /**
    * Find transactions by seller (creator)
+   * Unterstützt Gast-Käufe (buyer_id kann NULL sein)
    */
   async findBySellerId(sellerId, limit = 50, offset = 0) {
     const query = `
-      SELECT 
+      SELECT
         t.*,
         p.title as product_title,
         p.thumbnail_url as product_thumbnail,
-        buyer.name as buyer_name
+        COALESCE(buyer.name, t.buyer_email) as buyer_name
       FROM transactions t
       JOIN products p ON t.product_id = p.id
-      JOIN users buyer ON t.buyer_id = buyer.id
+      LEFT JOIN users buyer ON t.buyer_id = buyer.id
       WHERE t.seller_id = $1
       ORDER BY t.created_at DESC
       LIMIT $2 OFFSET $3
     `;
-    
+
     const result = await db.query(query, [sellerId, limit, offset]);
     return result.rows;
   },
@@ -122,11 +125,13 @@ const TransactionModel = {
 
   /**
    * Create new transaction
+   * Unterstützt Gast-Käufe: buyer_id kann NULL sein, buyer_email wird dann verwendet
    */
   async create(data) {
     const {
       product_id,
-      buyer_id,
+      buyer_id = null,        // NULL für Gäste
+      buyer_email = null,     // E-Mail für Gäste (von Stripe)
       seller_id,
       promoter_id = null,
       amount,
@@ -141,22 +146,44 @@ const TransactionModel = {
 
     const query = `
       INSERT INTO transactions (
-        product_id, buyer_id, seller_id, promoter_id,
+        product_id, buyer_id, buyer_email, seller_id, promoter_id,
         amount, platform_fee, seller_amount, promoter_commission,
         stripe_payment_id, stripe_session_id, affiliate_available_at, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
 
     const values = [
-      product_id, buyer_id, seller_id, promoter_id,
+      product_id, buyer_id, buyer_email, seller_id, promoter_id,
       amount, platform_fee, seller_amount, promoter_commission,
       stripe_payment_id, stripe_session_id, affiliate_available_at, status
     ];
 
     const result = await db.query(query, values);
     return result.rows[0];
+  },
+
+  /**
+   * Find transactions by buyer email (für Gast-Käufe)
+   */
+  async findByBuyerEmail(email, limit = 50, offset = 0) {
+    const query = `
+      SELECT
+        t.*,
+        p.title as product_title,
+        p.thumbnail_url as product_thumbnail,
+        seller.name as seller_name
+      FROM transactions t
+      JOIN products p ON t.product_id = p.id
+      JOIN users seller ON t.seller_id = seller.id
+      WHERE t.buyer_email = $1
+      ORDER BY t.created_at DESC
+      LIMIT $2 OFFSET $3
+    `;
+
+    const result = await db.query(query, [email, limit, offset]);
+    return result.rows;
   },
   
   /**
@@ -364,6 +391,7 @@ const TransactionModel = {
 
   /**
    * Get recent sales activity
+   * Unterstützt Gast-Käufe
    */
   async getRecentSales(userId, limit = 10) {
     const query = `
@@ -373,15 +401,16 @@ const TransactionModel = {
         t.seller_amount,
         t.promoter_commission,
         t.promoter_id,
+        t.buyer_email,
         t.created_at,
         p.title as product_title,
         p.thumbnail_url as product_thumbnail,
-        buyer.name as buyer_name,
+        COALESCE(buyer.name, t.buyer_email) as buyer_name,
         promoter.name as promoter_name,
         promoter.username as promoter_username
       FROM transactions t
       JOIN products p ON t.product_id = p.id
-      JOIN users buyer ON t.buyer_id = buyer.id
+      LEFT JOIN users buyer ON t.buyer_id = buyer.id
       LEFT JOIN users promoter ON t.promoter_id = promoter.id
       WHERE t.seller_id = $1 AND t.status = 'completed'
       ORDER BY t.created_at DESC
@@ -394,6 +423,7 @@ const TransactionModel = {
 
   /**
    * Check if user has purchased a product
+   * Unterstützt sowohl buyer_id als auch buyer_email
    */
   async hasPurchased(buyerId, productId) {
     const query = `
@@ -401,8 +431,22 @@ const TransactionModel = {
       WHERE buyer_id = $1 AND product_id = $2 AND status = 'completed'
       LIMIT 1
     `;
-    
+
     const result = await db.query(query, [buyerId, productId]);
+    return result.rows.length > 0;
+  },
+
+  /**
+   * Check if email has purchased a product (für Gäste)
+   */
+  async hasPurchasedByEmail(email, productId) {
+    const query = `
+      SELECT id FROM transactions
+      WHERE buyer_email = $1 AND product_id = $2 AND status = 'completed'
+      LIMIT 1
+    `;
+
+    const result = await db.query(query, [email, productId]);
     return result.rows.length > 0;
   }
 };

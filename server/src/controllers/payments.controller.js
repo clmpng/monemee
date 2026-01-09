@@ -25,29 +25,27 @@ const paymentsController = {
   /**
    * Create Stripe Checkout Session
    * POST /api/v1/payments/create-checkout
+   *
+   * Unterstützt Gast-Checkout (ohne Account):
+   * - buyerId kann null sein
+   * - Stripe erfasst E-Mail im Checkout
+   * - E-Mail wird im Webhook gespeichert
    */
   async createCheckout(req, res, next) {
     try {
       const { productId, affiliateCode } = req.body;
-      const buyerId = req.userId;
-      
-      if (!buyerId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Nicht authentifiziert'
-        });
-      }
+      const buyerId = req.userId || null;  // null für Gäste
 
       // Produkt laden
       const product = await ProductModel.findById(productId);
-      
+
       if (!product) {
         return res.status(404).json({
           success: false,
           message: 'Produkt nicht gefunden'
         });
       }
-      
+
       if (product.status !== 'active') {
         return res.status(400).json({
           success: false,
@@ -81,25 +79,27 @@ const paymentsController = {
         });
       }
 
-      // Buyer laden
-      const buyer = await UserModel.findById(buyerId);
-      if (!buyer) {
-        return res.status(404).json({
-          success: false,
-          message: 'Käufer nicht gefunden'
-        });
+      // Buyer laden (nur wenn eingeloggt)
+      let buyer = null;
+      if (buyerId) {
+        buyer = await UserModel.findById(buyerId);
+        // Wenn User nicht gefunden, trotzdem fortfahren als Gast
+        if (!buyer) {
+          console.warn(`Buyer ${buyerId} nicht gefunden, fahre als Gast fort`);
+        }
       }
 
       // Affiliate prüfen
       let promoterId = null;
       let promoterCode = null;
-      
+
       if (affiliateCode) {
         const affiliateLink = await AffiliateModel.findByCode(affiliateCode);
-        if (affiliateLink && 
-            affiliateLink.product_id === parseInt(productId) && 
+        if (affiliateLink &&
+            affiliateLink.product_id === parseInt(productId) &&
             affiliateLink.is_active &&
-            affiliateLink.promoter_id !== buyerId) {
+            // Nur prüfen wenn buyer eingeloggt - Gast kann nicht sein eigener Promoter sein
+            (!buyerId || affiliateLink.promoter_id !== buyerId)) {
           promoterId = affiliateLink.promoter_id;
           promoterCode = affiliateCode;
         }
@@ -107,16 +107,16 @@ const paymentsController = {
 
       // Platform Fee aus Single Source of Truth (levels.config)
       const platformFeePercent = getPlatformFee(seller.level);
-      
+
       // Affiliate Commission vom Produkt
       const affiliateCommission = product.affiliate_commission || 0;
 
       // Stripe Checkout Session erstellen
       const baseUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
-      
+
       const session = await stripeService.createCheckoutSession({
         product,
-        buyer,
+        buyer,        // kann null sein für Gäste
         seller,
         promoterId,
         promoterCode,
@@ -136,7 +136,7 @@ const paymentsController = {
 
     } catch (error) {
       console.error('Create checkout error:', error);
-      
+
       if (error.message?.includes('nicht konfiguriert')) {
         return res.status(503).json({
           success: false,
@@ -144,7 +144,7 @@ const paymentsController = {
           code: 'STRIPE_NOT_CONFIGURED'
         });
       }
-      
+
       next(error);
     }
   },
@@ -152,18 +152,15 @@ const paymentsController = {
   /**
    * Verify Checkout Session (nach Redirect)
    * GET /api/v1/payments/verify-session/:sessionId
+   *
+   * Unterstützt Gast-Checkout:
+   * - Wenn eingeloggt: prüft ob Session zu User gehört
+   * - Wenn Gast: prüft nur ob Session existiert und bezahlt wurde
    */
   async verifySession(req, res, next) {
     try {
       const { sessionId } = req.params;
-      const userId = req.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Nicht authentifiziert'
-        });
-      }
+      const userId = req.userId || null;  // null für Gäste
 
       // Session von Stripe abrufen
       const stripe = stripeService.stripe;
@@ -176,8 +173,9 @@ const paymentsController = {
         });
       }
 
-      // Prüfe ob Session zu diesem User gehört
-      if (session.metadata.buyer_id !== userId.toString()) {
+      // Wenn eingeloggt: prüfe ob Session zu diesem User gehört
+      // Wenn Gast: Session hat keine buyer_id, also überspringen
+      if (userId && session.metadata.buyer_id && session.metadata.buyer_id !== userId.toString()) {
         return res.status(403).json({
           success: false,
           message: 'Keine Berechtigung'
@@ -194,7 +192,9 @@ const paymentsController = {
           productId: parseInt(session.metadata.product_id),
           amount: session.amount_total / 100,
           transactionId: transaction?.id || null,
-          hasTransaction: !!transaction
+          hasTransaction: !!transaction,
+          // Für Gäste: Info ob sie eingeloggt werden sollten
+          isGuest: !userId && !session.metadata.buyer_id
         }
       });
 

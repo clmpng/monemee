@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Icon } from '../../components/common';
@@ -11,8 +11,8 @@ import styles from '../../styles/pages/Auth.module.css';
  */
 function Register() {
   const navigate = useNavigate();
-  const { register, loginWithGoogle, error, clearError } = useAuth();
-  
+  const { register, loginWithGoogle, error, clearError, isAuthenticated } = useAuth();
+    
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,6 +58,12 @@ function Register() {
     return true;
   };
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
   // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -70,13 +76,8 @@ function Register() {
     setLoading(true);
     
     try {
-      const result = await register(email, password, name);
-      
-      if (result.success) {
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 100);
-      }
+      await register(email, password, name);
+      // Navigation erfolgt automatisch durch useEffect
     } finally {
       setLoading(false);
     }
@@ -95,11 +96,10 @@ function Register() {
     try {
       const result = await loginWithGoogle();
       
-      if (result.success) {
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 100);
+      if (result.redirect) {
+        return; // Mobile: Browser redirected
       }
+      // Desktop: Navigation durch useEffect
     } finally {
       setGoogleLoading(false);
     }

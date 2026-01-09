@@ -1898,3 +1898,73 @@
     color: var(--color-primary);
     background: rgba(30, 58, 138, 0.03);
   }
+
+  /* ========================================
+     Purchases Link (Käufe Tab)
+     ======================================== */
+
+  .purchasesLink {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-xl);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-xl);
+    text-align: center;
+  }
+
+  .purchasesLinkIcon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(129, 140, 248, 0.1) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+  }
+
+  .purchasesLinkInfo h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--spacing-xs);
+  }
+
+  .purchasesLinkInfo p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  .purchasesLinkButton {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-xl);
+    background: var(--color-primary);
+    color: white;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    font-size: var(--font-size-md);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .purchasesLinkButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  @media (min-width: 768px) {
+    .purchasesLink {
+      flex-direction: row;
+      text-align: left;
+      padding: var(--spacing-xl);
+    }
+
+    .purchasesLinkInfo {
+      flex: 1;
+    }
+  }

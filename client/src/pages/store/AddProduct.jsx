@@ -2,7 +2,9 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../../components/common';
 import ProductForm from '../../components/products/ProductForm';
+import ShareProductModal from '../../components/products/ShareProductModal';
 import { useProducts } from '../../context/ProductContext';
+import { useAuth } from '../../context/AuthContext';
 import { productsService } from '../../services';
 import styles from '../../styles/pages/ProductPage.module.css';
 
@@ -13,7 +15,10 @@ import styles from '../../styles/pages/ProductPage.module.css';
 function AddProduct() {
   const navigate = useNavigate();
   const { addProduct } = useProducts();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [createdProduct, setCreatedProduct] = useState(null);
 
   // Formular absenden
   const handleSubmit = async (productData) => {
@@ -53,7 +58,12 @@ function AddProduct() {
       });
 
       if (result?.success !== false) {
-        navigate('/');
+        // Share-Modal zeigen statt direktem Redirect
+        setCreatedProduct({
+          title: productData.title,
+          price: productData.price
+        });
+        setShowShareModal(true);
       }
     } catch (error) {
       console.error('Error creating product:', error);
@@ -94,6 +104,14 @@ function AddProduct() {
           showTypeSelection={true}
         />
       </main>
+
+      {/* Share Modal nach erfolgreicher Erstellung */}
+      <ShareProductModal
+        isOpen={showShareModal}
+        onClose={() => navigate('/')}
+        product={createdProduct}
+        storeUrl={`${window.location.origin}/store/${user?.username}`}
+      />
     </div>
   );
 }

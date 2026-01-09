@@ -9,6 +9,7 @@ function Header({ user }) {
   const { logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const menuRef = useRef(null);
 
   // Get initials from user name (max 2 characters)
@@ -32,6 +33,11 @@ function Header({ user }) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Reset avatar error when user avatar changes
+  useEffect(() => {
+    setAvatarError(false);
+  }, [user?.avatar]);
 
   // Handle logout
   const handleLogout = async () => {
@@ -78,8 +84,13 @@ function Header({ user }) {
               onClick={() => setShowUserMenu(!showUserMenu)}
               aria-label="User Menu"
             >
-              {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} className={styles.avatarImage} />
+              {user?.avatar && !avatarError ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className={styles.avatarImage}
+                  onError={() => setAvatarError(true)}
+                />
               ) : (
                 <span className={styles.avatarInitials}>
                   {getInitials(user?.name)}
@@ -93,8 +104,12 @@ function Header({ user }) {
                 {/* User Info */}
                 <div className={styles.userMenuHeader}>
                   <div className={styles.userMenuAvatar}>
-                    {user?.avatar ? (
-                      <img src={user.avatar} alt={user.name} />
+                    {user?.avatar && !avatarError ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        onError={() => setAvatarError(true)}
+                      />
                     ) : (
                       <span>{getInitials(user?.name)}</span>
                     )}

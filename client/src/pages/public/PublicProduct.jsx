@@ -130,13 +130,11 @@ function PublicProduct() {
   /**
    * Kaufen Handler
    * Erstellt Stripe Checkout Session und leitet weiter
+   *
+   * HINWEIS: Gast-Checkout ist erlaubt (kein Login erforderlich)
+   * Stripe erfasst die E-Mail im Checkout-Prozess
    */
   const handleBuy = async () => {
-    if (!isAuthenticated) {
-      navigate('/login?redirect=' + encodeURIComponent(`/p/${productId}`));
-      return;
-    }
-
     // Prüfe Widerrufs-Checkbox für kostenpflichtige Produkte
     if (product.price > 0 && !acceptedWaiver) {
       setPurchaseError('Bitte bestätige, dass du auf dein Widerrufsrecht verzichtest, um den sofortigen Zugang zu erhalten.');

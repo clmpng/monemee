@@ -31,9 +31,9 @@ function StorePreviewModal({
   userName,
   userBio
 }) {
-  if (!isOpen) return null;
-
   const [activeTab, setActiveTab] = useState('theme'); // theme | layout | style
+
+  if (!isOpen) return null;
 
   const theme = getTheme(settings.theme);
   const avatarStyle = getAvatarStyle(settings.avatarStyle);

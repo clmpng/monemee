@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Icon } from '../common';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +9,7 @@ function Sidebar({ user }) {
   const { logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   const navItems = [
     { path: '/', icon: 'store', label: 'Meine Produkte' },
@@ -30,6 +31,11 @@ function Sidebar({ user }) {
     }
     return name.slice(0, 2).toUpperCase();
   };
+
+  // Reset avatar error when user avatar changes
+  useEffect(() => {
+    setAvatarError(false);
+  }, [user?.avatar]);
 
   // Handle logout
   const handleLogout = async () => {
@@ -101,8 +107,13 @@ function Sidebar({ user }) {
           onClick={() => setShowUserMenu(!showUserMenu)}
         >
           <div className={styles.userAvatar}>
-            {user?.avatar ? (
-              <img src={user.avatar} alt={user.name} className={styles.userAvatarImage} />
+            {user?.avatar && !avatarError ? (
+              <img
+                src={user.avatar}
+                alt={user.name}
+                className={styles.userAvatarImage}
+                onError={() => setAvatarError(true)}
+              />
             ) : (
               <span className={styles.userAvatarInitials}>
                 {getInitials(user?.name)}

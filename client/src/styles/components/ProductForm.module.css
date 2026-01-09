@@ -1439,7 +1439,7 @@
     background: transparent;
     border-top: none;
     padding: var(--spacing-xl) 0 0 0;
-    margin: var(--spacing-lg) 0 0;
+    margin: var(--spacing-lg) auto 0;
     max-width: 400px;
   }
 

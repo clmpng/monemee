@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Layout
-import { AppLayout } from '../components/layout';
+import { AppLayout, BuyerLayout } from '../components/layout';
 
 // Common
 import { Icon } from '../components/common';
@@ -28,6 +28,9 @@ import CheckoutSuccess from '../pages/public/CheckoutSuccess';
 
 // Legal Pages
 import { Impressum, Datenschutz, AGB, Widerruf } from '../pages/legal';
+
+// Dashboard Pages
+import Purchases from '../pages/dashboard/Purchases';
 
 /**
  * Protected Route Wrapper
@@ -90,16 +93,10 @@ function AppRoutes() {
       {/* ================================
           CHECKOUT ROUTES
           ================================ */}
-      
+
       {/* Checkout Success - Nach erfolgreicher Stripe-Zahlung */}
-      <Route 
-        path="/checkout/success" 
-        element={
-          <ProtectedRoute>
-            <CheckoutSuccess />
-          </ProtectedRoute>
-        } 
-      />
+      {/* Öffentlich für Gast-Checkout - Validierung über session_id */}
+      <Route path="/checkout/success" element={<CheckoutSuccess />} />
 
       {/* ================================
           LEGAL PAGES (§ 5 TMG, DSGVO)
@@ -156,42 +153,66 @@ function AppRoutes() {
       />
 
       {/* ================================
-          PROTECTED ROUTES
+          PROTECTED ROUTES - BUYER ONLY
+          Minimales Layout für User ohne eigene Produkte
           ================================ */}
-      
-      <Route 
-        element={
-          <ProtectedRoute>
-            <AppLayout user={user} />
-          </ProtectedRoute>
-        }
-      >
-        {/* Dashboard / Home (authenticated) */}
-        <Route path="/dashboard" element={<MyStore />} />
-        
-        {/* Product Management */}
-        <Route path="/products/new" element={<AddProduct />} />
-        <Route path="/products/:id/edit" element={<EditProduct />} />
-        
-        {/* Earnings / Statistics */}
-        <Route path="/earnings" element={<EarningsDashboard />} />
-        
-        {/* Promotion */}
-        <Route path="/promotion" element={<PromotionHub />} />
-        
-        {/* Messages / Notifications */}
-        <Route path="/messages" element={<Messages />} />
-        
-        {/* Settings */}
-        <Route path="/settings" element={<Settings />} />
 
-        {/* Invoices*/}
-        <Route path="/invoice/:token" element={<InvoiceView />} />
-        
-        {/* Purchases / My bought products */}
-        {/* TODO: Implement Purchases page */}
-        {/* <Route path="/dashboard/purchases" element={<Purchases />} /> */}
-      </Route>
+      {user?.isBuyerOnly && (
+        <Route
+          element={
+            <ProtectedRoute>
+              <BuyerLayout />
+            </ProtectedRoute>
+          }
+        >
+          {/* Käufer sehen nur ihre Käufe */}
+          <Route path="/dashboard" element={<Navigate to="/dashboard/purchases" replace />} />
+          <Route path="/dashboard/purchases" element={<Purchases />} />
+
+          {/* Produkt erstellen (Upgrade zu Creator) */}
+          <Route path="/products/new" element={<AddProduct />} />
+        </Route>
+      )}
+
+      {/* ================================
+          PROTECTED ROUTES - FULL APP
+          Volles Layout für Creator/Seller
+          ================================ */}
+
+      {!user?.isBuyerOnly && (
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppLayout user={user} />
+            </ProtectedRoute>
+          }
+        >
+          {/* Dashboard / Home (authenticated) */}
+          <Route path="/dashboard" element={<MyStore />} />
+
+          {/* Product Management */}
+          <Route path="/products/new" element={<AddProduct />} />
+          <Route path="/products/:id/edit" element={<EditProduct />} />
+
+          {/* Earnings / Statistics */}
+          <Route path="/earnings" element={<EarningsDashboard />} />
+
+          {/* Promotion */}
+          <Route path="/promotion" element={<PromotionHub />} />
+
+          {/* Messages / Notifications */}
+          <Route path="/messages" element={<Messages />} />
+
+          {/* Settings */}
+          <Route path="/settings" element={<Settings />} />
+
+          {/* Invoices*/}
+          <Route path="/invoice/:token" element={<InvoiceView />} />
+
+          {/* Purchases / My bought products */}
+          <Route path="/dashboard/purchases" element={<Purchases />} />
+        </Route>
+      )}
 
       {/* ================================
           FALLBACK ROUTES

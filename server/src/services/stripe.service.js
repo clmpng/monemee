@@ -239,10 +239,14 @@ const getConnectAccountBalance = async (accountId) => {
 /**
  * Erstellt eine Checkout Session für einen Produktkauf
  * Mit automatischer Gebührenberechnung und Transfer zum Verkäufer
+ *
+ * Unterstützt Gast-Checkout: buyer kann null sein
+ * In diesem Fall wird keine buyer_id in den Metadaten gesetzt,
+ * aber die E-Mail wird von Stripe im Checkout erfasst
  */
 const createCheckoutSession = async ({
   product,
-  buyer,
+  buyer,        // kann null sein für Gäste
   seller,
   promoterCode = null,
   promoterId = null,
@@ -266,10 +270,10 @@ const createCheckoutSession = async ({
 
   try {
     const amountInCents = Math.round(product.price * 100);
-    
+
     // Plattform-Gebühr berechnen
     const platformFee = Math.round(amountInCents * (platformFeePercent / 100));
-    
+
     // Affiliate-Provision berechnen
     let affiliateFee = 0;
     if (promoterCode && affiliateCommission > 0) {
@@ -279,6 +283,9 @@ const createCheckoutSession = async ({
     // Gesamtgebühr die bei uns bleibt (Platform + Affiliate)
     // Affiliate wird später von uns an den Promoter ausgezahlt
     const applicationFee = platformFee + affiliateFee;
+
+    // Buyer-ID nur wenn eingeloggt
+    const buyerId = buyer?.id ? buyer.id.toString() : '';
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -301,13 +308,14 @@ const createCheckoutSession = async ({
       cancel_url: cancelUrl,
       metadata: {
         product_id: product.id.toString(),
-        buyer_id: buyer.id.toString(),
+        buyer_id: buyerId,           // leer für Gäste
         seller_id: seller.id.toString(),
         promoter_id: promoterId ? promoterId.toString() : '',
         promoter_code: promoterCode || '',
         platform_fee: platformFee.toString(),
         affiliate_commission: affiliateFee.toString(),
-        environment: STRIPE_MODE
+        environment: STRIPE_MODE,
+        is_guest: buyer ? 'false' : 'true'  // Flag für Webhook
       },
       payment_intent_data: {
         application_fee_amount: applicationFee,
@@ -316,13 +324,13 @@ const createCheckoutSession = async ({
         },
         metadata: {
           product_id: product.id.toString(),
-          buyer_id: buyer.id.toString(),
+          buyer_id: buyerId,
           seller_id: seller.id.toString()
         }
       }
     });
 
-    console.log(`[Stripe] Checkout Session erstellt: ${session.id}`);
+    console.log(`[Stripe] Checkout Session erstellt: ${session.id} (Gast: ${!buyer})`);
     return session;
 
   } catch (error) {

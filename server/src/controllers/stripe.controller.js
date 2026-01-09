@@ -1,11 +1,13 @@
 /**
  * Stripe Controller
  * Handles all Stripe-related HTTP requests
- * 
+ *
  * ERWEITERT mit:
  * - Verbesserter Webhook-Validierung
  * - Automatischer Rechnungsstellung
  * - Admin-Alerts
+ * - Gast-Checkout Support
+ * - Digitale Produktauslieferung (E-Mail + Download-Tokens)
  */
 
 const stripeService = require('../services/stripe.service');
@@ -13,7 +15,10 @@ const SellerBillingModel = require('../models/SellerBilling.model');
 const InvoiceService = require('../services/invoice.service');
 const TransactionModel = require('../models/Transaction.model');
 const ProductModel = require('../models/Product.model');
+const ProductModuleModel = require('../models/ProductModule.model');
 const UserModel = require('../models/User.model');
+const DownloadTokenModel = require('../models/DownloadToken.model');
+const emailService = require('../services/email.service');
 
 const stripeController = {
   // ============================================
@@ -354,12 +359,13 @@ const stripeController = {
 /**
  * Verarbeitet checkout.session.completed Event
  * Erstellt Rechnung NUR wenn Verkäufer gewerblich ist
+ * ERWEITERT: Unterstützt Gast-Checkout und sendet Kaufbestätigungs-E-Mail
  */
 async function handleCheckoutCompleted(session, eventId) {
   console.log(`[Stripe Webhook] Processing checkout: ${session.id}`);
-  
+
   const metadata = session.metadata;
-  
+
   // Prüfe auf Idempotenz - wurde diese Session schon verarbeitet?
   const existingTransaction = await TransactionModel.findByStripeSessionId(session.id);
   if (existingTransaction) {
@@ -369,23 +375,31 @@ async function handleCheckoutCompleted(session, eventId) {
 
   // Daten aus Metadata extrahieren
   const productId = parseInt(metadata.product_id);
-  const buyerId = parseInt(metadata.buyer_id);
+  // buyer_id kann leer sein bei Gast-Checkout
+  const buyerId = metadata.buyer_id ? parseInt(metadata.buyer_id) : null;
   const sellerId = parseInt(metadata.seller_id);
   const promoterId = metadata.promoter_id ? parseInt(metadata.promoter_id) : null;
   const amount = session.amount_total / 100;
   const platformFee = parseInt(metadata.platform_fee) / 100;
   const affiliateCommission = parseInt(metadata.affiliate_commission) / 100;
   const sellerAmount = amount - platformFee - affiliateCommission;
+  const isGuest = metadata.is_guest === 'true' || !buyerId;
+
+  // Käufer-E-Mail aus Stripe Session (immer vorhanden)
+  const buyerEmail = session.customer_details?.email || null;
+
+  console.log(`[Stripe Webhook] Checkout: Product ${productId}, Buyer ${buyerId || 'GUEST'}, Email: ${buyerEmail}`);
 
   // 7 Tage Clearing für Affiliate
-  const affiliateAvailableAt = promoterId 
-    ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) 
+  const affiliateAvailableAt = promoterId
+    ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     : null;
 
-  // Transaktion erstellen
+  // Transaktion erstellen (mit buyer_email für Gäste)
   const transaction = await TransactionModel.create({
     product_id: productId,
-    buyer_id: buyerId,
+    buyer_id: buyerId,           // null für Gäste
+    buyer_email: buyerEmail,     // E-Mail von Stripe
     seller_id: sellerId,
     promoter_id: promoterId,
     amount: amount,
@@ -466,7 +480,67 @@ async function handleCheckoutCompleted(session, eventId) {
     console.log(`[Stripe Webhook] Seller ${sellerId} is private - Stripe Receipt only`);
   }
 
-  console.log(`[Stripe Webhook] ✓ Checkout complete: Session ${session.id}, Transaction #${transaction.id}`);
+  // ========================================
+  // DIGITALE PRODUKTAUSLIEFERUNG
+  // Download-Tokens erstellen und E-Mail senden
+  // ========================================
+
+  if (buyerEmail) {
+    try {
+      const product = await ProductModel.findById(productId);
+      const seller = await UserModel.findById(sellerId);
+
+      // Module laden
+      const modules = await ProductModuleModel.findByProductId(productId);
+      const downloadableModules = modules.filter(m => m.type === 'file' && m.file_url);
+
+      // Download-Tokens erstellen (nur für Dateien)
+      let downloadLinks = [];
+      if (downloadableModules.length > 0) {
+        const tokens = await DownloadTokenModel.createForTransaction({
+          transactionId: transaction.id,
+          buyerId: buyerId,
+          buyerEmail: buyerEmail,
+          productId: productId,
+          modules: downloadableModules
+        });
+
+        const baseUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+        downloadLinks = tokens.map(t => ({
+          title: t.module_title || 'Download',
+          url: `${baseUrl}/api/v1/downloads/token/${t.token}`,
+          expiresAt: t.expires_at
+        }));
+
+        console.log(`[Stripe Webhook] ${downloadLinks.length} Download-Tokens erstellt`);
+      }
+
+      // Kaufbestätigungs-E-Mail senden
+      const emailResult = await emailService.sendPurchaseConfirmation({
+        buyerEmail: buyerEmail,
+        productTitle: product.title,
+        productThumbnail: product.thumbnail_url,
+        sellerName: seller.name || seller.username,
+        amount: amount,
+        downloadLinks: downloadLinks,
+        invoiceUrl: null  // TODO: Invoice URL wenn vorhanden
+      });
+
+      if (emailResult.success) {
+        console.log(`[Stripe Webhook] Kaufbestätigung gesendet an ${buyerEmail}`);
+      } else {
+        console.warn(`[Stripe Webhook] E-Mail-Versand fehlgeschlagen: ${emailResult.reason || emailResult.error}`);
+      }
+
+    } catch (emailError) {
+      // E-Mail-Fehler sind nicht kritisch - Transaktion war erfolgreich
+      console.error('[Stripe Webhook] Produktauslieferung-Fehler:', emailError);
+    }
+  } else {
+    console.warn(`[Stripe Webhook] Keine E-Mail-Adresse für Käufer - keine E-Mail gesendet`);
+  }
+
+  console.log(`[Stripe Webhook] ✓ Checkout complete: Session ${session.id}, Transaction #${transaction.id}${isGuest ? ' (GUEST)' : ''}`);
 }
 
 module.exports = stripeController;

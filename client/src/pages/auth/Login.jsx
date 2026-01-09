@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Icon } from '../../components/common';
@@ -11,7 +11,7 @@ import styles from '../../styles/pages/Auth.module.css';
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loginWithGoogle, error, clearError } = useAuth();
+  const { login, loginWithGoogle, error, clearError, isAuthenticated } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,6 +21,12 @@ function Login() {
 
   // Get redirect path from location state, default to home
   const from = location.state?.from?.pathname || '/';
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, from]);
 
   // Handle form submit
   const handleSubmit = async (e) => {
@@ -32,14 +38,8 @@ function Login() {
     clearError();
     
     try {
-      const result = await login(email, password);
-      
-      if (result.success) {
-        // Small delay to let auth state update
-        setTimeout(() => {
-          navigate(from, { replace: true });
-        }, 100);
-      }
+      await login(email, password);
+      // Navigation erfolgt automatisch durch useEffect wenn isAuthenticated true wird
     } finally {
       setLoading(false);
     }
@@ -53,11 +53,11 @@ function Login() {
     try {
       const result = await loginWithGoogle();
       
-      if (result.success) {
-        setTimeout(() => {
-          navigate(from, { replace: true });
-        }, 100);
+      // Bei Redirect-Flow (Mobile) wird die Seite neu geladen
+      if (result.redirect) {
+        return;
       }
+      // Desktop: Navigation erfolgt durch useEffect
     } finally {
       setGoogleLoading(false);
     }

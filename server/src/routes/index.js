@@ -11,6 +11,7 @@ const messagesRoutes = require('./messages.routes');
 const payoutsRoutes = require('./payouts.routes');
 const stripeRoutes = require('./stripe.routes');
 const invoicesRoutes = require('./invoices.routes');
+const downloadsRoutes = require('./downloads.routes');
 
 // ============================================
 // API Routes
@@ -42,5 +43,8 @@ router.use('/users', usersRoutes);
 
 // Messages
 router.use('/messages', messagesRoutes);
+
+// Downloads (digitale Produktauslieferung)
+router.use('/downloads', downloadsRoutes);
 
 module.exports = router;

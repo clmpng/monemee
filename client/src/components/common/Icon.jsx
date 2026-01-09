@@ -102,7 +102,19 @@ import {
   Mail,
   Lock,
   Unlock,
-  Palette
+  Palette,
+
+  // Zusätzliche Icons
+  LayoutGrid,
+  Lightbulb,
+  Layers,
+  Type,
+  Save,
+  Printer,
+  ArrowLeft,
+  ArrowRight,
+  MousePointer,
+  Edit2
 } from 'lucide-react';
 
 // ============================================
@@ -226,7 +238,24 @@ const iconMap = {
   mail: Mail,
   lock: Lock,
   unlock: Unlock,
-  palette: Palette
+  palette: Palette,
+
+  // Zusätzliche Icons
+  layoutGrid: LayoutGrid,
+  lightbulb: Lightbulb,
+  layers: Layers,
+  type: Type,
+  save: Save,
+  printer: Printer,
+  arrowLeft: ArrowLeft,
+  arrowRight: ArrowRight,
+  mousePointer: MousePointer,
+  edit2: Edit2,
+
+  // Aliase (für Konsistenz mit häufig verwendeten Namen)
+  x: X,
+  trash2: Trash2,
+  logOut: LogOut
 };
 
 /**

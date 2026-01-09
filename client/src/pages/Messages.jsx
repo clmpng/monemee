@@ -14,6 +14,11 @@ function Messages() {
   
   // Tab state
   const [activeTab, setActiveTab] = useState('inbox');
+
+  // Close message detail when switching tabs
+  useEffect(() => {
+    setSelectedMessage(null);
+  }, [activeTab]);
   
   // Inbox state
   const [messages, setMessages] = useState([]);
@@ -400,19 +405,25 @@ function Messages() {
  * Message Item Component
  */
 function MessageItem({ message, onClick, formatRelativeTime }) {
+  const [avatarError, setAvatarError] = useState(false);
+
   const getInitial = (name) => {
     if (!name) return '?';
     return name.charAt(0).toUpperCase();
   };
 
   return (
-    <div 
+    <div
       className={`${styles.messageItem} ${!message.is_read ? styles.messageUnread : ''}`}
       onClick={onClick}
     >
       <div className={styles.messageAvatar}>
-        {message.sender_avatar ? (
-          <img src={message.sender_avatar} alt={message.sender_name} />
+        {message.sender_avatar && !avatarError ? (
+          <img
+            src={message.sender_avatar}
+            alt={message.sender_name}
+            onError={() => setAvatarError(true)}
+          />
         ) : (
           <span>{getInitial(message.sender_name)}</span>
         )}
@@ -492,62 +503,74 @@ function NotificationCard({ notification }) {
  * Message Detail Component
  */
 function MessageDetail({ message, onClose, onArchive, onDelete, formatRelativeTime }) {
+  const [avatarError, setAvatarError] = useState(false);
+
   const getInitial = (name) => {
     if (!name) return '?';
     return name.charAt(0).toUpperCase();
   };
 
   return (
-    <div className={styles.messageDetailOverlay} onClick={onClose}>
-      <div className={styles.messageDetail} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.messageDetailHeader}>
-          <button className={styles.backButton} onClick={onClose}>
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <button className={styles.modalBack} onClick={onClose}>
             <Icon name="arrowLeft" size="md" />
           </button>
-          <div className={styles.messageDetailActions}>
-            <button onClick={onArchive} title="Archivieren">
+          <h2>Nachricht</h2>
+          <div className={styles.modalActions}>
+            <button
+              className={styles.modalAction}
+              onClick={onArchive}
+              title="Archivieren"
+            >
               <Icon name="archive" size="sm" />
             </button>
-            <button onClick={onDelete} title="Löschen">
+            <button
+              className={`${styles.modalAction} ${styles.modalActionDanger}`}
+              onClick={onDelete}
+              title="Löschen"
+            >
               <Icon name="trash" size="sm" />
             </button>
           </div>
         </div>
-        
-        <div className={styles.messageDetailContent}>
-          <div className={styles.messageDetailSender}>
-            <div className={styles.messageAvatar}>
-              {message.sender_avatar ? (
-                <img src={message.sender_avatar} alt={message.sender_name} />
+
+        <div className={styles.modalContent}>
+          <div className={styles.senderInfo}>
+            <div className={styles.senderAvatar}>
+              {message.sender_avatar && !avatarError ? (
+                <img
+                  src={message.sender_avatar}
+                  alt={message.sender_name}
+                  onError={() => setAvatarError(true)}
+                />
               ) : (
                 <span>{getInitial(message.sender_name)}</span>
               )}
             </div>
-            <div>
+            <div className={styles.senderDetails}>
               <h3>{message.sender_name}</h3>
               <p>{message.sender_email}</p>
             </div>
+            <span className={styles.messageTime}>{formatRelativeTime(message.created_at)}</span>
           </div>
-          
+
           {message.subject && (
-            <h2 className={styles.messageDetailSubject}>{message.subject}</h2>
+            <h2 className={styles.messageSubject}>{message.subject}</h2>
           )}
-          
-          <p className={styles.messageDetailDate}>{formatRelativeTime(message.created_at)}</p>
-          
-          <div className={styles.messageDetailBody}>
-            {message.message}
-          </div>
-          
+
           {message.product_title && (
-            <div className={styles.relatedProduct}>
+            <div className={styles.productRef}>
               <Icon name="package" size="sm" />
               <span>Bezogen auf: {message.product_title}</span>
             </div>
           )}
-        </div>
-        
-        <div className={styles.messageDetailFooter}>
+
+          <div className={styles.messageBody}>
+            {message.message}
+          </div>
+
           <a href={`mailto:${message.sender_email}`} className={styles.replyButton}>
             <Icon name="mail" size="sm" />
             Per E-Mail antworten
