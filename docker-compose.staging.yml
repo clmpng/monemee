@@ -1,0 +1,133 @@
+# =============================================================================
+# MONEMEE - Docker Compose (Staging)
+# =============================================================================
+# Staging-Umgebung auf dem gleichen Server wie Produktion
+# Laeuft parallel mit separater Datenbank und Ports
+#
+# Usage:
+#   docker compose -f docker-compose.staging.yml up -d
+#   docker compose -f docker-compose.staging.yml logs -f
+#   docker compose -f docker-compose.staging.yml down
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database (Staging - separate Datenbank!)
+  # ---------------------------------------------------------------------------
+  db-staging:
+    image: postgres:16-alpine
+    container_name: monemee-db-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-monemee}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_STAGING:?DB_PASSWORD_STAGING is required}
+      POSTGRES_DB: ${DB_NAME:-monemee}_staging
+    volumes:
+      - postgres_data_staging:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/migrations:/docker-entrypoint-initdb.d/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-monemee} -d ${DB_NAME:-monemee}_staging"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - monemee-staging-network
+
+  # ---------------------------------------------------------------------------
+  # Monemee Application (Staging)
+  # ---------------------------------------------------------------------------
+  app-staging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_FIREBASE_API_KEY=${REACT_APP_FIREBASE_API_KEY}
+        - REACT_APP_FIREBASE_AUTH_DOMAIN=${REACT_APP_FIREBASE_AUTH_DOMAIN}
+        - REACT_APP_FIREBASE_PROJECT_ID=${REACT_APP_FIREBASE_PROJECT_ID}
+        - REACT_APP_FIREBASE_STORAGE_BUCKET=${REACT_APP_FIREBASE_STORAGE_BUCKET}
+        - REACT_APP_FIREBASE_MESSAGING_SENDER_ID=${REACT_APP_FIREBASE_MESSAGING_SENDER_ID}
+        - REACT_APP_FIREBASE_APP_ID=${REACT_APP_FIREBASE_APP_ID}
+    container_name: monemee-app-staging
+    restart: unless-stopped
+    depends_on:
+      db-staging:
+        condition: service_healthy
+    environment:
+      NODE_ENV: staging
+      PORT: 5000
+      CLIENT_URL: ${STAGING_URL:-https://staging.monemee.app}
+
+      # Staging Database
+      DB_HOST: db-staging
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-monemee}_staging
+      DB_USER: ${DB_USER:-monemee}
+      DB_PASSWORD: ${DB_PASSWORD_STAGING:?DB_PASSWORD_STAGING is required}
+
+      # Firebase Admin SDK (gleiche wie Produktion)
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET}
+
+      # Stripe TEST Mode fuer Staging!
+      STRIPE_MODE: test
+      STRIPE_SECRET_KEY_TEST: ${STRIPE_SECRET_KEY_TEST}
+      STRIPE_PUBLISHABLE_KEY_TEST: ${STRIPE_PUBLISHABLE_KEY_TEST}
+      STRIPE_PAYMENT_WEBHOOK_SECRET: ${STRIPE_PAYMENT_WEBHOOK_SECRET_STAGING}
+      STRIPE_CONNECT_WEBHOOK_SECRET: ${STRIPE_CONNECT_WEBHOOK_SECRET_STAGING}
+
+      # Email (optional - kann deaktiviert sein)
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: staging@monemee.app
+    networks:
+      - monemee-staging-network
+    expose:
+      - "5000"
+
+  # ---------------------------------------------------------------------------
+  # Mission Control (Staging)
+  # ---------------------------------------------------------------------------
+  mission-control-staging:
+    build:
+      context: ./mission-control
+      dockerfile: Dockerfile
+    container_name: monemee-mission-control-staging
+    restart: unless-stopped
+    depends_on:
+      db-staging:
+        condition: service_healthy
+    environment:
+      NODE_ENV: staging
+      PORT: 5001
+      WS_PORT: 5002
+      FRONTEND_URL: ${STAGING_MC_URL:-https://admin-staging.monemee.app}
+
+      DB_HOST: db-staging
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-monemee}_staging
+      DB_USER: ${DB_USER:-monemee}
+      DB_PASSWORD: ${DB_PASSWORD_STAGING:?DB_PASSWORD_STAGING is required}
+
+      JWT_SECRET: ${MC_JWT_SECRET_STAGING:-staging-secret-change-me}
+    networks:
+      - monemee-staging-network
+    expose:
+      - "5001"
+      - "5002"
+
+# =============================================================================
+# Networks (separat von Produktion!)
+# =============================================================================
+networks:
+  monemee-staging-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes (separat von Produktion!)
+# =============================================================================
+volumes:
+  postgres_data_staging:
+    driver: local

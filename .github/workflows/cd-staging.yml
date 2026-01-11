@@ -1,0 +1,125 @@
+# =============================================================================
+# MONEMEE - Staging Deployment Workflow
+# =============================================================================
+# Automatisches Deployment auf Staging nach Push auf develop
+# =============================================================================
+
+name: CD - Deploy to Staging
+
+on:
+  # Nach erfolgreichem CI auf develop
+  workflow_run:
+    workflows: ["CI - Tests & Build"]
+    types:
+      - completed
+    branches:
+      - develop
+
+  # Manuelles Deployment
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build & Push Staging Image
+  # ---------------------------------------------------------------------------
+  build-staging:
+    name: Build Staging Image
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Staging Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            REACT_APP_FIREBASE_API_KEY=${{ secrets.REACT_APP_FIREBASE_API_KEY }}
+            REACT_APP_FIREBASE_AUTH_DOMAIN=${{ secrets.REACT_APP_FIREBASE_AUTH_DOMAIN }}
+            REACT_APP_FIREBASE_PROJECT_ID=${{ secrets.REACT_APP_FIREBASE_PROJECT_ID }}
+            REACT_APP_FIREBASE_STORAGE_BUCKET=${{ secrets.REACT_APP_FIREBASE_STORAGE_BUCKET }}
+            REACT_APP_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.REACT_APP_FIREBASE_MESSAGING_SENDER_ID }}
+            REACT_APP_FIREBASE_APP_ID=${{ secrets.REACT_APP_FIREBASE_APP_ID }}
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Staging Server
+  # ---------------------------------------------------------------------------
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-staging
+    environment: staging
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          script: |
+            set -e
+
+            cd ${{ secrets.SERVER_PROJECT_PATH || '/opt/monemee' }}
+
+            # Wechsle zu develop Branch
+            git fetch origin develop
+            git checkout develop
+            git reset --hard origin/develop
+
+            # Login zum Container Registry
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Staging Container neu bauen/starten
+            docker compose -f docker-compose.staging.yml pull
+            docker compose -f docker-compose.staging.yml up -d --build
+
+            # Health Check
+            echo "Warte auf Staging Health Check..."
+            sleep 15
+
+            if curl -sf http://localhost:5000/health > /dev/null 2>&1; then
+              echo "Staging Deployment erfolgreich!"
+            else
+              echo "Staging Health Check fehlgeschlagen"
+              docker compose -f docker-compose.staging.yml logs --tail=50
+              exit 1
+            fi
+
+            # Bereinige alte Images
+            docker image prune -f
+
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "Staging Deployment erfolgreich!"
+          echo "URL: https://staging.${{ secrets.DOMAIN }}"
