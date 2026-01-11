@@ -41,5 +41,14 @@ coverage/
 *.pem
 .vercel
 
-# Separate projects
-mission-control/
+# Docker
+docker/certbot/conf/
+docker/certbot/www/
+
+# Backups
+backups/
+*.sql.gz
+
+# Production secrets (niemals committen!)
+.env.production
+*.key

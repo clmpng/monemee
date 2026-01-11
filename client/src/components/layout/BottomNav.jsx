@@ -8,7 +8,7 @@ function BottomNav() {
     { path: '/', icon: 'store', label: 'Store' },
     { path: '/earnings', icon: 'chart', label: 'Fortschritt' },
     { path: '/promotion', icon: 'megaphone', label: 'Promotion' },
-    { path: '/messages', icon: 'message', label: 'Nachrichten' },
+    { path: '/settings', icon: 'settings', label: 'Einstellungen' },
   ];
 
   return (

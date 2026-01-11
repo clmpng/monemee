@@ -1,0 +1,65 @@
+# =============================================================================
+# Docker Ignore - Exclude from build context
+# =============================================================================
+
+# Git
+.git
+.gitignore
+
+# Node modules (rebuilt in container)
+**/node_modules
+
+# Build outputs (rebuilt in container)
+client/build
+server/dist
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+*.env
+**/*.env
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+**/*.log
+
+# Test files
+**/__tests__
+**/*.test.js
+**/*.spec.js
+**/coverage
+.nyc_output
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# CI/CD
+.github
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker
+
+# Mission Control (separate deployment)
+mission-control/
+
+# Misc
+*.tmp
+*.temp
+.cache

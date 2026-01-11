@@ -67,7 +67,6 @@ function PromotionHub() {
   if (loading) {
     return (
       <div className="page">
-        <div className="page-header"><h1 className="page-title">Promotion</h1></div>
         <div style={{ textAlign: 'center', padding: '48px' }}>Wird geladen...</div>
       </div>
     );
@@ -79,11 +78,6 @@ function PromotionHub() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">Promotion</h1>
-        <p className="page-subtitle">Bewerbe Produkte und verdiene Provisionen</p>
-      </div>
-
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
         {[

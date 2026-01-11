@@ -296,6 +296,27 @@ function CheckoutSuccess() {
             </div>
           )}
 
+          {/* Affiliate Promotion Hint */}
+          {purchaseData?.productId && (
+            <div className={styles.affiliateHint}>
+              <Icon name="dollarCircle" size="sm" />
+              <div>
+                <p>
+                  <strong>Hat dir das Produkt gefallen?</strong> Teile es mit deiner Community und verdiene{' '}
+                  {purchaseData.affiliateCommission || 30}% an jedem Verkauf.
+                </p>
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={() => navigate(`/p/${purchaseData.productId}`)}
+                  style={{ marginTop: '8px' }}
+                >
+                  Affiliate-Link erstellen
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
           <div className={styles.actions}>
             {isAuthenticated && (

@@ -1,0 +1,53 @@
+# =============================================================================
+# MONEMEE - Docker Compose (Development)
+# =============================================================================
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d     # Start database only
+#   docker compose -f docker-compose.dev.yml down      # Stop database
+#   docker compose -f docker-compose.dev.yml logs -f   # View logs
+#
+# Dann lokal:
+#   cd server && npm run dev   # Backend mit Hot-Reload
+#   cd client && npm start     # Frontend mit Hot-Reload
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database (nur fuer Entwicklung)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: monemee-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: monemee
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d monemee"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Adminer (Datenbank-UI fuer Entwicklung)
+  # ---------------------------------------------------------------------------
+  adminer:
+    image: adminer
+    container_name: monemee-adminer
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+
+volumes:
+  postgres_data_dev:
+    driver: local

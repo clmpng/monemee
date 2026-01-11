@@ -27,7 +27,10 @@ import LandingPage from '../pages/public/LandingPage';
 import CheckoutSuccess from '../pages/public/CheckoutSuccess';
 
 // Legal Pages
-import { Impressum, Datenschutz, AGB, Widerruf } from '../pages/legal';
+import { Impressum, Datenschutz, AGB, Widerruf, ContentPolicy } from '../pages/legal';
+
+// Report Pages
+import ReportContent from '../pages/public/ReportContent';
 
 // Dashboard Pages
 import Purchases from '../pages/dashboard/Purchases';
@@ -113,7 +116,15 @@ function AppRoutes() {
       
       {/* Widerrufsbelehrung */}
       <Route path="/widerruf" element={<Widerruf />} />
-      
+
+      {/* Inhaltsrichtlinien (DSA-konform) */}
+      <Route path="/inhaltsrichtlinien" element={<ContentPolicy />} />
+      <Route path="/content-policy" element={<Navigate to="/inhaltsrichtlinien" replace />} />
+
+      {/* Meldeformular (DSA Art. 16) */}
+      <Route path="/melden" element={<ReportContent />} />
+      <Route path="/report" element={<Navigate to="/melden" replace />} />
+
       {/* Legacy routes for consistent linking */}
       <Route path="/privacy" element={<Navigate to="/datenschutz" replace />} />
       <Route path="/terms" element={<Navigate to="/agb" replace />} />

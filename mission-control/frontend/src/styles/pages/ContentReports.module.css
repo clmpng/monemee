@@ -1,0 +1,429 @@
+/* ========================================
+   Content Reports Page Styles
+   ======================================== */
+
+/* Header */
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Stat Cards */
+.statCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.statCardWarning {
+  border-left: 4px solid var(--color-warning);
+}
+
+.statCardSuccess {
+  border-left: 4px solid var(--color-success);
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-lg);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.statCardWarning .statIcon {
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--color-warning);
+}
+
+.statCardSuccess .statIcon {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-success);
+}
+
+/* Mini Stats */
+.miniStats {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-sm);
+}
+
+.miniStats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.miniStatValue {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.miniStatLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Report Row */
+.reportRow {
+  transition: background-color var(--transition-fast);
+}
+
+.reportRow:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+/* Report ID */
+.reportId {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg-tertiary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+}
+
+/* Product Info */
+.productInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.productTitle {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sellerName {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.unknownProduct {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Timestamp */
+.timestamp {
+  display: block;
+  color: var(--color-text-primary);
+}
+
+.timestampTime {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Auto Review */
+.noAutoReview {
+  color: var(--color-text-muted);
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  justify-content: center;
+}
+
+.btn-success {
+  color: var(--color-success-light);
+}
+
+.btn-success:hover {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.btn-danger {
+  color: var(--color-danger-light);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ========================================
+   Report Detail Modal
+   ======================================== */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+}
+
+.modal {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modalTitle {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.modalClose {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-tertiary);
+  border: none;
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.modalClose:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.modalContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.modalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Detail Sections */
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.detailSectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.detailValue {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+}
+
+.descriptionBox {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Auto Review Result */
+.autoReviewResult {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+}
+
+.autoReviewHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.autoReviewHeader svg {
+  color: var(--color-primary);
+}
+
+.autoReviewContent {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  background: var(--color-bg-tertiary);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+/* Resolution Form */
+.resolutionForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.formLabel {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* ========================================
+   Auto Review Config Modal
+   ======================================== */
+
+.configSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.configHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.configTitle {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.toggle {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.toggle.active {
+  background: var(--color-success);
+}
+
+.toggleKnob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: var(--radius-full);
+  transition: transform var(--transition-fast);
+}
+
+.toggle.active .toggleKnob {
+  transform: translateX(24px);
+}
+
+.configDescription {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  line-height: 1.5;
+}
+
+.warningBox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.warningBox svg {
+  color: var(--color-warning);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.promptTextarea {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  min-height: 120px;
+  resize: vertical;
+}

@@ -43,6 +43,7 @@ function PublicProduct() {
 
   // Widerrufs-Checkbox State (§ 356 Abs. 5 BGB)
   const [acceptedWaiver, setAcceptedWaiver] = useState(false);
+  const [showWaiverCheckbox, setShowWaiverCheckbox] = useState(false);
 
   // Creator Store Settings für Design-Anpassung
   const [creatorSettings, setCreatorSettings] = useState(null);
@@ -135,6 +136,12 @@ function PublicProduct() {
    * Stripe erfasst die E-Mail im Checkout-Prozess
    */
   const handleBuy = async () => {
+    // Bei kostenpflichtigen Produkten: Erst Checkbox anzeigen
+    if (product.price > 0 && !showWaiverCheckbox) {
+      setShowWaiverCheckbox(true);
+      return;
+    }
+
     // Prüfe Widerrufs-Checkbox für kostenpflichtige Produkte
     if (product.price > 0 && !acceptedWaiver) {
       setPurchaseError('Bitte bestätige, dass du auf dein Widerrufsrecht verzichtest, um den sofortigen Zugang zu erhalten.');
@@ -412,8 +419,8 @@ function PublicProduct() {
             </div>
           )}
 
-          {/* Widerrufs-Checkbox für kostenpflichtige digitale Produkte */}
-          {product.price > 0 && !isOwnProduct && (
+          {/* Widerrufs-Checkbox für kostenpflichtige digitale Produkte - erscheint nach Klick auf Kaufen */}
+          {product.price > 0 && !isOwnProduct && showWaiverCheckbox && (
             <div className={styles.waiverCheckbox}>
               <label className={styles.waiverLabel}>
                 <input
@@ -445,11 +452,12 @@ function PublicProduct() {
             size="large" 
             fullWidth 
             onClick={handleBuy}
-            disabled={purchasing || isOwnProduct || (product.price > 0 && !acceptedWaiver)}
+            disabled={purchasing || isOwnProduct || (product.price > 0 && showWaiverCheckbox && !acceptedWaiver)}
             icon={purchasing ? null : <Icon name="shoppingBag" size="sm" />}
           >
-            {purchasing ? 'Weiter zur Zahlung...' : 
+            {purchasing ? 'Weiter zur Zahlung...' :
              isOwnProduct ? 'Dein eigenes Produkt' :
+             product.price > 0 && showWaiverCheckbox ? 'Kostenpflichtig bestellen' :
              product.price > 0 ? 'Jetzt kaufen' : 'Kostenlos herunterladen'}
           </Button>
 
@@ -529,46 +537,6 @@ function PublicProduct() {
           )}
         </div>
 
-        {/* Creator Card */}
-        <Card className={styles.creatorCard}>
-          <h2 className={styles.sectionTitle}>
-            <Icon name="user" size="sm" />
-            Über den Creator
-          </h2>
-          <div className={styles.creatorProfile}>
-            <div
-              className={styles.creatorAvatarLarge}
-              style={{
-                borderRadius: avatarStyle.borderRadius,
-                clipPath: avatarStyle.clipPath || 'none'
-              }}
-            >
-              {product.creator_avatar ? (
-                <img src={product.creator_avatar} alt={product.creator_name} />
-              ) : (
-                getInitials(product.creator_name)
-              )}
-            </div>
-            <div className={styles.creatorDetails}>
-              <h3>{product.creator_name}</h3>
-              <p>@{product.creator_username}</p>
-              {product.creator_product_count > 0 && (
-                <span className={styles.creatorStats}>
-                  {product.creator_product_count} Produkte
-                </span>
-              )}
-            </div>
-          </div>
-          <Button 
-            variant="secondary" 
-            fullWidth
-            onClick={() => navigate(`/store/${product.creator_username}`)}
-          >
-            Store ansehen
-            <Icon name="chevronRight" size="sm" />
-          </Button>
-        </Card>
-
         {/* Affiliate Section - Nur wenn Provision > 0 und nicht eigenes Produkt */}
         {!isOwnProduct && product.affiliate_commission > 0 && (
           <Card className={styles.affiliateCard} highlight>
@@ -599,13 +567,13 @@ function PublicProduct() {
 
             {affiliateLink ? (
               <div className={styles.affiliateLinkBox}>
-                <input 
-                  type="text" 
-                  value={affiliateLink} 
-                  readOnly 
+                <input
+                  type="text"
+                  value={affiliateLink}
+                  readOnly
                   className={styles.affiliateLinkInput}
                 />
-                <Button 
+                <Button
                   variant={linkCopied ? 'success' : 'primary'}
                   onClick={handleCopyLink}
                   icon={<Icon name={linkCopied ? 'check' : 'copy'} size="sm" />}
@@ -614,9 +582,9 @@ function PublicProduct() {
                 </Button>
               </div>
             ) : (
-              <Button 
-                variant="primary" 
-                fullWidth 
+              <Button
+                variant="primary"
+                fullWidth
                 size="large"
                 onClick={handleGenerateLink}
                 loading={generatingLink}
@@ -627,8 +595,8 @@ function PublicProduct() {
             )}
 
             {affiliateLink && (
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 fullWidth
                 onClick={handleShare}
                 icon={<Icon name="share" size="sm" />}
@@ -646,6 +614,46 @@ function PublicProduct() {
           </Card>
         )}
 
+        {/* Creator Card */}
+        <Card className={styles.creatorCard}>
+          <h2 className={styles.sectionTitle}>
+            <Icon name="user" size="sm" />
+            Über den Creator
+          </h2>
+          <div className={styles.creatorProfile}>
+            <div
+              className={styles.creatorAvatarLarge}
+              style={{
+                borderRadius: avatarStyle.borderRadius,
+                clipPath: avatarStyle.clipPath || 'none'
+              }}
+            >
+              {product.creator_avatar ? (
+                <img src={product.creator_avatar} alt={product.creator_name} />
+              ) : (
+                getInitials(product.creator_name)
+              )}
+            </div>
+            <div className={styles.creatorDetails}>
+              <h3>{product.creator_name}</h3>
+              <p>@{product.creator_username}</p>
+              {product.creator_product_count > 0 && (
+                <span className={styles.creatorStats}>
+                  {product.creator_product_count} Produkte
+                </span>
+              )}
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => navigate(`/@${product.creator_username}`)}
+          >
+            Store ansehen
+            <Icon name="chevronRight" size="sm" />
+          </Button>
+        </Card>
+
         {/* Legal Footer */}
         <div className={styles.legalFooter}>
           <Link to="/agb">AGB</Link>
@@ -655,6 +663,10 @@ function PublicProduct() {
           <Link to="/widerruf">Widerrufsrecht</Link>
           <span>•</span>
           <Link to="/impressum">Impressum</Link>
+          <span>•</span>
+          <Link to={`/melden?product=${productId}`} className={styles.reportLink}>
+            Inhalt melden
+          </Link>
         </div>
       </div>
     </div>

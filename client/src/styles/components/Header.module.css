@@ -28,28 +28,28 @@
     padding: 0 var(--spacing-md);
     max-width: 100%;
   }
-  
-  /* Logo */
-  .logo {
+
+  /* Title Section (Logo + Page Title) */
+  .titleSection {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    text-decoration: none;
-    color: inherit;
   }
-  
+
   .logoIcon {
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--color-primary);
+    text-decoration: none;
   }
-  
-  .logoText {
+
+  .pageTitle {
     font-size: var(--font-size-lg);
     font-weight: 700;
     color: var(--color-text-primary);
     letter-spacing: -0.02em;
+    margin: 0;
   }
   
   /* Actions */

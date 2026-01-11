@@ -102,12 +102,6 @@ function MyStore() {
 
   return (
     <div className={`page ${styles.storePage}`}>
-      {/* Page Header - Consistent with other pages */}
-      <div className="page-header">
-        <h1 className="page-title">Meine Produkte</h1>
-        <p className="page-subtitle">Verwalte deine Produkte und deinen Store</p>
-      </div>
-
       {/* Profile Card with integrated Stats */}
       <div className={styles.profileCard}>
         {/* Top Section: Avatar + Info */}
@@ -152,8 +146,8 @@ function MyStore() {
           </div>
         </div>
 
-        {/* Stats Row - Integrated */}
-        <div className={styles.profileStats}>
+        {/* Stats Row - Clickable, links to /earnings */}
+        <Link to="/earnings" className={styles.profileStats}>
           <div className={styles.profileStatItem}>
             <span className={styles.profileStatValue}>{formatCurrency(stats.totalRevenue)}</span>
             <span className={styles.profileStatLabel}>Umsatz</span>
@@ -168,22 +162,15 @@ function MyStore() {
             <span className={styles.profileStatValue}>{stats.totalSales || 0}</span>
             <span className={styles.profileStatLabel}>Verkäufe</span>
           </div>
-        </div>
-
-        {/* Stats Link */}
-        <div className={styles.statsLinkWrapper}>
-          <Link to="/earnings" className={styles.statsMoreLink}>
-            Alle Statistiken ansehen
-            <Icon name="chevronRight" size={16} />
-          </Link>
-        </div>
+          <Icon name="chevronRight" size={16} className={styles.statsChevron} />
+        </Link>
 
         {/* Store Actions */}
         <div className={styles.storeActions}>
           <span className={styles.storeActionsLabel}>Store verwalten</span>
           <div className={styles.storeActionsButtons}>
             <Link to="/settings?tab=store" className={styles.storeActionBtn}>
-              <Icon name="palette" size={18} />
+              <Icon name="palette" size={16} />
               <span>Design ändern</span>
             </Link>
             {user?.username && (
@@ -193,7 +180,7 @@ function MyStore() {
                 rel="noopener noreferrer"
                 className={styles.storeActionBtn}
               >
-                <Icon name="eye" size={18} />
+                <Icon name="eye" size={16} />
                 <span>Vorschau ansehen</span>
               </a>
             )}

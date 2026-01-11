@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { Icon } from '../common';
-import { useAuth } from '../../context/AuthContext';
 import styles from '../../styles/components/Sidebar.module.css';
 
 function Sidebar({ user }) {
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
   const navItems = [
@@ -36,19 +31,6 @@ function Sidebar({ user }) {
   useEffect(() => {
     setAvatarError(false);
   }, [user?.avatar]);
-
-  // Handle logout
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      await logout();
-      navigate('/login', { replace: true });
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      setLoggingOut(false);
-    }
-  };
 
   return (
     <aside className={styles.sidebar}>
@@ -100,11 +82,11 @@ function Sidebar({ user }) {
         </div>
       </nav>
 
-      {/* User Section */}
+      {/* User Section - Links to Account Settings */}
       <div className={styles.userSection}>
-        <div 
-          className={`${styles.userCard} ${showUserMenu ? styles.userCardActive : ''}`}
-          onClick={() => setShowUserMenu(!showUserMenu)}
+        <Link
+          to="/settings?tab=account"
+          className={styles.userCard}
         >
           <div className={styles.userAvatar}>
             {user?.avatar && !avatarError ? (
@@ -123,28 +105,14 @@ function Sidebar({ user }) {
           <div className={styles.userInfo}>
             <div className={styles.userName}>{user?.name || 'User'}</div>
             <div className={styles.userRole}>
-              {user?.role === 'both' ? 'Creator & Promoter' : 
+              {user?.role === 'both' ? 'Creator & Promoter' :
                user?.role === 'creator' ? 'Creator' : 'Promoter'}
             </div>
           </div>
           <span className={styles.userMenuIcon}>
-            <Icon name={showUserMenu ? 'chevronDown' : 'moreVertical'} size="sm" />
+            <Icon name="chevronRight" size="sm" />
           </span>
-        </div>
-
-        {/* User Menu Dropdown */}
-        {showUserMenu && (
-          <div className={styles.userMenu}>
-            <button 
-              className={`${styles.userMenuItem} ${styles.logoutItem}`}
-              onClick={handleLogout}
-              disabled={loggingOut}
-            >
-              <Icon name="logout" size="sm" />
-              <span>{loggingOut ? 'Abmelden...' : 'Abmelden'}</span>
-            </button>
-          </div>
-        )}
+        </Link>
       </div>
 
       {/* Legal Links */}

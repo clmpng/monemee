@@ -431,6 +431,7 @@ async function handleCheckoutCompleted(session, eventId) {
   // ========================================
 
   const seller = await UserModel.findById(sellerId);
+  let createdInvoice = null; // Invoice speichern für E-Mail
 
   console.log(`[Stripe Webhook] Seller type for user ${sellerId}: ${seller.seller_type}`);
 
@@ -454,7 +455,7 @@ async function handleCheckoutCompleted(session, eventId) {
       });
 
       if (billingInfo && SellerBillingModel.isComplete(billingInfo)) {
-        const invoice = await InvoiceService.createInvoiceForTransaction({
+        createdInvoice = await InvoiceService.createInvoiceForTransaction({
           transaction,
           product,
           buyer,
@@ -462,7 +463,7 @@ async function handleCheckoutCompleted(session, eventId) {
           billingInfo
         });
 
-        console.log(`[Stripe Webhook] Invoice created: ${invoice.invoice_number}`);
+        console.log(`[Stripe Webhook] Invoice created: ${createdInvoice.invoice_number}`);
       } else {
         console.warn(`[Stripe Webhook] Seller ${sellerId} is business but billing incomplete - no invoice created`);
         if (!billingInfo) {
@@ -523,7 +524,7 @@ async function handleCheckoutCompleted(session, eventId) {
         sellerName: seller.name || seller.username,
         amount: amount,
         downloadLinks: downloadLinks,
-        invoiceUrl: null  // TODO: Invoice URL wenn vorhanden
+        invoiceUrl: getInvoiceUrl(createdInvoice)
       });
 
       if (emailResult.success) {
@@ -541,6 +542,14 @@ async function handleCheckoutCompleted(session, eventId) {
   }
 
   console.log(`[Stripe Webhook] ✓ Checkout complete: Session ${session.id}, Transaction #${transaction.id}${isGuest ? ' (GUEST)' : ''}`);
+}
+
+/**
+ * Hilfsfunktion: Invoice-URL generieren
+ */
+function getInvoiceUrl(invoice) {
+  if (!invoice || !invoice.access_token) return null;
+  return InvoiceService.getPublicUrl(invoice.access_token);
 }
 
 module.exports = stripeController;

@@ -12,6 +12,7 @@ const payoutsRoutes = require('./payouts.routes');
 const stripeRoutes = require('./stripe.routes');
 const invoicesRoutes = require('./invoices.routes');
 const downloadsRoutes = require('./downloads.routes');
+const reportsRoutes = require('./reports.routes');
 
 // ============================================
 // API Routes
@@ -46,5 +47,8 @@ router.use('/messages', messagesRoutes);
 
 // Downloads (digitale Produktauslieferung)
 router.use('/downloads', downloadsRoutes);
+
+// Reports (DSA Art. 16 - Melde- und Abhilfeverfahren)
+router.use('/reports', reportsRoutes);
 
 module.exports = router;

@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
 const uploadRoutes = require('./routes/upload.routes');
 
 // Import routes
@@ -16,6 +17,10 @@ const { generalLimiter } = require('./middleware/rateLimit');
 // Create Express app
 const app = express();
 
+// Trust proxy für korrekte Client-IP Erkennung (z.B. hinter nginx)
+// Wichtig für express-rate-limit wenn X-Forwarded-For Header vorhanden
+app.set('trust proxy', 1);
+
 // ============================================
 // Middleware
 // ============================================
@@ -25,9 +30,17 @@ app.use(helmet());
 
 // CORS - Sichere Konfiguration mit Whitelist
 const allowedOrigins = [
+  // Monemee Client URLs
   process.env.CLIENT_URL,
   'http://localhost:3000',
-  'http://localhost:3001'
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
+  'http://localhost:5000', // React Dev Server Proxy
+  // Mission Control URLs (Admin Dashboard)
+  process.env.MISSION_CONTROL_URL,
+  'http://localhost:5173',  // Mission Control Development
+  'http://127.0.0.1:5173'
 ].filter(Boolean); // Entfernt undefined/null
 
 app.use(cors({
@@ -45,7 +58,7 @@ app.use(cors({
     callback(new Error('CORS not allowed'));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -96,10 +109,25 @@ app.use('/api/v1', routes);
 app.use('/api/v1/upload', uploadRoutes);
 
 // ============================================
+// Production: Serve React Frontend
+// ============================================
+
+if (process.env.NODE_ENV === 'production') {
+  // Statische Dateien aus client/build ausliefern
+  const clientBuildPath = path.join(__dirname, '../../client/build');
+  app.use(express.static(clientBuildPath));
+
+  // SPA Fallback: Alle nicht-API Routes an React übergeben
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
+
+// ============================================
 // Error Handling
 // ============================================
 
-// 404 handler
+// 404 handler (nur für API-Routes in Production, alle Routes in Development)
 app.use((req, res) => {
   res.status(404).json({
     success: false,

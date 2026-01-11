@@ -1,8 +1,17 @@
 const ProductModel = require('../models/Product.model');
 const ProductModuleModel = require('../models/ProductModule.model');
+const UserModel = require('../models/User.model');
 
 // Mindestpreis für kostenpflichtige Produkte (wegen Stripe-Gebühren)
 const MIN_PRICE = 2.99;
+
+/**
+ * Prüft ob ein User Stripe eingerichtet hat und Zahlungen empfangen kann
+ */
+async function canUserSell(userId) {
+  const user = await UserModel.findById(userId);
+  return !!(user && user.stripe_account_id && user.stripe_charges_enabled);
+}
 
 /**
  * Products Controller
@@ -125,7 +134,7 @@ const productsController = {
       }
 
       const { modules, ...productData } = req.body;
-      
+
       // Mindestpreis-Validierung (nur für kostenpflichtige Produkte)
       const price = parseFloat(productData.price);
       if (price > 0 && price < MIN_PRICE) {
@@ -134,10 +143,21 @@ const productsController = {
           message: `Mindestpreis für kostenpflichtige Produkte: ${MIN_PRICE.toFixed(2).replace('.', ',')} €`
         });
       }
-      
+
+      // Stripe-Validierung: Produkte können nur veröffentlicht werden, wenn Stripe eingerichtet ist
+      let finalStatus = productData.status || 'draft';
+      if (finalStatus === 'active') {
+        const canSell = await canUserSell(userId);
+        if (!canSell) {
+          // Status auf draft setzen statt Fehler zu werfen (sanfter Fallback)
+          finalStatus = 'draft';
+        }
+      }
+
       // Erstelle Produkt
       const product = await ProductModel.create({
         ...productData,
+        status: finalStatus,
         user_id: userId
       });
       
@@ -194,7 +214,16 @@ const productsController = {
           });
         }
       }
-      
+
+      // Stripe-Validierung: Produkte können nur veröffentlicht werden, wenn Stripe eingerichtet ist
+      if (updateData.status === 'active') {
+        const canSell = await canUserSell(userId);
+        if (!canSell) {
+          // Status auf draft setzen statt Fehler zu werfen (sanfter Fallback)
+          updateData.status = 'draft';
+        }
+      }
+
       // Update Produkt
       const product = await ProductModel.update(id, updateData);
       

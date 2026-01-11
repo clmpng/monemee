@@ -45,10 +45,16 @@ let providerName = 'none';
 const initializeProvider = () => {
   // Option 1: Resend
   if (Resend && process.env.RESEND_API_KEY) {
-    emailProvider = new Resend(process.env.RESEND_API_KEY);
-    providerName = 'resend';
-    console.log('[Email Service] Resend initialisiert');
-    return;
+    try {
+      emailProvider = new Resend(process.env.RESEND_API_KEY);
+      providerName = 'resend';
+      console.log('[Email Service] Resend initialisiert');
+      return;
+    } catch (e) {
+      // Resend benötigt Node.js 18+ für native fetch/Headers
+      console.warn('[Email Service] Resend-Initialisierung fehlgeschlagen (Node.js 18+ erforderlich)');
+      console.warn('[Email Service] Fallback auf SMTP oder deaktiviert');
+    }
   }
 
   // Option 2: SMTP via Nodemailer

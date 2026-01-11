@@ -1,0 +1,24 @@
+{
+  "name": "monemee-mission-control-tests",
+  "version": "1.0.0",
+  "description": "Test-Runner für Monemee App (gesteuert via Mission Control)",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=unit",
+    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=integration",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "server": "node src/test-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@jest/globals": "^29.7.0",
+    "supertest": "^6.3.3"
+  }
+}

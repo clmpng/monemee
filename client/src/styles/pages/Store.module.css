@@ -62,30 +62,30 @@
     background: var(--color-bg-secondary);
     border-radius: var(--radius-xl);
     border: 1px solid var(--color-border);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
   }
-  
+
   /* Top: Avatar + Info */
   .profileTop {
     display: flex;
     align-items: flex-start;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
   }
-  
-  /* Profile Avatar */
+
+  /* Profile Avatar - Compact */
   .profileAvatar {
     position: relative;
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     flex-shrink: 0;
   }
@@ -97,20 +97,20 @@
     border-radius: 50%;
   }
   
-  /* Level Badge - Fixed positioning */
+  /* Level Badge */
   .profileLevelBadge {
     position: absolute;
-    bottom: -4px;
-    right: -4px;
-    width: 22px;
-    height: 22px;
+    bottom: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
     background: var(--gradient-warning);
     color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 3px solid var(--color-bg-secondary);
+    border: 2px solid var(--color-bg-secondary);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   
@@ -121,17 +121,17 @@
   }
   
   .profileName {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--color-text-primary);
-    margin: 0 0 2px 0;
+    margin: 0;
     line-height: 1.3;
   }
-  
+
   .profileHandle {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--color-text-tertiary);
-    margin: 0 0 8px 0;
+    margin: 0 0 4px 0;
   }
   
   /* Store Link - Subtle */
@@ -183,17 +183,30 @@
     border-radius: var(--radius-sm);
   }
   
-  /* Stats Row - Integrated in Card */
+  /* Stats Row - Clickable Link to /earnings */
   .profileStats {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-md) 0;
+    padding: var(--spacing-sm) var(--spacing-xs);
+    margin: 0 calc(-1 * var(--spacing-xs));
     border-top: 1px solid var(--color-border);
     border-bottom: 1px solid var(--color-border);
-    margin-bottom: var(--spacing-md);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+    position: relative;
   }
-  
+
+  .profileStats:hover {
+    background: rgba(30, 58, 138, 0.05);
+  }
+
+  .profileStats:hover .statsChevron {
+    opacity: 1;
+    color: var(--color-primary);
+  }
+
   .profileStatItem {
     flex: 1;
     display: flex;
@@ -201,66 +214,34 @@
     align-items: center;
     text-align: center;
   }
-  
+
   .profileStatValue {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--color-text-primary);
     line-height: 1.2;
   }
-  
-  @media (min-width: 480px) {
-    .profileStatValue {
-      font-size: 18px;
-    }
-  }
-  
+
   .profileStatLabel {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    margin-top: 2px;
+    margin-top: 1px;
   }
-  
+
   .profileStatDivider {
     width: 1px;
-    height: 32px;
+    height: 28px;
     background: var(--color-border);
   }
-  
-  /* Stats Link Wrapper */
-  .statsLinkWrapper {
-    display: flex;
-    justify-content: center;
-    padding-bottom: var(--spacing-md);
-    border-bottom: 1px solid var(--color-border);
-  }
 
-  /* Stats More Link */
-  .statsMoreLink {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-primary);
-    text-decoration: none;
-    padding: 8px 12px;
-    border-radius: var(--radius-md);
+  .statsChevron {
+    position: absolute;
+    right: var(--spacing-xs);
+    opacity: 0.4;
+    color: var(--color-text-tertiary);
     transition: all var(--transition-fast);
-  }
-
-  .statsMoreLink:hover {
-    background: rgba(30, 58, 138, 0.08);
-  }
-
-  .statsMoreLink svg {
-    transition: transform var(--transition-fast);
-  }
-
-  .statsMoreLink:hover svg {
-    transform: translateX(2px);
   }
 
   /* ========================================
@@ -270,12 +251,12 @@
   .storeActions {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
-    padding-top: var(--spacing-md);
+    gap: var(--spacing-xs);
+    padding-top: var(--spacing-sm);
   }
 
   .storeActionsLabel {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     color: var(--color-text-tertiary);
     text-transform: uppercase;
@@ -284,7 +265,7 @@
 
   .storeActionsButtons {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
   }
 
   .storeActionBtn {
@@ -292,12 +273,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 12px 16px;
+    gap: 6px;
+    padding: 8px 12px;
     background: var(--color-bg-tertiary);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    font-size: 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
     font-weight: 500;
     color: var(--color-text-primary);
     text-decoration: none;

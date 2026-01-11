@@ -1,0 +1,242 @@
+/* ========================================
+   Dashboard Page Styles
+   ======================================== */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.header {
+  margin-bottom: var(--spacing-sm);
+}
+
+.title {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  font-size: var(--font-size-base);
+  color: var(--color-text-tertiary);
+  margin-top: var(--spacing-xs);
+}
+
+/* KPI Grid */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 1200px) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* KPI Card */
+.kpiCard {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.kpiContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpiLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+}
+
+.kpiValue {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-top: var(--spacing-xs);
+}
+
+.kpiChange {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.kpiChangePositive {
+  color: var(--color-success-light);
+}
+
+.kpiChangeNegative {
+  color: var(--color-danger-light);
+}
+
+.kpiChangeLabel {
+  color: var(--color-text-muted);
+}
+
+/* Alerts Section */
+.alertsCard {
+  margin-top: var(--spacing-md);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.alertsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.alertItem {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+}
+
+.alertCritical {
+  background-color: var(--color-danger-50);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.alertWarning {
+  background-color: var(--color-warning-50);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.alertTitle {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.alertMessage {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
+}
+
+/* Live Feed */
+.feedCard {
+  margin-top: var(--spacing-md);
+}
+
+.feedList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.feedItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.feedItem:hover {
+  background-color: var(--color-bg-hover);
+}
+
+.feedIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.feedContent {
+  flex: 1;
+}
+
+.feedMessage {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.feedTime {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+/* Loading */
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 256px;
+}
+
+/* Content Reports Card */
+.reportsCard {
+  display: block;
+  text-decoration: none;
+  border-left: 4px solid var(--color-warning);
+  background: linear-gradient(to right, rgba(251, 191, 36, 0.05), transparent);
+  transition: all var(--transition-fast);
+}
+
+.reportsCard:hover {
+  border-left-color: var(--color-warning-light);
+  background: linear-gradient(to right, rgba(251, 191, 36, 0.1), transparent);
+  transform: translateY(-2px);
+}
+
+.reportsCardContent {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.reportsCardIcon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: var(--radius-lg);
+  color: var(--color-warning);
+  flex-shrink: 0;
+}
+
+.reportsCardText {
+  flex: 1;
+}
+
+.reportsCardTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.reportsCardSubtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  margin: var(--spacing-xs) 0 0 0;
+}
+
+.reportsCardAction {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-primary);
+  white-space: nowrap;
+}

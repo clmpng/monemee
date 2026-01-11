@@ -10,3 +10,4 @@ export { default as stripeService } from './stripe.service';
 export { default as billingService } from './billing.service';
 export { default as invoiceService } from './invoice.service';
 export { default as purchasesService } from './purchases.service';
+export { default as reportsService } from './reports.service';

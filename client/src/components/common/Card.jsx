@@ -38,9 +38,9 @@ function Card({
 }
 
 // Card Header
-function CardHeader({ title, subtitle, action, className = '' }) {
+function CardHeader({ title, subtitle, action, className = '', ...props }) {
   return (
-    <div className={`${styles.header} ${className}`}>
+    <div className={`${styles.header} ${className}`} {...props}>
       <div>
         <h3 className={styles.headerTitle}>{title}</h3>
         {subtitle && <p className={styles.headerSubtitle}>{subtitle}</p>}
@@ -51,18 +51,18 @@ function CardHeader({ title, subtitle, action, className = '' }) {
 }
 
 // Card Body
-function CardBody({ children, className = '' }) {
+function CardBody({ children, className = '', ...props }) {
   return (
-    <div className={`${styles.body} ${className}`}>
+    <div className={`${styles.body} ${className}`} {...props}>
       {children}
     </div>
   );
 }
 
 // Card Footer
-function CardFooter({ children, className = '' }) {
+function CardFooter({ children, className = '', ...props }) {
   return (
-    <div className={`${styles.footer} ${className}`}>
+    <div className={`${styles.footer} ${className}`} {...props}>
       {children}
     </div>
   );

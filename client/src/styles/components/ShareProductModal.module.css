@@ -1,177 +1,193 @@
 /* ========================================
    ShareProductModal Styles
-   Mobile-first, clean design
+   Clean, celebratory design
    ======================================== */
 
 .content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-xl);
 }
 
 /* ========================================
-   Header Section
+   Success Header
    ======================================== */
 
-.header {
+.successHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  padding-bottom: var(--spacing-md);
+  padding: var(--spacing-md) 0;
 }
 
-.celebrationIcon {
-  color: var(--color-warning);
-  margin-bottom: var(--spacing-sm);
+.successIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-success) 0%, #10b981 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-md);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);
 }
 
-.subtitle {
+.successIcon svg {
+  color: white;
+}
+
+.successTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.successSubtitle {
   font-size: 15px;
   color: var(--color-text-secondary);
-  line-height: 1.5;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.successSubtitle strong {
+  color: var(--color-text-primary);
+}
+
+/* ========================================
+   Share Section
+   ======================================== */
+
+.shareSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.shareLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin: 0;
 }
 
-.subtitle strong {
-  color: var(--color-text-primary);
-}
-
 /* ========================================
-   Templates Section
+   Share Card (Text zum Kopieren)
    ======================================== */
 
-.templates {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.templateCard {
+.shareCard {
   background: var(--color-bg-tertiary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
+  overflow: hidden;
 }
 
-.templateHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-sm);
-}
-
-.platformLabel {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.platformLabel svg {
-  color: var(--color-text-tertiary);
-}
-
-.copyButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 12px;
-  font-weight: 500;
+.shareText {
+  font-size: 14px;
   color: var(--color-text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.copyTextButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-primary);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.copyButton:hover {
+.copyTextButton:hover {
   background: var(--color-bg-secondary);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
 }
 
-.copyButton svg {
-  flex-shrink: 0;
-}
-
-.copiedBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.copyTextButton.copied {
   color: var(--color-success);
 }
 
-.templateText {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: var(--color-bg-secondary);
-  padding: var(--spacing-sm);
-  border-radius: var(--radius-md);
-  max-height: 120px;
-  overflow-y: auto;
+.copyTextButton svg {
+  flex-shrink: 0;
 }
 
 /* ========================================
-   Link Section
+   Link Card
    ======================================== */
 
-.linkSection {
+.linkCard {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: space-between;
   gap: var(--spacing-sm);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
-.linkDisplay {
+.linkContent {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
+  min-width: 0;
+  flex: 1;
+}
+
+.linkContent svg {
+  flex-shrink: 0;
   color: var(--color-text-tertiary);
 }
 
 .linkUrl {
   font-size: 13px;
   font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.linkCopyButton {
-  display: inline-flex;
+.copyLinkButton {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: var(--color-bg-tertiary);
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  font-size: 13px;
-  font-weight: 500;
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
-}
-
-.linkCopyButton:hover {
-  background: var(--color-bg-secondary);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.linkCopyButton svg {
   flex-shrink: 0;
 }
 
-/* ========================================
-   Responsive Adjustments
-   ======================================== */
+.copyLinkButton:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
 
-@media (min-width: 640px) {
-  .templateText {
-    max-height: 150px;
-  }
+.copyLinkButton.copied {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: white;
+}
+
+.copyLinkButton svg {
+  flex-shrink: 0;
 }

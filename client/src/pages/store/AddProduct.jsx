@@ -4,7 +4,6 @@ import { Icon } from '../../components/common';
 import ProductForm from '../../components/products/ProductForm';
 import ShareProductModal from '../../components/products/ShareProductModal';
 import { useProducts } from '../../context/ProductContext';
-import { useAuth } from '../../context/AuthContext';
 import { productsService } from '../../services';
 import styles from '../../styles/pages/ProductPage.module.css';
 
@@ -15,10 +14,10 @@ import styles from '../../styles/pages/ProductPage.module.css';
 function AddProduct() {
   const navigate = useNavigate();
   const { addProduct } = useProducts();
-  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [createdProduct, setCreatedProduct] = useState(null);
+  const [createdProductId, setCreatedProductId] = useState(null);
 
   // Formular absenden
   const handleSubmit = async (productData) => {
@@ -57,12 +56,13 @@ function AddProduct() {
         modules: processedModules
       });
 
-      if (result?.success !== false) {
+      if (result?.success !== false && result?.data) {
         // Share-Modal zeigen statt direktem Redirect
         setCreatedProduct({
           title: productData.title,
           price: productData.price
         });
+        setCreatedProductId(result.data.id);
         setShowShareModal(true);
       }
     } catch (error) {
@@ -108,9 +108,9 @@ function AddProduct() {
       {/* Share Modal nach erfolgreicher Erstellung */}
       <ShareProductModal
         isOpen={showShareModal}
-        onClose={() => navigate('/')}
+        onClose={() => navigate('/dashboard')}
         product={createdProduct}
-        storeUrl={`${window.location.origin}/store/${user?.username}`}
+        productUrl={`${window.location.origin}/p/${createdProductId}`}
       />
     </div>
   );

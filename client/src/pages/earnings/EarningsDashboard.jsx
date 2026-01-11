@@ -253,12 +253,6 @@ function EarningsDashboard() {
 
   return (
     <div className={`page ${styles.earningsPage}`}>
-      {/* Header */}
-      <div className="page-header">
-        <h1 className="page-title">Fortschritt</h1>
-        <p className="page-subtitle">Deine Einnahmen und Statistiken</p>
-      </div>
-
       {/* Level Card */}
       {level && (
         <div className={styles.levelCard}>

@@ -1968,3 +1968,71 @@
       flex: 1;
     }
   }
+
+  /* ========================================
+     Legal Links Section (Mobile Footer)
+     ======================================== */
+
+  .legalSection {
+    margin-top: var(--spacing-xl);
+    margin-bottom: calc(var(--bottom-nav-height, 64px) + 80px); /* Platz für Sticky Footer + Bottom Nav */
+    padding: var(--spacing-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+  }
+
+  .legalSectionTitle {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--spacing-md);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .legalLinks {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .legalLinkItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-md);
+    font-weight: 500;
+    transition: all var(--transition-normal);
+    min-height: 48px; /* Minimum tap target */
+  }
+
+  .legalLinkItem:hover {
+    background: var(--color-bg-primary);
+    color: var(--color-primary);
+  }
+
+  .legalLinkItem:active {
+    transform: scale(0.98);
+  }
+
+  .legalLinkItem svg {
+    color: var(--color-text-tertiary);
+    transition: color var(--transition-normal);
+  }
+
+  .legalLinkItem:hover svg {
+    color: var(--color-primary);
+  }
+
+  /* Hide on desktop (Sidebar already shows legal links) */
+  @media (min-width: 768px) {
+    .legalSection {
+      display: none;
+    }
+  }

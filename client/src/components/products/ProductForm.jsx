@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '../common';
+import { useAuth } from '../../context/AuthContext';
 import ModuleCard from './ModuleCard';
 import ModuleSheet from './ModuleSheet';
 import PricingInfoModal from './PricingInfoModal';
@@ -17,6 +19,10 @@ const ONBOARDING_KEY = 'monemee_product_onboarding_seen';
  * Single-Page Accordion-basiertes Formular mit verbesserter Mobile UX
  */
 function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelection = true }) {
+  // Auth Context für Stripe-Status
+  const { user } = useAuth();
+  const stripeComplete = user?.stripeComplete || false;
+
   // Basis-Produktdaten
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
@@ -29,6 +35,9 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
     affiliateCommission: initialData?.affiliate_commission || 20,
     status: initialData?.status || 'draft'
   });
+
+  // Startmodus: null = noch nicht gewählt, 'blank' = leere Seite, 'template' = mit Vorlage
+  const [startMode, setStartMode] = useState(initialData ? 'blank' : null);
 
   // Produkttyp State
   const [selectedType, setSelectedType] = useState(initialData?.type || null);
@@ -51,6 +60,9 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
   // Validation State - Inline-Fehler
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+
+  // Rechtliche Bestätigung (DSA-konform)
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
 
   // Modals
   const [showPricingInfo, setShowPricingInfo] = useState(false);
@@ -215,8 +227,8 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
     setExpandedType(expandedType === typeId ? null : typeId);
   };
 
-  // Handle template selection
-  const handleTemplateSelect = (template) => {
+  // Handle template selection (aus Template-Browser oder Modal)
+  const handleTemplateSelect = (template, typeId = null) => {
     if (template?.data) {
       setFormData(prev => ({
         ...prev,
@@ -226,7 +238,13 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
         isFree: template.data.price === 0
       }));
       setModules(template.data.modules || []);
+
+      // Typ automatisch setzen wenn aus Template-Browser
+      if (typeId) {
+        setSelectedType(typeId);
+      }
     }
+    setStartMode('blank'); // Wechsel zum normalen Formular
     setShowTemplateModal(false);
     setCollapsedSections({
       type: true,
@@ -235,6 +253,25 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
       modules: false,
       pricing: false
     });
+  };
+
+  // Handle Start-Modus Auswahl
+  const handleStartModeSelect = (mode) => {
+    setStartMode(mode);
+    if (mode === 'blank') {
+      // Bei leerer Seite: Typ-Section öffnen
+      setCollapsedSections(prev => ({ ...prev, type: false }));
+    }
+  };
+
+  // Alle Templates gruppiert nach Typ holen
+  const getAllTemplatesGrouped = () => {
+    return PRODUCT_TYPES
+      .filter(type => !type.comingSoon && PRODUCT_TEMPLATES[type.id]?.length > 0)
+      .map(type => ({
+        type,
+        templates: PRODUCT_TEMPLATES[type.id] || []
+      }));
   };
 
   // Handle thumbnail upload
@@ -331,8 +368,13 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
       newErrors.modules = 'Füge mindestens einen Inhalt hinzu';
     }
 
+    // Rechte-Bestätigung ist Pflicht
+    if (!rightsConfirmed) {
+      newErrors.rights = 'Bitte bestätige, dass du die Rechte an den Inhalten besitzt';
+    }
+
     setErrors(newErrors);
-    setTouched({ title: true, price: true, modules: true });
+    setTouched({ title: true, price: true, modules: true, rights: true });
     return Object.keys(newErrors).length === 0;
   };
 
@@ -346,6 +388,7 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
       } else if (errors.price) {
         setCollapsedSections(prev => ({ ...prev, pricing: false }));
       }
+      // Für Rechte-Fehler: Scroll zum Rechte-Bereich
       return;
     }
 
@@ -428,18 +471,137 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
         </>
       )}
 
-      {/* Progress Bar */}
-      <div className={styles.progressContainer}>
-        <div className={styles.progressBar}>
-          <div
-            className={styles.progressFill}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <span className={styles.progressText}>{progress}% ausgefüllt</span>
-      </div>
+      {/* Startauswahl: Leere Seite vs. Mit Vorlage */}
+      {showTypeSelection && startMode === null && (
+        <div className={styles.startSelection}>
+          <div className={styles.startSelectionHeader}>
+            <h2 className={styles.startSelectionTitle}>Wie möchtest du starten?</h2>
+            <p className={styles.startSelectionSubtitle}>
+              Nutze eine Vorlage für einen schnellen Start oder beginne mit einer leeren Seite.
+            </p>
+          </div>
 
-      <div className={styles.form}>
+          <div className={styles.startSelectionOptions}>
+            <button
+              type="button"
+              className={styles.startOption}
+              onClick={() => handleStartModeSelect('template')}
+            >
+              <div className={styles.startOptionIcon} data-variant="template">
+                <Icon name="zap" size="lg" />
+              </div>
+              <div className={styles.startOptionContent}>
+                <span className={styles.startOptionTitle}>Mit Vorlage</span>
+                <span className={styles.startOptionDescription}>
+                  Fertige Struktur, schneller Start
+                </span>
+              </div>
+              <span className={styles.startOptionBadge}>Empfohlen</span>
+            </button>
+
+            <button
+              type="button"
+              className={styles.startOption}
+              onClick={() => handleStartModeSelect('blank')}
+            >
+              <div className={styles.startOptionIcon} data-variant="blank">
+                <Icon name="filePlus" size="lg" />
+              </div>
+              <div className={styles.startOptionContent}>
+                <span className={styles.startOptionTitle}>Leere Seite</span>
+                <span className={styles.startOptionDescription}>
+                  Volle Freiheit, selbst gestalten
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Template Browser */}
+      {showTypeSelection && startMode === 'template' && (
+        <div className={styles.templateBrowser}>
+          <div className={styles.templateBrowserHeader}>
+            <button
+              type="button"
+              className={styles.templateBrowserBack}
+              onClick={() => setStartMode(null)}
+            >
+              <Icon name="chevronLeft" size="md" />
+              <span>Zurück</span>
+            </button>
+            <h2 className={styles.templateBrowserTitle}>Vorlage wählen</h2>
+          </div>
+
+          <div className={styles.templateBrowserContent}>
+            {getAllTemplatesGrouped().map(({ type, templates }) => (
+              <div key={type.id} className={styles.templateGroup}>
+                <div className={styles.templateGroupHeader}>
+                  <div
+                    className={styles.templateGroupIcon}
+                    style={{ '--type-color': type.color }}
+                  >
+                    <Icon name={type.icon} size="sm" />
+                  </div>
+                  <span className={styles.templateGroupTitle}>{type.label}</span>
+                  <span className={styles.templateGroupCount}>
+                    {templates.length} {templates.length === 1 ? 'Vorlage' : 'Vorlagen'}
+                  </span>
+                </div>
+
+                <div className={styles.templateGroupList}>
+                  {templates.map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      className={styles.templateCard}
+                      onClick={() => handleTemplateSelect(template, type.id)}
+                      style={{ '--type-color': type.color }}
+                    >
+                      <div className={styles.templateCardIcon}>
+                        <Icon name={template.preview} size="md" />
+                      </div>
+                      <div className={styles.templateCardContent}>
+                        <span className={styles.templateCardName}>{template.name}</span>
+                        <span className={styles.templateCardMeta}>
+                          {template.data.modules?.length || 0} Inhalte · {template.data.price > 0 ? `${template.data.price.toFixed(2).replace('.', ',')} €` : 'Kostenlos'}
+                        </span>
+                      </div>
+                      <Icon name="chevronRight" size="sm" className={styles.templateCardArrow} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Option ohne Vorlage */}
+            <button
+              type="button"
+              className={styles.templateBrowserBlank}
+              onClick={() => handleStartModeSelect('blank')}
+            >
+              <Icon name="filePlus" size="md" />
+              <span>Ohne Vorlage fortfahren</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Normales Formular - nur wenn startMode 'blank' oder bei Edit */}
+      {(startMode === 'blank' || !showTypeSelection) && (
+        <>
+          {/* Progress Bar */}
+          <div className={styles.progressContainer}>
+            <div className={styles.progressBar}>
+              <div
+                className={styles.progressFill}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className={styles.progressText}>{progress}% ausgefüllt</span>
+          </div>
+
+          <div className={styles.form}>
         {/* Type Selection Section */}
         {showTypeSelection && (
           <section
@@ -982,7 +1144,60 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
             </div>
           )}
         </section>
+
+        {/* Rechtliche Bestätigung - DSA-konform */}
+        <div className={styles.rightsSection}>
+          <div className={styles.rightsBox}>
+            <label className={styles.rightsLabel}>
+              <input
+                type="checkbox"
+                checked={rightsConfirmed}
+                onChange={(e) => {
+                  setRightsConfirmed(e.target.checked);
+                  if (errors.rights) {
+                    setErrors(prev => ({ ...prev, rights: null }));
+                  }
+                }}
+                className={styles.rightsInput}
+              />
+              <span className={styles.rightsCheckbox}>
+                {rightsConfirmed && <Icon name="check" size="xs" />}
+              </span>
+              <span className={styles.rightsText}>
+                Ich bestätige, dass ich alle erforderlichen Rechte an den hochgeladenen
+                Inhalten besitze und diese keine urheberrechtlich geschützten Werke Dritter,
+                illegalen Inhalte oder Inhalte enthalten, die gegen die{' '}
+                <Link to="/inhaltsrichtlinien" className={styles.rightsLink}>
+                  Inhaltsrichtlinien
+                </Link>{' '}
+                verstoßen. <span className={styles.required}>*</span>
+              </span>
+            </label>
+            {errors.rights && touched.rights && (
+              <p className={styles.errorText}>{errors.rights}</p>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Stripe-Warnung wenn nicht eingerichtet */}
+      {!stripeComplete && (
+        <div className={styles.stripeWarning}>
+          <div className={styles.stripeWarningIcon}>
+            <Icon name="alertTriangle" size="md" />
+          </div>
+          <div className={styles.stripeWarningContent}>
+            <p className={styles.stripeWarningTitle}>Zahlungen einrichten</p>
+            <p className={styles.stripeWarningText}>
+              Um Produkte zu verkaufen, musst du zuerst deine Zahlungsdaten hinterlegen.
+            </p>
+            <Link to="/settings?tab=stripe" className={styles.stripeWarningLink}>
+              <span>Jetzt einrichten</span>
+              <Icon name="arrowRight" size="sm" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Static CTA */}
       <div className={styles.staticCTA} ref={ctaRef}>
@@ -1003,9 +1218,10 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
         </button>
         <button
           type="button"
-          className={styles.primaryButton}
+          className={`${styles.primaryButton} ${!stripeComplete ? styles.primaryButtonDisabled : ''}`}
           onClick={() => handleSubmit('active')}
-          disabled={isLoading}
+          disabled={isLoading || !stripeComplete}
+          title={!stripeComplete ? 'Bitte richte zuerst deine Zahlungsdaten ein' : ''}
         >
           {isLoading ? (
             <span className={styles.spinner} />
@@ -1018,8 +1234,8 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
         </button>
       </div>
 
-      {/* Floating CTA (Mobile) */}
-      {showFloatingCTA && (
+      {/* Floating CTA (Mobile) - nur wenn Stripe eingerichtet */}
+      {showFloatingCTA && stripeComplete && (
         <div className={styles.floatingCTA}>
           <button
             type="button"
@@ -1037,6 +1253,8 @@ function ProductForm({ initialData, onSubmit, onCancel, isLoading, showTypeSelec
             )}
           </button>
         </div>
+      )}
+        </>
       )}
 
       {/* Template Selection Modal */}

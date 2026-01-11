@@ -69,6 +69,7 @@ import {
   // Content & Dateien
   FileText,
   File,
+  FilePlus,
   Package,
   Video,
   Music,
@@ -204,6 +205,7 @@ const iconMap = {
   // Content & Dateien
   fileText: FileText,
   file: File,
+  filePlus: FilePlus,
   package: Package,
   video: Video,
   music: Music,

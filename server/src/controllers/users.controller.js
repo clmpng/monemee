@@ -34,6 +34,9 @@ const usersController = {
       const products = await ProductModel.findByUserId(userId);
       const productCount = products?.length || 0;
 
+      // Stripe-Status prüfen
+      const stripeComplete = !!(user.stripe_account_id && user.stripe_charges_enabled);
+
       res.json({
         success: true,
         data: {
@@ -49,7 +52,8 @@ const usersController = {
           seller_type: user.seller_type || 'private',
           storeSettings: user.store_settings || { theme: 'classic', layout: { productGrid: 'two-column' } },
           productCount,
-          isBuyerOnly: productCount === 0 && parseFloat(user.total_earnings || 0) === 0,
+          stripeComplete,
+          isBuyerOnly: false, // Alle User starten im Creator/Affiliate-Modus
           createdAt: user.created_at,
           updatedAt: user.updated_at
         }

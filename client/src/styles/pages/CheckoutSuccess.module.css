@@ -427,6 +427,40 @@
   color: var(--color-text-primary);
 }
 
+.affiliateHint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  text-align: left;
+  width: 100%;
+}
+
+.affiliateHint svg {
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.affiliateHint > div {
+  flex: 1;
+}
+
+.affiliateHint p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.affiliateHint strong {
+  color: var(--color-text-primary);
+}
+
 /* ========================================
    Actions
    ======================================== */

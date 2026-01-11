@@ -581,12 +581,6 @@ function Settings() {
 
   return (
     <div className={`page ${styles.settingsPage}`}>
-      {/* Header */}
-      <div className={styles.header}>
-        <h1 className={styles.title}>Einstellungen</h1>
-        <p className={styles.subtitle}>Verwalte dein Profil und deinen Store</p>
-      </div>
-
       {/* Tab Navigation */}
       <div className={styles.tabNavigation}>
         {tabs.map(tab => (
@@ -1637,6 +1631,33 @@ function Settings() {
           </div>
         )}
       </form>
+
+      {/* Legal Links Section (Mobile only) */}
+      <div className={styles.legalSection}>
+        <h3 className={styles.legalSectionTitle}>Rechtliches</h3>
+        <nav className={styles.legalLinks}>
+          <Link to="/impressum" className={styles.legalLinkItem}>
+            <span>Impressum</span>
+            <Icon name="chevronRight" size="sm" />
+          </Link>
+          <Link to="/datenschutz" className={styles.legalLinkItem}>
+            <span>Datenschutz</span>
+            <Icon name="chevronRight" size="sm" />
+          </Link>
+          <Link to="/agb" className={styles.legalLinkItem}>
+            <span>AGB</span>
+            <Icon name="chevronRight" size="sm" />
+          </Link>
+          <Link to="/widerruf" className={styles.legalLinkItem}>
+            <span>Widerrufsbelehrung</span>
+            <Icon name="chevronRight" size="sm" />
+          </Link>
+          <Link to="/inhaltsrichtlinien" className={styles.legalLinkItem}>
+            <span>Inhaltsrichtlinien</span>
+            <Icon name="chevronRight" size="sm" />
+          </Link>
+        </nav>
+      </div>
 
       {/* Seller Type Modal */}
       <SellerTypeModal

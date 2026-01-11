@@ -18,9 +18,9 @@ const stripeService = {
   startOnboarding: () => api.post('/stripe/connect/start'),
   
   /**
-   * Continue onboarding (get new link if expired)
+   * Get new onboarding link (for continuing onboarding)
    */
-  continueOnboarding: () => api.post('/stripe/connect/continue'),
+  getOnboardingLink: () => api.get('/stripe/connect/onboarding-link'),
   
   /**
    * Get Stripe Express Dashboard link
